@@ -1,0 +1,42 @@
+﻿syntax = "proto3";
+
+package device.protos.charger; // will be placed in a namespace matching the package name if csharp_namespace is not specified
+option csharp_namespace = "TacDynamics.Device.Protos.Charger";
+
+service ChargerActionService {
+  rpc PostAction(PostActionRequest) returns (ChargerActionResponse);
+  rpc ChangeCurrent(ChangeCurrentRequest) returns (ChargerActionResponse);
+}
+message PostActionRequest {
+  int64 request_uuid = 1;
+  string device_id = 2;
+  ChargerAction charger_action = 3;
+}
+
+message ChangeCurrentRequest{
+  MaxChargerCurrent max_charger_current = 1;
+}
+
+message ChargerActionResponse{
+  int64 response_uuid = 1; 
+  string node_name = 2;
+  bool success = 3;
+  string message = 4;
+}
+
+enum ChargerAction {
+    ACTION_UNSPECIFIED = 0;          // �����w�ʧ@
+    ACTION_RESERVE = 1;              // �w���R�q��
+    ACTION_CANCEL_RESERVATION = 2;   // �����w��
+    ACTION_START_CHARGING = 3;       // �}�l�R�q
+    ACTION_STOP_CHARGING = 4;        // ����R�q
+    ACTION_RESET = 5;                // �G�٭��m todo
+}
+enum MaxChargerCurrent {
+    CURRENT_UNSPECIFIED = 0;
+    CURRENT_5A = 1;
+    CURRENT_10A = 2;
+    CURRENT_15A = 3;
+    CURRENT_20A = 4;
+    CURRENT_25A = 5;
+}

@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package device.protos.charger; // will be placed in a namespace matching the package name if csharp_namespace is not specified
+option csharp_namespace = "TacDynamics.Device.Protos.Charger";
+
+service ChargerStatusService {
+  rpc GetStatus(google.protobuf.Empty) returns (stream ChargerStatusResponse);
+}
+
+message ChargerStatusResponse {
+  int64 response_uuid = 1;
+  string device_id = 2;
+  ChargingMsg charging_msg = 3;
+}
+message ChargingMsg {
+  ChargerState charger_state = 1;
+  ChargerError charger_error = 2;
+  int32 time_to_full = 3;
+  float charging_current = 4;
+  float charging_voltage = 5;
+  int32 charging_soc = 6;
+}
+
+enum ChargerState{
+  STATE_UNSPECIFIED = 0;
+  STATE_IDLE = 1;
+  STATE_RESERVE = 2;
+  STATE_CHARGING = 3;
+  STATE_OCCUPY = 4;
+  STATE_ERROR = 5;
+  STATE_RESERVATION_TIMEOUT = 6;
+}
+enum ChargerError{
+  ERROR_UNSPECIFIED = 0;
+  OVER_TEMPERATURE_PROTECTION = 1;
+  OVER_VOLTAGE_PROTECTION = 2;
+  OVER_CURRENT_PROTECTION = 3;
+  SHORT_PROTECTION = 4;
+  AC_FAIL = 5;
+  OPERATION_OFF = 6;
+  HIGH_TEMPERATURE = 7;
+}

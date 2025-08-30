@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package deviceservice.protos;  //will be placed in a namespace matching the package name if csharp_namespace is not specified
+option csharp_namespace = "TacDynamics.Kernel.DeviceService.Protos";
+
+message DeviceServiceSimpleResponse {
+    int64 request_id = 1;
+    bool success     = 2;
+    string message   = 3;
+}
+
+message Location {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+}
+
+enum PathAction {
+    UNSPECIFIED_PATHACTION = 0;
+    LIGHT                  = 1;
+    HORN                   = 2;
+}
+
+enum NodeAction {
+    UNSPECIFIED_NODEACTION = 0;
+    WAIT                   = 1;
+    PUSH                   = 2;
+    PULL                   = 3;
+}
+
+enum Status {
+    UNSPECIFIED = 0;
+    IDLE        = 1;
+    WORKING     = 2;
+    SLEEPING    = 3;
+    WAITING     = 4;
+    MAINTENANCE = 5;
+    CHARGING    = 6;
+    MANUAL      = 7;
+    STANDBY = 8;
+    ERROR = 9;
+}
+
+message DeviceServiceActionUnit {
+    //    int32 node_id = 1;
+    string start_node_name  = 1;
+    string end_node_name    = 2;
+    repeated Action actions = 3;
+    // repeated PathAction path_action = 7; // act concurrently
+    // repeated NodeAction node_action = 8; // act in serial
+    double speed_limit = 4;
+    double path_width  = 5;
+    int32 wait_time    = 6;
+}
+
+enum Action {
+    UNSPECIFIED_ACTION = 0;
+    // general agvAction
+    GENERAL_ACTION_LIGHT = 1;
+    GENERAL_ACTION_HORN  = 2;
+
+    // path agvAction - move group
+    PATH_ACTION_SIMPLE_MOVE    = 100;
+    PATH_ACTION_GOTO_CHARGE    = 101;
+    PATH_ACTION_ENTER_ELEVATOR = 102;
+    PATH_ACTION_ELEVATOR_MOVE  = 103;
+    PATH_ACTION_LEAVE_ELEVATOR = 104;
+
+    // node agvAction - move group
+    NODE_ACTION_PREPARE_SHIFT_MOVE = 300;
+    NODE_ACTION_FINISH_SHIFT_MOVE  = 301;
+
+    // node agvAction - halt group
+    NODE_ACTION_WAIT      = 400;
+    NODE_ACTION_LIFT_UP   = 401;
+    NODE_ACTION_LIFT_DOWN = 402;
+    NODE_ACTION_CHARGING  = 403;
+
+    // Temporary Path agvAction
+    PATH_ACTION_ENTER_CONTAINER_NODE = 500;
+    PATH_ACTION_LEAVE_CONTAINER_NODE = 501;
+}
+
+message Pose {
+    float x     = 1;  // meter
+    float y     = 2;  // meter
+    float z     = 3;  // meter
+    float roll  = 4;  // radian
+    float pitch = 5;  // radian
+    float yaw   = 6;  // radian
+}
+
+message HardwareVersion {
+    string name          = 1;
+    string version       = 2;
+    string serial_number = 3;
+}
+
+message SoftwareVersion {
+    string name    = 1;  // docker image name
+    string version = 2;  // docker image tag
+}
+
+message FileVersion {
+    string name            = 1;  // file or (zip) directory name
+    bool file_or_directory = 2;  // ture as file, false as (zip) directory
+    string md5             = 3;  // md5 checksum of file, empty value
+                                 // when device don't have target file
+}
+
+message MapVersion {
+    int32 map_id   = 1;
+    string version = 2;  // optional, empty value as unused
+}
+
+enum DeviceActionStatus {
+    DEVICE_ACTION_UNSPECIFIED = 0;
+    DEVICE_ACTION_AWAITING    = 1;
+    DEVICE_ACTION_DISPATCHED  = 2;
+    DEVICE_ACTION_FINISHED    = 3;
+    DEVICE_ACTION_ERROR       = 4;
+    DEVICE_ACTION_PAUSE       = 5;
+    DEVICE_ACTION_ABORTED     = 6;
+    DEVICE_ACTION_CREATING    = 7;
+}

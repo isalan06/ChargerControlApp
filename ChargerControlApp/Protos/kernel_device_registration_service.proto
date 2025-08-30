@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+import "Protos/kernel_device_common.proto";
+package deviceservice.protos;
+option csharp_namespace = "TacDynamics.Kernel.DeviceService.Protos";
+
+service DeviceRegistrationService {
+  /*
+  // Service Description: Device Registration Service
+  // Server: Fleet Management System
+  // Client: Device
+  */
+
+  /*
+  // API Description: Allow device to register on fleet management system
+  */
+  rpc Post(DevicePostRegistrationRequest)
+      returns (DevicePostRegistrationResponse);
+
+  /*
+  // API Description: Allow device to unregister from fleet management system
+  */
+  rpc Delete(DeviceDeleteRegistrationRequest) returns (DeviceServiceSimpleResponse);
+
+  /*
+  // API Description:
+  */
+  rpc GetFile(DeviceGetFileRequest) returns (DeviceGetFileResponse);
+}
+
+// TODO: hostname:PORT
+
+message DevicePostRegistrationRequest {
+  int64 request_uuid = 1;
+
+  string device_id = 2; // Device name or UUID
+  string ip_port = 3;   // format as "IP:PORT"
+
+  string device_model = 4;                 // Device model/type
+  repeated HardwareVersion hw_versions = 5; // optinal, empty as unused
+  repeated SoftwareVersion sw_versions = 6; // software version, use to
+                                           // get docker registry to pull image
+  repeated FileVersion file_versions = 7;   // file version, use to get file
+                                           // (file, zip directory) from FMS
+                                           // (ex: audio file, firmware program,
+                                           // obstacle map image, etc..)
+  MapVersion map_version = 8;
+  string device_info = 9;
+  string tag_name = 10; //Optional, if device model is elevator, tag_name is essential.
+  string device_name = 11;
+
+}
+
+
+
+
+message DevicePostRegistrationResponse {
+  int64 request_uuid = 1;
+  DeviceMap map = 2;            // get from device map from facility
+  string heartbeat_ip_port = 3; // format as "IP:PORT"
+  string device_name = 4; // device name assigned by USER
+  bool success = 5;
+}
+
+message DeviceMap {
+	int32 map_id = 2;
+	string map_version = 3;
+	repeated DeviceMapNode nodes = 4;
+	repeated DeviceMapPath paths = 5; // directive path
+  }
+  
+  message DeviceMapNode {
+	int32 node_id = 1;
+	string node_name = 2; // unique name e.g. Map-000-Node-X001Y002Z003
+	Pose node_pose = 3;
+	string tag_name = 4; // optinal, empty value when tag name same with node
+						 // name, when a node contain a tag name same with other
+						 // nodes, it's meaning its a elevator node.
+	Pose tag_offset = 5; // optinal, offset value for tag from node.
+  }
+  
+  message DeviceMapPath {
+	string start_node_name = 1;
+	string end_node_name = 2;
+  }
+
+message DeviceDeleteRegistrationRequest {
+  int64 request_uuid = 1;
+
+  string device_id = 2;
+  string ip_port = 3; // format as "IP:PORT"
+}
+
+message DeviceGetFileRequest {
+  int64 request_uuid = 1;
+
+  repeated string file_names = 2;
+}
+
+message DeviceGetFileResponse {
+  int64 request_uuid = 1;
+
+  repeated File files = 2;
+}
+
+message File {
+  string file_name = 1;       // file or (zip) directory name
+  bool file_or_directory = 2; // ture as file, false as (zip) directory
+  string md5 = 3;             // md5 checksum of file, empty value
+                              // when device don't have target file
+  bytes binary_data = 4;
+}

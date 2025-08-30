@@ -1,0 +1,117 @@
+syntax = "proto3";
+import "Protos/kernel_device_common.proto";
+package deviceservice.protos; //will be placed in a namespace matching the package name if csharp_namespace is not specified
+option csharp_namespace = "TacDynamics.Kernel.DeviceService.Protos";
+
+service DeviceStatusService {
+    /*
+    // Service Description: Device Status Service
+    // Server: Device Service
+    */
+    
+    /*
+    // API Description: External service e.g. UI to access the device status
+    // Client: Externals
+    */
+    rpc Get (DeviceStatusRequest) returns (DeviceStatusResponse);
+    // rpc Put (SimpleRequest) returns (SimpleResp);
+    // rpc Post (DeviceStatusRequest) returns (SimpleResponse);
+    // rpc Delete (SimpleRequest) returns (SimpleResp);
+    /*
+    // API Description: 
+    // Client: 
+    */
+    // rpc GetStream(stream SimpleRequest) returns (stream SimpleResp);
+    // rpc PutStream(stream SimpleRequest) returns (stream SimpleResp);
+    // rpc PostStream(stream SimpleRequest) returns (stream SimpleResp);
+    // rpc DeleteStream(stream SimpleRequest) returns (stream SimpleResp);
+}
+
+message DeviceStatusRequest{
+    int64 request_id = 1;
+    string device_id = 2; // Optional. For determing if the device is correct
+    string device_model = 3; // Optional
+    string device_name = 4; 
+}
+
+message DeviceStatusResponse{
+    int64 request_id = 1;
+    repeated DeviceStatus device_status = 2;
+}
+
+message DeviceStatus{
+    string device_id = 1;
+    string device_name = 2;
+    Status status = 3;
+    BatteryStatus battery_status = 4;
+    MoveStatus move_status = 5;
+    // LightStatus light_status = 6;
+    // AudioStatus audio_status = 7;
+    LiftStatus lift_status = 8;
+    RotatingPlateStatus rotating_plate_status = 9;
+    // ConveyorStatus conveyor_status = 10;
+    // FootprintStatus footprint_status = 11;
+    ChargingStatus charging_status = 12;
+    // GpioStatus gpio_status = 13;
+    // ExternalSignalStatus external_signal_status = 14;
+    // MapStatus map_status = 15;
+    
+    string device_model = 16;
+}
+
+
+  
+message BatteryStatus {
+    double state_of_charge = 3; // percentage
+    double state_of_health = 4; // percentage
+    double time_to_empty = 5;   // seconds
+}
+  
+message MoveStatus {
+    Pose pose = 1;
+    double speed = 2; // meter/second
+    string node = 3;  // last node id catch by robot
+}
+
+// message LightStatus {}
+
+// message AudioStatus {}
+
+enum LiftState {
+    UNSPECIFIED_LIFT_STATE = 0;
+
+    // lift state
+    LIFT_STATE_UP = 1;
+    LIFT_STATE_DOWN = 2;
+    // lift transit
+    LIFT_TRANSIT_DOWN_TO_UP = 3;
+    LIFT_TRANSIT_UP_TO_DOWN = 4;
+}
+
+message LiftStatus { LiftState lift_state = 1; }
+
+message RotatingPlateStatus {
+    double heading_orientation_base_on_map = 1;   // radian
+    double heading_orientation_base_on_robot = 2; // radian
+    double speed = 3;                             // radian/second
+    string container_tag_name = 4; // container tag name
+}
+
+// message ConveyorStatus {}
+
+// message FootprintStatus {}
+
+message ChargingStatus {
+    float time_to_full = 6;         // seconds
+    float charging_current = 7;     // A
+    float charging_voltage = 8;     // Voltage
+    float charging_temperature = 9; // degC
+}
+
+// message GpioStatus {}
+
+// message ExternalSignalStatus {}
+
+// message MapStatus {}
+
+

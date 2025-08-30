@@ -5,6 +5,22 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Platforms>AnyCPU;ARM64</Platforms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="DataAccess\CANBus\Interfaces.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DataAccess\Modbus\" />
+    <Folder Include="DataAccess\GPIO\" />
+    <Folder Include="Protos\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NModbus" Version="3.0.81" />
+    <PackageReference Include="SocketCANSharp" Version="0.13.0" />
+  </ItemGroup>
 
 </Project>
