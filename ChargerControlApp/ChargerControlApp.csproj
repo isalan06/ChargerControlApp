@@ -9,18 +9,27 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Libs\**" />
+    <Content Remove="Libs\**" />
+    <EmbeddedResource Remove="Libs\**" />
+    <None Remove="Libs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="DataAccess\CANBus\Interfaces.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DataAccess\Modbus\" />
     <Folder Include="DataAccess\GPIO\" />
     <Folder Include="Protos\" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="NModbus" Version="3.0.81" />
+    <PackageReference Include="NModbus4.NetCore" Version="3.0.0" />
+    <PackageReference Include="Smart.Modbus" Version="1.0.1" />
     <PackageReference Include="SocketCANSharp" Version="0.13.0" />
+    <PackageReference Include="System.IO.Ports" Version="9.0.8" />
   </ItemGroup>
 
 </Project>
