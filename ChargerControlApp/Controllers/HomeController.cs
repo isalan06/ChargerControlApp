@@ -55,7 +55,20 @@ namespace ChargerControlApp.Controllers
                 posActual = m.Pos_Actual,
                 velActual = m.Vel_Actual,
                 errorCode = m.ErrorCode,
-                sOn = m.IO_Output_Low.Bits.SON_MON
+                sOn = m.IO_Output_Low.Bits.SON_MON,
+                rdyDdOpe = m.IO_Output_Low.Bits.RDY_DD_OPE,
+                stopR = m.IO_Output_Low.Bits.STOP_R,
+                freeR = m.IO_Output_Low.Bits.FREE_R,
+                armA = m.IO_Output_Low.Bits.ALM_A,
+                sysBsy = m.IO_Output_Low.Bits.SYS_BSY,
+                inPos = m.IO_Output_Low.Bits.IN_POS,
+                rdyHomeOpe = m.IO_Output_Low.Bits.RDY_HOME_OPE,
+                rdyFwrvOpe = m.IO_Output_Low.Bits.RDY_FWRV_OPE,
+                rdySdOpe = m.IO_Output_Low.Bits.RDY_SD_OPE,
+                move = m.IO_Output_Low.Bits.MOVE,
+                selectDataNo = m.OpData_IdSelect,
+                currentDataNo = m.OpData_IdOp,
+                jogMode = m.JogMode,
             }).ToList();
             return Json(result);
         }
@@ -71,6 +84,43 @@ namespace ChargerControlApp.Controllers
             bool next = !current;
             _robotController.ServerOn(motorId, next);
             return Json(new { serverOn = next });
+        }
+
+        [HttpPost]
+        public IActionResult SetAlarm(int motorId, bool state)
+        {
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+
+            _robotController.AlarmReset(motorId, state);
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult SetHome(int motorId, bool state)
+        {
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+            _robotController.Home(motorId, state);
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult SetStop(int motorId, bool state)
+        {
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+            _robotController.Stop(motorId, state);
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult SetJogMode(int motorId, int mode)
+        {
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+            _robotController.SetJogMode(motorId, mode);
+            return Json(new { success = true });
         }
 
         public IActionResult Privacy()

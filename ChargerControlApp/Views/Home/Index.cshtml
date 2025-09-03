@@ -9,6 +9,39 @@
 </div>
 
 <script>
+    function setAlarm(motorId, state) {
+    fetch('/Home/SetAlarm?motorId=' + motorId + '&state=' + state, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            updateMotorsStatus();
+        });
+    }
+
+    function setHome(motorId, state) {
+    fetch('/Home/SetHome?motorId=' + motorId + '&state=' + state, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            // 可選：立即刷新狀態
+            updateMotorsStatus();
+        });
+    }
+
+    function setStop(motorId, state) {
+        fetch('/Home/SetStop?motorId=' + motorId + '&state=' + state, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                updateMotorsStatus();
+            });
+    }
+
+    function setJogMode(motorId, mode) {
+    fetch('/Home/SetJogMode?motorId=' + motorId + '&mode=' + mode, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            updateMotorsStatus();
+        });
+    }
+
     function updateMotorsStatus() {
         fetch('/Home/GetMotorsStatus')
             .then(response => response.json())
@@ -17,15 +50,107 @@
                 data.forEach(m => {
                     html += `
                     <div class="motor-status-card">
-                        <div><b>Motor #${m.id}</b></div>
-                        <div>位置：${m.posActual}</div>
-                        <div>速度：${m.velActual}</div>
-                        <div>錯誤碼：${m.errorCode}</div>
-                        <div>
-                            伺服狀態：
+                        <div class="card-section card-section-top">
+                            <div class="motor-title">馬達 #${m.id}</div>
+                            <div class="motor-title-divider"></div>
+                            <div class="section-title">IO狀態</div>
                             <span class="status-light ${m.sOn ? 'on' : 'off'}"></span>
-                            <span>${m.sOn ? 'ON' : 'OFF'}</span>
+                            <span>伺服</span>
                             <button type="button" class="toggle-servo-btn" data-id="${m.id}" style="margin-left:12px;">切換</button>
+                            <div class="alarm-row" style="margin-top:12px;">
+                            <span class="alarm-light ${m.armA ? 'on' : 'off'}"></span>
+                            <span>Alarm</span>
+                            <button type="button"
+                                class="alarm-btn"
+                                data-id="${m.id}"
+                                onmousedown="setAlarm(${m.id}, true)"
+                                onmouseup="setAlarm(${m.id}, false)"
+                                onmouseleave="setAlarm(${m.id}, false)"
+                                style="margin-left:12px;">
+                                Reset
+                            </button>
+                            <span>錯誤碼：${m.errorCode}</span>
+                        </div>
+                        <div class="lights-row">
+                            
+                            <div class="light-item">
+                                <span class="status-light ${m.sysBsy ? 'on' : 'off'}"></span>
+                                <span>BUSY</span>
+                            </div>
+                            <div class="light-item">
+                                <span class="status-light ${m.move ? 'on' : 'off'}"></span>
+                                <span>MOVE</span>
+                            </div>
+                            <div class="light-item">
+                                <span class="status-light ${m.inPos ? 'on' : 'off'}"></span>
+                                <span>IN-POS</span>
+                            </div>
+                        </div>
+                        <div class="lights-row">
+                            <div class="light-item">
+                                <span class="status-light ${m.stopR ? 'on' : 'off'}"></span>
+                                <span>STOP</span>
+                            </div>
+                            <div class="light-item">
+                                <span class="status-light ${m.freeR ? 'on' : 'off'}"></span>
+                                <span>FREE</span>
+                            </div>
+                            <div class="light-item">
+                                <span class="status-light ${m.rdyDdOpe ? 'on' : 'off'}"></span>
+                                <span>DD</span>
+                            </div>
+                        </div>
+                        <div class="lights-row">
+                            <div class="light-item">
+                                <span class="status-light ${m.rdyHomeOpe ? 'on' : 'off'}"></span>
+                                <span>HOME</span>
+                            </div>
+                            <div class="light-item">
+                                <span class="status-light ${m.rdyFwrvOpe ? 'on' : 'off'}"></span>
+                                <span>FWRV</span>
+                            </div>
+                            <div class="light-item">
+                                <span class="status-light ${m.rdySdOpe ? 'on' : 'off'}"></span>
+                                <span>SD</span>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="card-divider"></div>
+                        <div class="card-section card-section-bottom">
+                            <div class="section-title">數據</div>
+                            <div>位置：${m.posActual}</div>
+                            <div>速度：${m.velActual}</div>
+                            <div class="action-btn-row">
+                                <button type="button"
+                                    class="action-btn"
+                                    onmousedown="setHome(${m.id}, true)"
+                                    onmouseup="setHome(${m.id}, false)"
+                                    onmouseleave="setHome(${m.id}, false)">
+                                    HOME
+                                </button>
+                                <button type="button"
+                                    class="action-btn"
+                                    onmousedown="setStop(${m.id}, true)"
+                                    onmouseup="setStop(${m.id}, false)"
+                                    onmouseleave="setStop(${m.id}, false)">
+                                    STOP
+                                </button>
+                            </div>
+                            <div class="radio-row">
+                                <div class="section-title">JOG</div>
+                                <label class="radio-item">
+                                    <input type="radio" name="jogMode${m.id}" value="2" ${m.jogMode == 2 ? 'checked' : ''} onchange="setJogMode(${m.id}, 2)">
+                                    吋動
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="jogMode${m.id}" value="0" ${m.jogMode == 0 ? 'checked' : ''} onchange="setJogMode(${m.id}, 0)">
+                                    低速
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="jogMode${m.id}" value="1" ${m.jogMode == 1 ? 'checked' : ''} onchange="setJogMode(${m.id}, 1)">
+                                    高速
+                                </label>
+                            </div>
                         </div>
                     </div>
                     `;
@@ -45,6 +170,6 @@
                 });
             });
     }
-    setInterval(updateMotorsStatus, 1000);
+    setInterval(updateMotorsStatus, 2000);
     updateMotorsStatus();
 </script>

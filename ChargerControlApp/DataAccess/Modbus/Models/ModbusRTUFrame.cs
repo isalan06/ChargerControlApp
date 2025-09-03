@@ -61,6 +61,17 @@ namespace ChargerControlApp.DataAccess.Modbus.Models
                         throw new ModbusRTUException("Data array must contain at least 1 elements for Write Single Register", SlaveAddress, FunctionCode, 0xF3);
                     }
                     break;
+
+                case 0x10: // Write Multiple Registers  
+                    if((Data.Length >=1) && (Data.Length == DataNumber))
+                    {
+                        result = modbusHandler.BuildWriteMultipleRegistersRequest(StartAddress, Data);
+                    }
+                    else
+                    {
+                        throw new ModbusRTUException("Data array length must be equal to DataNumber for Write Multiple Registers", SlaveAddress, FunctionCode, 0xF4);
+                    }
+                    break;
             }
 
             return result;
@@ -106,7 +117,14 @@ namespace ChargerControlApp.DataAccess.Modbus.Models
                         {
                             result = true;
                         }
-
+                    }
+                    else if((response[1] == 0x10))
+                    {
+                        var valid = modbusHandler.ValidateResponse(response, Smart.Modbus.FunctionCode.WriteMultipleRegisters);
+                        if (valid.Valid)
+                        {
+                            result = true;
+                        }
                     }
                 }
             }

@@ -27,7 +27,17 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                     StartAddress = 125,
                     DataNumber = 1
                 }
-            }
+            },
+            new MotorFrame()
+            {
+                Name = "WriteJogMode",
+                DataFrame = new ModbusRTUFrame()
+                {
+                    FunctionCode = 0x10,
+                    StartAddress = 34848,
+                    DataNumber = 4
+                }
+            },
 
         }; 
 
@@ -35,7 +45,7 @@ namespace ChargerControlApp.DataAccess.Motor.Models
         {
             { "WriteInputHigh", Commands.First(c => c.Name == "WriteInputHigh") },
             { "WriteInputLow", Commands.First(c => c.Name == "WriteInputLow") },
-
+            { "WriteJogMode", Commands.First(c => c.Name == "WriteJogMode") },
         };
     }
 }

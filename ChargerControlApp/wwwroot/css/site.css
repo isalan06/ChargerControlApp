@@ -21,41 +21,180 @@ body {
   margin-bottom: 60px;
 }
 
-.motor-status-card {
-    display: inline-block;
-    text-align: left;
-    border: 2px solid #1976d2;
-    border-radius: 8px;
-    padding: 20px 32px;
-    margin: 20px auto;
-    background: #f8f9fa;
-    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
-    min-width: 260px;
-}
-
-.status-light {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 2px solid #888;
-    background-color: #ccc;
-    vertical-align: middle;
-}
-
-    .status-light.on {
-        background-color: #4caf50; /* 綠色 */
-        box-shadow: 0 0 8px #4caf50;
-    }
-
-    .status-light.off {
-        background-color: #f44336; /* 紅色 */
-        box-shadow: 0 0 8px #f44336;
-    }
-
 .motors-row {
     display: flex;
     justify-content: center;
     gap: 24px;
     margin-top: 24px;
+}
+
+.motor-status-card {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid #1976d2;
+    border-radius: 8px;
+    background: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+    min-width: 220px;
+    max-width: 500px;
+    margin: 0 8px;
+    padding: 0;
+}
+
+.card-section {
+    padding: 16px 20px 12px 20px;
+}
+
+.card-section-top {
+    text-align: left;
+}
+
+.card-section-bottom {
+    text-align: left;
+}
+
+.section-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 1.05em;
+    color: #1976d2;
+}
+
+.card-divider {
+    border-top: 1.5px solid #b0bec5;
+    margin: 0 20px;
+}
+
+.status-light {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #888;
+    background-color: #ccc;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+    .status-light.on {
+        background-color: #4caf50;
+        box-shadow: 0 0 8px #4caf50;
+    }
+
+    .status-light.off {
+        background-color: #ffffff;
+        box-shadow: 0 0 8px #ffffff;
+    }
+
+.alarm-light {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #888;
+    background-color: #ccc;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+    .alarm-light.on {
+        background-color: #f44336;
+        box-shadow: 0 0 8px #f44336;
+    }
+
+    .alarm-light.off {
+        background-color: #ffffff;
+        box-shadow: 0 0 8px #ffffff;
+    }
+
+.alarm-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.alarm-btn {
+    padding: 2px 10px;
+    font-size: 0.95em;
+    background: #ff9800;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+    .alarm-btn:active {
+        background: #f44336;
+    }
+
+.lights-row {
+    display: flex;
+    justify-content: flex-start;
+    gap: 32px; /* 固定每個燈號間距 */
+    margin-top: 12px;
+    margin-bottom: 4px;
+}
+
+.light-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap; /* 讓燈號與文字都在同一行 */
+    min-width: 80px; /* 可依需求調整，確保間距一致 */
+}
+
+.lights-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* 三列間距，可依需求調整 */
+    margin-top: 8px;
+}
+
+.motor-title {
+    font-size: 1.15em;
+    font-weight: bold;
+    color: #1976d2;
+    padding: 16px 20px 4px 20px;
+    text-align: left;
+    letter-spacing: 1px;
+}
+
+.motor-title-divider {
+    border-top: 2px solid #b0bec5;
+    margin: 0 20px 8px 20px;
+}
+
+.action-btn-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.action-btn {
+    padding: 4px 18px;
+    font-size: 1em;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+    .action-btn:active {
+        background: #388e3c;
+    }
+
+.radio-row {
+    display: flex;
+    gap: 32px;
+    margin-top: 12px;
+    margin-bottom: 4px;
+}
+
+.radio-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
 }

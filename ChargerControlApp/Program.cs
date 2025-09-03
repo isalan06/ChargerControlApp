@@ -7,6 +7,9 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // 監聽所有網卡 (0.0.0.0)，可自訂 port
+        //builder.WebHost.UseUrls("http://0.0.0.0:5000", "https://0.0.0.0:5001");
+
         ModbusRTUService modbusRTUService = new ModbusRTUService();
         RobotController robotController = new RobotController(modbusRTUService);
 
@@ -18,6 +21,8 @@ public class Program
         robotController.Open();
 
         robotController.ServerOn(1, true);
+
+        robotController.SetJogMode(1, 2);
 
 
         Console.WriteLine("Starting Web Application...");

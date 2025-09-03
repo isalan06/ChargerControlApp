@@ -18,8 +18,6 @@ namespace ChargerControlApp.Hardware
 
         private Queue<MotorFrame> _manualCommand = new Queue<MotorFrame>();
 
-        
-
         #region Constructor
 
         private RobotController()
@@ -142,6 +140,91 @@ namespace ChargerControlApp.Hardware
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].IO_Input_Low.Data };
 
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+
+            return result;
+        }
+
+        public bool AlarmReset(int motorId, bool state)
+        {
+            bool result = false;
+
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                Motors[motorId].IO_Input_Low.Bits.ALM_RST = state;
+                var command = MotorCommandList.CommandMap["WriteInputLow"];
+                command.Id = (byte)motorId;
+                command.DataFrame.DataNumber = 1;
+                command.DataFrame.Data = new ushort[] { Motors[motorId].IO_Input_Low.Data };
+
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+
+            return result;
+        }
+
+        public bool Home(int motorId, bool state)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                Motors[motorId].IO_Input_High.Bits.HOME = state;
+                var command = MotorCommandList.CommandMap["WriteInputHigh"];
+                command.Id = (byte)motorId;
+                command.DataFrame.DataNumber = 1;
+                command.DataFrame.Data = new ushort[] { Motors[motorId].IO_Input_High.Data };
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+            return result;
+        }
+
+        public bool Stop(int motorId, bool state)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                Motors[motorId].IO_Input_Low.Bits.STOP = state;
+                var command = MotorCommandList.CommandMap["WriteInputLow"];
+                command.Id = (byte)motorId;
+                command.DataFrame.DataNumber = 1;
+                command.DataFrame.Data = new ushort[] { Motors[motorId].IO_Input_Low.Data };
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="motorId"></param>
+        /// <param name="mode"></param>
+        /// 0: Low Ppeed; 1; High Speed; 2: Pitch
+        /// <returns></returns>
+        public bool SetJogMode(int motorId, int mode)
+        {
+            bool result = false;
+
+            ushort[] _mode = new ushort[] { 0, 52, 0, 53 }
+            ;
+            if (mode == 0)
+                _mode = new ushort[] { 0, 48, 0, 49 };
+            else if(mode == 1)
+                _mode = new ushort[] { 0, 50, 0, 51 };
+
+
+
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+
+                var command = MotorCommandList.CommandMap["WriteJogMode"];
+                command.Id = (byte)motorId;
+                command.DataFrame.DataNumber = (ushort)_mode.Length;
+                command.DataFrame.Data = _mode ;
                 _manualCommand.Enqueue(command);
                 result = true;
             }

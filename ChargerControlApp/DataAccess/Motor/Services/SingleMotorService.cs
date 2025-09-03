@@ -43,6 +43,12 @@ namespace ChargerControlApp.DataAccess.Motor.Services
 
         #endregion
 
+        #region Read Jog Setting
+
+        public int JogMode { get; internal set; } = 2;  // 0: Low Ppeed; 1; High Speed; 2: Pitch
+
+        #endregion
+
         public byte SlaveAddress { get; set; } = 1;
 
 
@@ -106,6 +112,16 @@ namespace ChargerControlApp.DataAccess.Motor.Services
                         StartAddress = 194,
                         DataNumber = 16
                     }
+                },
+                new MotorFrame()
+                {
+                    Id = 0, Name = "Read Jog Setting",
+                    DataFrame = new ModbusRTUFrame()
+                    {
+                        FunctionCode = 0x03,
+                        StartAddress = 34848,
+                        DataNumber = 4
+                    }
                 }
             };
 
@@ -113,53 +129,72 @@ namespace ChargerControlApp.DataAccess.Motor.Services
         {
             bool result = false;
 
-            if (_modbusRTUService.IsRunning)
+            try
             {
-                _routeProcess[_routeIndex].DataFrame.SlaveAddress = SlaveAddress;
-                var data = _modbusRTUService.Act(_routeProcess[_routeIndex].DataFrame);
-                if (data.Result != null)
+
+                if (_modbusRTUService.IsRunning)
                 {
-                    if (data.Result.Data.Length >= _routeProcess[_routeIndex].DataFrame.DataNumber)
+                    _routeProcess[_routeIndex].DataFrame.SlaveAddress = SlaveAddress;
+                    var data = _modbusRTUService.Act(_routeProcess[_routeIndex].DataFrame);
+                    if (data.Result != null)
                     {
-                        if (_routeIndex == 0)
+                        if (data.Result.Data.Length >= _routeProcess[_routeIndex].DataFrame.DataNumber)
                         {
-                            IO_Input_High.Data = data.Result.Data[0];
-                            IO_Input_Low.Data = data.Result.Data[1];
-                            IO_Output_High.Data = data.Result.Data[2];
-                            IO_Output_Low.Data = data.Result.Data[3];
+                            if (_routeIndex == 0)
+                            {
+                                IO_Input_High.Data = data.Result.Data[0];
+                                IO_Input_Low.Data = data.Result.Data[1];
+                                IO_Output_High.Data = data.Result.Data[2];
+                                IO_Output_Low.Data = data.Result.Data[3];
 
-                            ErrorCode = (data.Result.Data[4] << 16) | data.Result.Data[5];
-                        }
-                        else if (_routeIndex == 1)
-                        {
-                            Pos_Target = (data.Result.Data[0] << 16) | data.Result.Data[1];
-                            Pos_Command = (data.Result.Data[2] << 16) | data.Result.Data[3];
-                            Pos_Actual = (data.Result.Data[4] << 16) | data.Result.Data[5];
-                            Vel_Target = (data.Result.Data[6] << 16) | data.Result.Data[7];
-                            Vel_Command = (data.Result.Data[8] << 16) | data.Result.Data[9];
-                            Vel_Actual = (data.Result.Data[10] << 16) | data.Result.Data[11];
-                            ErrorComm = (data.Result.Data[12] << 16) | data.Result.Data[13];
+                                ErrorCode = (data.Result.Data[4] << 16) | data.Result.Data[5];
+                            }
+                            else if (_routeIndex == 1)
+                            {
+                                Pos_Target = (data.Result.Data[0] << 16) | data.Result.Data[1];
+                                Pos_Command = (data.Result.Data[2] << 16) | data.Result.Data[3];
+                                Pos_Actual = (data.Result.Data[4] << 16) | data.Result.Data[5];
+                                Vel_Target = (data.Result.Data[6] << 16) | data.Result.Data[7];
+                                Vel_Command = (data.Result.Data[8] << 16) | data.Result.Data[9];
+                                Vel_Actual = (data.Result.Data[10] << 16) | data.Result.Data[11];
+                                ErrorComm = (data.Result.Data[12] << 16) | data.Result.Data[13];
 
-                        }
-                        else if (_routeIndex == 2)
-                        {
-                            OpData_IdSelect = (data.Result.Data[0] << 16) | data.Result.Data[1];
-                            OpData_IdOp = (data.Result.Data[2] << 16) | data.Result.Data[3];
-                            OpData_Pos_Command = (data.Result.Data[4] << 16) | data.Result.Data[5];
-                            OpData_VelR_Command = (data.Result.Data[6] << 16) | data.Result.Data[7];
-                            OpData_Vel_Command = (data.Result.Data[8] << 16) | data.Result.Data[9];
-                            OpData_Pos_Actual = (data.Result.Data[10] << 16) | data.Result.Data[11];
-                            OpData_VelR_Actual = (data.Result.Data[12] << 16) | data.Result.Data[13];
-                            OpData_Vel_Actual = (data.Result.Data[14] << 16) | data.Result.Data[15];
+                            }
+                            else if (_routeIndex == 2)
+                            {
+                                OpData_IdSelect = (data.Result.Data[0] << 16) | data.Result.Data[1];
+                                OpData_IdOp = (data.Result.Data[2] << 16) | data.Result.Data[3];
+                                OpData_Pos_Command = (data.Result.Data[4] << 16) | data.Result.Data[5];
+                                OpData_VelR_Command = (data.Result.Data[6] << 16) | data.Result.Data[7];
+                                OpData_Vel_Command = (data.Result.Data[8] << 16) | data.Result.Data[9];
+                                OpData_Pos_Actual = (data.Result.Data[10] << 16) | data.Result.Data[11];
+                                OpData_VelR_Actual = (data.Result.Data[12] << 16) | data.Result.Data[13];
+                                OpData_Vel_Actual = (data.Result.Data[14] << 16) | data.Result.Data[15];
+                            }
+                            else if (_routeIndex == 3)
+                            { 
+                                int _mode_ori = (data.Result.Data[0] << 16) | data.Result.Data[1];
+
+                                int _mode = 2;
+
+                                if (_mode_ori == 48) _mode = 0;
+                                else if (_mode_ori == 50) _mode = 1;
+
+                                    JogMode = _mode;
+                            }
                         }
                     }
                 }
-            }
 
-            if (++_routeIndex >= _routeProcess.Length)
+                if (++_routeIndex >= _routeProcess.Length)
+                {
+                    _routeIndex = 0;
+                    result = true;
+                }
+            }
+            catch (Exception ex)
             {
                 _routeIndex = 0;
-                result = true;
             }
 
             return result;
