@@ -29,7 +29,7 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 }
             }
 
-        };
+        }; 
 
         public static Dictionary<string, MotorFrame> CommandMap = new Dictionary<string, MotorFrame>()
         {

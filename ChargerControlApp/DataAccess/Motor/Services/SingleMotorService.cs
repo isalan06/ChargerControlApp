@@ -419,7 +419,8 @@ namespace ChargerControlApp.DataAccess.Motor.Services
             GC.SuppressFinalize(this);
         }
 
-        #endregion
+        #endregion 
 
-    }    
+
+    }
 }
