@@ -99,6 +99,15 @@ namespace ChargerControlApp.DataAccess.Modbus.Models
                             throw new ModbusRTUException($"Invalid number of registers in response. Expected {DataNumber}, but got {registers.Length}", response[0], response[1], 0xF2);
                         }
                     }
+                    else if ((response[1] == 0x6))
+                    {
+                        var valid = modbusHandler.ValidateResponse(response, Smart.Modbus.FunctionCode.WriteSingleRegister);
+                        if (valid.Valid)
+                        {
+                            result = true;
+                        }
+
+                    }
                 }
             }
 

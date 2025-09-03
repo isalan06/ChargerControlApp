@@ -20,3 +20,42 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.motor-status-card {
+    display: inline-block;
+    text-align: left;
+    border: 2px solid #1976d2;
+    border-radius: 8px;
+    padding: 20px 32px;
+    margin: 20px auto;
+    background: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+    min-width: 260px;
+}
+
+.status-light {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #888;
+    background-color: #ccc;
+    vertical-align: middle;
+}
+
+    .status-light.on {
+        background-color: #4caf50; /* ºñ¦â */
+        box-shadow: 0 0 8px #4caf50;
+    }
+
+    .status-light.off {
+        background-color: #f44336; /* ¬õ¦â */
+        box-shadow: 0 0 8px #f44336;
+    }
+
+.motors-row {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 24px;
+}

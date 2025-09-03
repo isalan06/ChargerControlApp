@@ -4,5 +4,47 @@
 
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h2>三個馬達狀態</h2>
+    <div class="motors-row" id="motorsRow"></div>
 </div>
+
+<script>
+    function updateMotorsStatus() {
+        fetch('/Home/GetMotorsStatus')
+            .then(response => response.json())
+            .then(data => {
+                let html = '';
+                data.forEach(m => {
+                    html += `
+                    <div class="motor-status-card">
+                        <div><b>Motor #${m.id}</b></div>
+                        <div>位置：${m.posActual}</div>
+                        <div>速度：${m.velActual}</div>
+                        <div>錯誤碼：${m.errorCode}</div>
+                        <div>
+                            伺服狀態：
+                            <span class="status-light ${m.sOn ? 'on' : 'off'}"></span>
+                            <span>${m.sOn ? 'ON' : 'OFF'}</span>
+                            <button type="button" class="toggle-servo-btn" data-id="${m.id}" style="margin-left:12px;">切換</button>
+                        </div>
+                    </div>
+                    `;
+                });
+                document.getElementById('motorsRow').innerHTML = html;
+
+                // 綁定每個按鈕事件
+                document.querySelectorAll('.toggle-servo-btn').forEach(btn => {
+                    btn.onclick = function() {
+                        const motorId = btn.getAttribute('data-id');
+                        fetch('/Home/ToggleServo?motorId=' + motorId, { method: 'POST' })
+                            .then(response => response.json())
+                            .then(data => {
+                                updateMotorsStatus();
+                            });
+                    };
+                });
+            });
+    }
+    setInterval(updateMotorsStatus, 1000);
+    updateMotorsStatus();
+</script>

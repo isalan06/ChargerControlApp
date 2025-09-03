@@ -115,6 +115,7 @@ namespace ChargerControlApp.DataAccess.Motor.Services
 
             if (_modbusRTUService.IsRunning)
             {
+                _routeProcess[_routeIndex].DataFrame.SlaveAddress = SlaveAddress;
                 var data = _modbusRTUService.Act(_routeProcess[_routeIndex].DataFrame);
                 if (data.Result != null)
                 {
@@ -419,7 +420,8 @@ namespace ChargerControlApp.DataAccess.Motor.Services
             GC.SuppressFinalize(this);
         }
 
-        #endregion
+        #endregion 
 
-    }    
+
+    }
 }

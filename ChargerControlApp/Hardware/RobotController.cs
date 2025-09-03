@@ -9,15 +9,16 @@ namespace ChargerControlApp.Hardware
 {
     public class RobotController : IDisposable
     {
-        public const int MOTOR_COUNT = 1;
+        public const int MOTOR_COUNT = 3;
         private byte[] MOTOR_ADDRESSES = new byte[] { 1, 2, 3 };
-        private SingleMotorService[] _motors;
+        public SingleMotorService[] Motors;
         private IModbusRTUService _modbusService;
 
         public bool IsRunning { get; internal set; } = false;
 
         private Queue<MotorFrame> _manualCommand = new Queue<MotorFrame>();
 
+        
 
         #region Constructor
 
@@ -28,9 +29,9 @@ namespace ChargerControlApp.Hardware
         {
             _modbusService = modbusService ?? throw new ArgumentNullException(nameof(modbusService));
 
-            _motors = new SingleMotorService[MOTOR_COUNT];
-            for (int i = 0; i < _motors.Length; i++)
-                _motors[i] = new SingleMotorService(_modbusService, MOTOR_ADDRESSES[i]);
+            Motors = new SingleMotorService[MOTOR_COUNT];
+            for (int i = 0; i < Motors.Length; i++)
+                Motors[i] = new SingleMotorService(_modbusService, MOTOR_ADDRESSES[i]);
 
         }
 
@@ -91,7 +92,7 @@ namespace ChargerControlApp.Hardware
                     if (_manualCommand.Count > 0)
                     {
                         var command = _manualCommand.Dequeue();
-                        var writeResult = _motors[command.Id].WriteFrame(command);
+                        var writeResult = Motors[command.Id].WriteFrame(command);
                         bool write_finished = writeResult.Result;
 
                         if (write_finished)
@@ -101,7 +102,7 @@ namespace ChargerControlApp.Hardware
                     }
 
                     // Route Proocess for each motor
-                    var result = _motors[_routeIndex].ExecuteRouteProcessOnce();
+                    var result = Motors[_routeIndex].ExecuteRouteProcessOnce();
                     bool finished  = result.Result;
                     if (finished)
                     { 
@@ -135,11 +136,11 @@ namespace ChargerControlApp.Hardware
 
             if(motorId >= 0 && motorId < MOTOR_COUNT)
             {
-                _motors[motorId].IO_Input_Low.Bits.S_ON = state;
+                Motors[motorId].IO_Input_Low.Bits.S_ON = state;
                 var command = MotorCommandList.CommandMap["WriteInputLow"];
                 command.Id = (byte)motorId;
                 command.DataFrame.DataNumber = 1;
-                command.DataFrame.Data = new ushort[] { _motors[motorId].IO_Input_Low.Data };
+                command.DataFrame.Data = new ushort[] { Motors[motorId].IO_Input_Low.Data };
 
                 _manualCommand.Enqueue(command);
                 result = true;

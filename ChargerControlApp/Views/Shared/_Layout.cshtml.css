@@ -46,3 +46,24 @@ button.accept-policy {
   white-space: nowrap;
   line-height: 60px;
 }
+
+
+.status-light {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #888;
+    background-color: #ccc;
+    vertical-align: middle;
+}
+
+    .status-light.on {
+        background-color: #4caf50; /* 綠色 */
+        box-shadow: 0 0 8px #4caf50;
+    }
+
+    .status-light.off {
+        background-color: #f44336; /* 紅色 */
+        box-shadow: 0 0 8px #f44336;
+    }
