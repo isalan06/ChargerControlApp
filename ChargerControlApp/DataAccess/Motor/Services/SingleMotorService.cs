@@ -41,6 +41,8 @@ namespace ChargerControlApp.DataAccess.Motor.Services
         public int OpData_VelR_Actual { get; internal set; } = 0;  // unit: r/min
         public int OpData_Vel_Actual { get; internal set; } = 0;  // unit: step/sec
 
+        public int CurrentDataNo { get; set; } = 0;
+
         #endregion
 
         #region Read Jog Setting

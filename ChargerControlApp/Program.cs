@@ -1,6 +1,8 @@
 using ChargerControlApp.DataAccess.Modbus.Services;
 using ChargerControlApp.Hardware;
 using Smart.Modbus;
+using System.Collections;
+using System.Data;
 public class Program
 {
     public static void Main(string[] args)

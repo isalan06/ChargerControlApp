@@ -2,7 +2,9 @@
 using ChargerControlApp.DataAccess.Motor.Interfaces;
 using ChargerControlApp.DataAccess.Motor.Models;
 using ChargerControlApp.DataAccess.Motor.Services;
+using System.Collections;
 using System.Runtime.Serialization.DataContracts;
+using System.Security.Cryptography.X509Certificates;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ChargerControlApp.Hardware
@@ -229,6 +231,107 @@ namespace ChargerControlApp.Hardware
                 result = true;
             }
 
+            return result;
+        }
+
+        public bool SetJOG_FW(int motorId, bool state)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                Motors[motorId].IO_Input_High.Bits.FW_JOG_P = state;
+                var command = MotorCommandList.CommandMap["WriteInputHigh"];
+                command.Id = (byte)motorId;
+                command.DataFrame.DataNumber = 1;
+                command.DataFrame.Data = new ushort[] { Motors[motorId].IO_Input_High.Data };
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+            return result;
+        }
+
+        public bool SetJOG_RV(int motorId, bool state)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                Motors[motorId].IO_Input_High.Bits.RV_JOG_P = state;
+                var command = MotorCommandList.CommandMap["WriteInputHigh"];
+                command.Id = (byte)motorId;
+                command.DataFrame.DataNumber = 1;
+                command.DataFrame.Data = new ushort[] { Motors[motorId].IO_Input_High.Data };
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+            return result;
+        }
+
+        public bool SetJog(int motorId, string dir, bool state)
+        {
+            if (motorId < 0 || motorId >= MOTOR_COUNT)
+                return false;
+
+            if (dir == "FW")
+                Motors[motorId].IO_Input_High.Bits.FW_JOG_P = state;
+            else if (dir == "RV")
+                Motors[motorId].IO_Input_High.Bits.RV_JOG_P = state;
+            else
+                return false;
+
+            var command = MotorCommandList.CommandMap["WriteInputHigh"];
+            command.Id = (byte)motorId;
+            command.DataFrame.DataNumber = 1;
+            command.DataFrame.Data = new ushort[] { Motors[motorId].IO_Input_High.Data };
+            _manualCommand.Enqueue(command);
+            return true;
+        }
+
+        public bool SetDataNo_M(int motorId, int dataNo)
+        {
+            bool result = false;
+
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                Motors[motorId].CurrentDataNo = dataNo;
+
+                BitArray bitArray = new BitArray(new int[] { dataNo });
+                bool[] boolArray = new bool[bitArray.Length];
+                bitArray.CopyTo(boolArray, 0);
+
+                Motors[motorId].IO_Input_High.Bits.M0 = boolArray[0];
+                Motors[motorId].IO_Input_High.Bits.M1 = boolArray[1];
+                Motors[motorId].IO_Input_High.Bits.M2 = boolArray[2];
+                Motors[motorId].IO_Input_High.Bits.M3 = boolArray[3];
+                Motors[motorId].IO_Input_High.Bits.M4 = boolArray[4];
+                Motors[motorId].IO_Input_High.Bits.M5 = boolArray[5];
+                Motors[motorId].IO_Input_High.Bits.M6 = boolArray[6];
+                Motors[motorId].IO_Input_High.Bits.M7 = boolArray[7];
+
+                var command = MotorCommandList.CommandMap["WriteInputHigh"];
+                command.Id = (byte)motorId;
+                command.DataFrame.DataNumber = 1;
+                command.DataFrame.Data = new ushort[] { Motors[motorId].IO_Input_High.Data };
+                _manualCommand.Enqueue(command);
+                result = true;
+
+            }
+
+            return result;
+        }
+
+        public bool SetStart(int motorId, bool state)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                Motors[motorId].IO_Input_High.Bits.START = state;
+                var command = MotorCommandList.CommandMap["WriteInputHigh"];
+                command.Id = (byte)motorId;
+                command.DataFrame.DataNumber = 1;
+                command.DataFrame.Data = new ushort[] { Motors[motorId].IO_Input_High.Data };
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
             return result;
         }
 

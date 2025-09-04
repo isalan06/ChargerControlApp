@@ -6,6 +6,7 @@
     <h1 class="display-4">Welcome</h1>
     <h2>三個馬達狀態</h2>
     <div class="motors-row" id="motorsRow"></div>
+    <h2>三個馬達狀態</h2>
 </div>
 
 <script>
@@ -38,8 +39,32 @@
     fetch('/Home/SetJogMode?motorId=' + motorId + '&mode=' + mode, { method: 'POST' })
         .then(response => response.json())
         .then(data => {
+            //updateMotorsStatus();
+        });
+    }
+
+    function setJog(motorId, dir, state) {
+    fetch('/Home/SetJog?motorId=' + motorId + '&dir=' + dir + '&state=' + state, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            // 可選：立即刷新狀態
             updateMotorsStatus();
         });
+    }
+
+    function setDataNo_M(motorId, dataNo) {
+    fetch('/Home/SetDataNo_M?motorId=' + motorId + '&dataNo=' + dataNo, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            // 可選：立即刷新狀態
+            updateMotorsStatus();
+        });
+    }
+
+    function setStart(motorId, state) {
+    fetch('/Home/SetStart?motorId=' + motorId + '&state=' + state, { method: 'POST' })
+        .then(response => response.json());
+        // 不要立即刷新畫面
     }
 
     function updateMotorsStatus() {
@@ -150,6 +175,44 @@
                                     <input type="radio" name="jogMode${m.id}" value="1" ${m.jogMode == 1 ? 'checked' : ''} onchange="setJogMode(${m.id}, 1)">
                                     高速
                                 </label>
+                            </div>
+                            <div class="jog-btn-row">
+                                <button type="button"
+                                    class="jog-btn"
+                                    onmousedown="setJog(${m.id}, 'FW', true)"
+                                    onmouseup="setJog(${m.id}, 'FW', false)"
+                                    onmouseleave="setJog(${m.id}, 'FW', false)">
+                                    FW-JOG
+                                </button>
+                                <button type="button"
+                                    class="jog-btn"
+                                    onmousedown="setJog(${m.id}, 'RV', true)"
+                                    onmouseup="setJog(${m.id}, 'RV', false)"
+                                    onmouseleave="setJog(${m.id}, 'RV', false)">
+                                    RV-JOG
+                                </button>
+                            </div>
+                            <div class="data-select-row">
+                                <span class="data-select-title">位置資料選擇</span>
+                                <select class="data-select-combo" onchange="setDataNo_M(${m.id}, this.value)">
+                                    ${[...Array(256).keys()].map(n => `<option value="${n}" ${m.dataNo == n ? 'selected' : ''}>${n}</option>`).join('')}
+                                </select>
+                                <button type="button"
+                                    class="start-btn"
+                                    onmousedown="setStart(${m.id}, true)"
+                                    onmouseup="setStart(${m.id}, false)"
+                                    onmouseleave="setStart(${m.id}, false)"
+                                    style="margin-left:12px;">
+                                    START
+                                </button>
+                            </div>
+                            <div class="opdata-list">
+                                <div class="opdata-item">選擇資料編號：${m.opData_IdSelect}</div>
+                                <div class="opdata-item">運轉資料編號：${m.opData_IdOp}</div>
+                                <div class="opdata-item">指令位置：${m.opData_Pos_Command}</div>
+                                <div class="opdata-item">指令速度：${m.opData_Vel_Command}</div>
+                                <div class="opdata-item">檢測位置：${m.opData_Pos_Actual}</div>
+                                <div class="opdata-item">檢測速度：${m.opData_Vel_Actual}</div>
                             </div>
                         </div>
                     </div>

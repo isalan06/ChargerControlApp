@@ -69,6 +69,13 @@ namespace ChargerControlApp.Controllers
                 selectDataNo = m.OpData_IdSelect,
                 currentDataNo = m.OpData_IdOp,
                 jogMode = m.JogMode,
+                dataNo = m.CurrentDataNo,
+                opData_IdSelect = m.OpData_IdSelect,
+                opData_IdOp = m.OpData_IdOp,
+                opData_Pos_Command = m.OpData_Pos_Command,
+                opData_Vel_Command = m.OpData_Vel_Command,
+                opData_Pos_Actual = m.OpData_Pos_Actual,
+                opData_Vel_Actual = m.OpData_Vel_Actual
             }).ToList();
             return Json(result);
         }
@@ -122,6 +129,36 @@ namespace ChargerControlApp.Controllers
             _robotController.SetJogMode(motorId, mode);
             return Json(new { success = true });
         }
+
+        [HttpPost]
+        public IActionResult SetJog(int motorId, string dir, bool state)
+        {
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+
+            // dir: "FW" or "RV"
+            _robotController.SetJog(motorId, dir, state);
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult SetDataNo_M(int motorId, int dataNo)
+        {
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+            _robotController.SetDataNo_M(motorId, dataNo);
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult SetStart(int motorId, bool state)
+        {
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+            _robotController.SetStart(motorId, state);
+            return Json(new { success = true });
+        }
+
 
         public IActionResult Privacy()
         {
