@@ -1,5 +1,6 @@
 ﻿using ChargerControlApp.DataAccess.Modbus.Models;
-using System.IO.Ports;
+//using System.IO.Ports;
+using RJCP.IO.Ports;
 
 namespace ChargerControlApp.DataAccess.Modbus.Interfaces
 {

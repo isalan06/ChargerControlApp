@@ -1,5 +1,13 @@
+﻿using ChargerControlApp.DataAccess.CANBus.Interfaces;
+using ChargerControlApp.DataAccess.CANBus.Linux;
+using ChargerControlApp.DataAccess.Modbus.Interfaces;
+using ChargerControlApp.DataAccess.Modbus.Models;
 using ChargerControlApp.DataAccess.Modbus.Services;
 using ChargerControlApp.Hardware;
+using ChargerControlApp.Services;
+using ChargerControlApp.Utilities;
+using Grpc.Net.Client;
+using RJCP.IO.Ports;
 using Smart.Modbus;
 using System.Collections;
 using System.Data;
@@ -9,22 +17,67 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // ��ť�Ҧ����d (0.0.0.0)�A�i�ۭq port
-        //builder.WebHost.UseUrls("http://0.0.0.0:5000", "https://0.0.0.0:5001");
+        // 讀取 appsettings.json
+        builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+        var configuration = builder.Configuration;
 
-        ModbusRTUService modbusRTUService = new ModbusRTUService();
-        RobotController robotController = new RobotController(modbusRTUService);
+        // 綁定設定
+        var settings = new AppSettings();
+        configuration.GetSection("AppSettings").Bind(settings);
+        builder.Services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
+        builder.Services.AddSingleton(settings); // 讓 DI 容器可以取得 AppSettings
 
-        // ���U robotController �� Singleton
-        builder.Services.AddSingleton<RobotController>(robotController);
 
-        modbusRTUService.Open();
+        // ModbusRTUService
+        builder.Services.AddSingleton<ModbusRTUService>(sp =>
+        {
+            // 這裡可根據 appsettings.json 參數建立
+            var settings = sp.GetRequiredService<AppSettings>();
+            return new ModbusRTUService(settings.PortName);
+        });
 
-        robotController.Open();
+        // 註冊 CANBUS 服務
+        //builder.Services.AddSingleton<ICANBusService, SocketCANBusService>();
+        builder.Services.AddSingleton<SocketCANBusService>(sp =>
+        {
+            return new SocketCANBusService();
+        });
 
-        robotController.ServerOn(1, true);
+        // RobotController
+        builder.Services.AddSingleton<RobotController>(sp =>
+            new RobotController(sp.GetRequiredService<ModbusRTUService>()));
 
-        robotController.SetJogMode(1, 2);
+        builder.Services.AddSingleton<NPB450Controller>(sp =>
+            new NPB450Controller(
+                sp.GetRequiredService<ChargingStationStateMachine>(),
+                sp.GetRequiredService<ICANBusService>()
+            )
+        );
+
+        
+
+        // 註冊 Grpc 相關服務
+        ConfigLoader.Load();
+        AppSettings appSettings = ConfigLoader.GetSettings();
+        builder.Services.AddSingleton(GrpcChannel.ForAddress(appSettings.ServerIp));
+        builder.Services.AddSingleton<GrpcClientService>();
+        builder.Services.RegisterChargingServices(); // 共用服務註冊
+        builder.Services.AddSingleton<GrpcServerService>();
+
+        // 註冊其他服務
+        builder.Services.AddSingleton<HardwareManager>();
+        builder.Services.AddSingleton<ChargingStationStateMachine>();
+        builder.Services.AddSingleton<IServiceProvider>(provider => provider);
+        
+
+        // 監聽所有網卡 (0.0.0.0)，可自訂 port
+        builder.WebHost.UseUrls("http://0.0.0.0:5000", "https://0.0.0.0:5001");
+
+
+        // ✅ 註冊 BackgroundService
+        builder.Services.AddHostedService<CanBusPollingService>();
+        builder.Services.AddHostedService<GrpcBackgroundService>();
+        builder.Services.AddHostedService<ModbusPollingService>();
 
 
         Console.WriteLine("Starting Web Application...");
@@ -35,6 +88,14 @@ public class Program
         Console.WriteLine("Building Web Application...");
 
         var app = builder.Build();
+
+        // 註冊 ApplicationStopping 事件
+        var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+        lifetime.ApplicationStopping.Register(() =>
+        {
+            Console.WriteLine("Application stopping, closing Services...");
+        });
+
 
         Console.WriteLine("Configuring Web Application...");
 
