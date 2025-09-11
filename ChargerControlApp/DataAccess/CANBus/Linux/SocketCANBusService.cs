@@ -22,6 +22,10 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
 
         public SocketCANBusService()
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return;
+            }
             string canInterfaceName = "can0";
             _socket = new RawCanSocket();
             CanNetworkInterface _canBus = CanNetworkInterface.GetAllInterfaces(true).First(iface => iface.Name.Equals(canInterfaceName));

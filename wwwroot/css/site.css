@@ -1,0 +1,47 @@
+.motor-card {
+    border: 2px solid #888;
+    border-radius: 8px;
+    margin: 16px auto;
+    padding: 0;
+    max-width: 480px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.motor-status-card {
+    padding: 16px;
+    border-bottom: 1px solid #ccc;
+}
+.motor-action-card {
+    padding: 16px;
+    width: 100%;
+}
+.motor-box {
+    max-width: 480px;
+    margin: 16px auto;
+    border: 2px solid #888;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.motor-status-card, .motor-action-card {
+    width: 100%;
+    box-sizing: border-box;
+}
+.motors-actions-flex {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 24px;
+    margin: 16px auto;
+    max-width: 900px;
+}
+.motor-action-frame {
+    border: 2px solid #888;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 16px;
+    min-width: 260px;
+    max-width: 320px;
+    box-sizing: border-box;
+}

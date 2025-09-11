@@ -13,5 +13,7 @@ namespace ChargerControlApp.Utilities
         public int MaxChargingCurrent { get; set; }
         public string CanInterface { get; set; }
         public int CanBitrate { get; set; }
+        public string PortName { get; set; }
+        public string PortNameLinux { get; set; }
     }
 }

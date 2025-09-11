@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package batteryswappingstation;
+option csharp_namespace = "TAC.Hardware";
+
+import "google/protobuf/empty.proto";
+
+// ----------- Enums -----------
+
+enum SlotChargeState {
+    SLOT_CHARGE_STATE_UNSPECIFIED = 0;
+    CHARGING = 1;
+    FLOATING = 2;
+    EMPTY = 3;
+}
+
+enum StationState {
+    STATION_STATE_UNSPECIFIED = 0;
+    INITIAL = 1;
+    IDLE = 2;
+    SWAPPING = 3;
+    MANUAL = 4;
+    ERROR = 5;
+}
+
+enum ActionType {
+    ACTION_TYPE_UNSPECIFIED = 0;
+    SWAP = 1;
+    RESET = 2;
+    // EMS = 3; // reserved for future use
+}
+
+// ----------- Messages -----------
+
+message SlotStatus {
+    string name = 1;
+    int32 soc = 2;
+    float current = 3;
+    float voltage = 4;
+    SlotChargeState state = 5;
+}
+
+message StationStatus {
+    repeated SlotStatus slot_statuses = 1;
+    StationState state = 2;
+    int32 highest_soc = 3;
+}
+
+message ActionRequest {
+    ActionType action = 1;
+}
+
+
+// ----------- Services -----------
+
+service SwappingStationService {
+rpc GetStatus(google.protobuf.Empty) returns (StationStatus);
+rpc PerformAction(ActionRequest) returns (google.protobuf.Empty);
+}

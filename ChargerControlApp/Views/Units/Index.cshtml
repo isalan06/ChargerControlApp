@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "Units";
+}
+<div class="text-center">
+    <h1 class="display-4">Unit 管理</h1>
+    <div class="unit-tabs">
+        <button class="unit-tab-btn active" onclick="showUnitTab('gpio')">GPIO</button>
+        <button class="unit-tab-btn" onclick="showUnitTab('slot')">Slot</button>
+    </div>
+    <div id="gpioTab" class="unit-tab-content">
+        <p>GPIO 相關內容（請依需求填入）</p>
+    </div>
+    <div id="slotTab" class="unit-tab-content" style="display:none;">
+        <p>Slot 相關內容（請依需求填入）</p>
+    </div>
+</div>
+
+<script>
+    function showUnitTab(tab) {
+        document.getElementById('gpioTab').style.display = tab === 'gpio' ? '' : 'none';
+        document.getElementById('slotTab').style.display = tab === 'slot' ? '' : 'none';
+        document.querySelectorAll('.unit-tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.unit-tab-btn' + (tab === 'gpio' ? ':first-child' : ':last-child')).classList.add('active');
+    }
+</script>

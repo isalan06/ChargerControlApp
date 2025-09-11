@@ -20,16 +20,47 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DataAccess\GPIO\" />
-    <Folder Include="Protos\" />
+    <None Remove="Protos\battery_swapping_station.proto" />
+    <None Remove="Protos\kernel_device_common.proto" />
+    <None Remove="Protos\kernel_device_registration_service.proto" />
+    <None Remove="Protos\kernel_device_status_service.proto" />
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="DataAccess\GPIO\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.72.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="NModbus" Version="3.0.81" />
     <PackageReference Include="NModbus4.NetCore" Version="3.0.0" />
+    <PackageReference Include="RJCP.SerialPortStream" Version="3.0.3" />
     <PackageReference Include="Smart.Modbus" Version="1.0.1" />
     <PackageReference Include="SocketCANSharp" Version="0.13.0" />
     <PackageReference Include="System.IO.Ports" Version="9.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos\battery_swapping_station.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\kernel_device_common.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos\kernel_device_registration_service.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos\kernel_device_status_service.proto" GrpcServices="Client" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\css\site.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Protos\charger_action_service.proto" GrpcServices="Server" />
+    <None Update="Protos\charger_status_service.proto" GrpcServices="Server" />
   </ItemGroup>
 
 </Project>

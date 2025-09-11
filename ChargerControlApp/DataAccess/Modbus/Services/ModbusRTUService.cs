@@ -1,23 +1,24 @@
 ﻿using ChargerControlApp.DataAccess.Modbus.Interfaces;
 using ChargerControlApp.DataAccess.Modbus.Models;
 using System;
-using System.IO.Ports;
+//using System.IO.Ports;
+using RJCP.IO.Ports;
 
 
 namespace ChargerControlApp.DataAccess.Modbus.Services
 {
     public class ModbusRTUService : IModbusRTUService, IDisposable
     {
-        private SerialPort _serialPort = new SerialPort();
+        private SerialPortStream _serialPort = new SerialPortStream();
         public string PortName { get; set; } = "COM1";
-        public int BaudRate { get; set; } = 115200;
+        public int BaudRate { get; set; } = 230400;
         public Parity Parity { get; set; } = Parity.Even;
         public int DataBits { get; set; } = 8;
         public StopBits StopBits { get; set; } = StopBits.One;
 
         public bool IsRunning { get; internal set; } = false;
 
-        public int Timeout { get; set; } = 1000;
+        public int Timeout { get; set; } = 5000;
 
         private bool _readResult = false;
         private ushort[] _readData = null;
@@ -27,11 +28,14 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
 
         #region Constructor
 
-        public ModbusRTUService() { _serialPort.DataReceived += _serialPort_DataReceived; }
+        public ModbusRTUService() 
+        { 
+            _serialPort.DataReceived += _serialPort_DataReceived; 
+        }
 
 
 
-        public ModbusRTUService(string portName, int baudRate = 9600, Parity parity = Parity.None, int dataBits = 8, StopBits stopBits = StopBits.One) : this()
+        public ModbusRTUService(string portName, int baudRate = 230400, Parity parity = Parity.Even, int dataBits = 8, StopBits stopBits = StopBits.One) : this()
         {
             PortName = portName; BaudRate = baudRate; Parity = parity; DataBits = dataBits; StopBits = stopBits;
         }
@@ -90,6 +94,8 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
 
                 _buffer.AddRange(_data);
 
+                //Console.WriteLine($"Received: {BitConverter.ToString(_data)}");
+
             }
         }
 
@@ -145,6 +151,7 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
+                    Console.WriteLine($"COM Port List: {string.Join(", ", System.IO.Ports.SerialPort.GetPortNames())}");
                     throw new ModbusRTUServiceException(ex.Message, PortName);
                 }
             }
@@ -177,17 +184,20 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
 
             if (_serialPort.IsOpen)
             {
+                // 清空所有狀態
+                _buffer.Clear();
+                _readResult = false;
+                _readData = null;
+
                 _frame = new ModbusRTUFrame(coammand);
                 _frame.HasResponse = false;
                 _frame.HasException = false;
-                _readResult = false;
-                _buffer.Clear();
 
                 var _command = _frame.CreateCommand();
+
                 _serialPort.Write(_command, 0, _command.Length);
 
                 bool _timeout = false;
-
                 DateTime dt = DateTime.Now;
 
                 while (!_timeout)

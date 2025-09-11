@@ -35,8 +35,7 @@ body {
     border-radius: 8px;
     background: #f8f9fa;
     box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
-    min-width: 220px;
-    max-width: 500px;
+    width: 400px;
     margin: 0 8px;
     padding: 0;
 }
@@ -49,6 +48,8 @@ body {
     text-align: left;
 }
 
+
+
 .card-section-bottom {
     text-align: left;
 }
@@ -60,20 +61,26 @@ body {
     color: #1976d2;
 }
 
+.section-title-io {
+    margin-left: 18px;
+}
+
 .card-divider {
-    border-top: 1.5px solid #b0bec5;
-    margin: 0 20px;
+    border-top: 2px solid #1976d2;   /* 更深的藍色分隔線 */
+    margin: 18px 20px;               /* 上下間距 18px，左右 20px */
+    width: calc(100% - 40px);
+    align-self: stretch;
+    box-sizing: border-box;
 }
 
 .status-light {
     display: inline-block;
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     border: 2px solid #888;
-    background-color: #ccc;
+    background-color: #fff;
     vertical-align: middle;
-    margin-right: 6px;
 }
 
     .status-light.on {
@@ -95,6 +102,7 @@ body {
     background-color: #ccc;
     vertical-align: middle;
     margin-right: 6px;
+    margin-left: 16px;
 }
 
     .alarm-light.on {
@@ -266,4 +274,167 @@ body {
     font-size: 0.98em;
     color: #333;
     padding-left: 2px;
+}
+
+.motor-card {
+    border: 2px solid #888;
+    border-radius: 8px;
+    margin: 16px auto;
+    padding: 0;
+    max-width: 480px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.motor-action-card {
+    padding: 16px;
+    width: 100%;
+}
+
+.motor-box {
+    max-width: 480px;
+    margin: 16px auto;
+    border: 2px solid #888;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.motors-actions-flex {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 42px;
+    margin: 16px auto;
+    max-width: 900px;
+}
+
+.motor-action-frame {
+    border: 2px solid #888;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 16px;
+    min-width: 400px;
+    max-width: 400px;
+    width: 400px;
+    box-sizing: border-box;
+}
+
+.motor-tabs {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+.motor-tab-btn {
+    padding: 8px 32px;
+    font-size: 1.1em;
+    border: 2px solid #1976d2;
+    background: #f8f9fa;
+    color: #1976d2;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    outline: none;
+    font-weight: bold;
+    transition: background 0.2s, color 0.2s;
+}
+.motor-tab-btn.active {
+    background: #1976d2;
+    color: #fff;
+    border-bottom: 2px solid #f8f9fa;
+}
+.motor-tab-content {
+    margin: 0 auto;
+}
+
+.unit-tabs {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.unit-tab-btn {
+    padding: 8px 32px;
+    font-size: 1.1em;
+    border: 2px solid #1976d2;
+    background: #f8f9fa;
+    color: #1976d2;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    outline: none;
+    font-weight: bold;
+    transition: background 0.2s, color 0.2s;
+}
+
+    .unit-tab-btn.active {
+        background: #1976d2;
+        color: #fff;
+        border-bottom: 2px solid #f8f9fa;
+    }
+
+.unit-tab-content {
+    margin: 0 auto;
+}
+
+.charger-box-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    justify-items: center;
+    align-items: start; /* 建議改用 start 讓內容往上對齊 */
+    margin-bottom: 24px;
+}
+
+.charger-box {
+    width: 300px;
+    height: auto;           /* 讓高度自動依內容調整 */
+    background-color: #e0e0e0;
+    border: 2px solid #888;
+    display: flex;  
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    border-radius: 8px;
+}
+
+.charger-box-used {
+    background-color: #fff;
+    border: 2px solid #007bff; /* 藍色外框 */
+}
+
+.charger-btn-group {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    margin-top: 8px;
+    justify-content: center;
+}
+
+.charger-lights-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 280px;
+    gap: 6px; /* 燈號與文字間距 */
+    margin: 8px auto 0 auto;
+}
+
+.charger-status-light {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #888;
+    background-color: #fff;
+    vertical-align: middle;
+}
+
+.charger-lights-row span {
+    font-size: 1.08em;
+    font-weight: 500;
 }
