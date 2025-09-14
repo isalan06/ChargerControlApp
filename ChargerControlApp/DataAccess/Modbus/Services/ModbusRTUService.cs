@@ -193,6 +193,7 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
                 _frame.HasResponse = false;
                 _frame.HasException = false;
 
+
                 var _command = _frame.CreateCommand();
 
                 _serialPort.Write(_command, 0, _command.Length);

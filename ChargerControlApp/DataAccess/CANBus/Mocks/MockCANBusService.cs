@@ -48,7 +48,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Mocks
             return null;
         }
 
-        public void SendCommand(byte[] data)
+        public void SendCommand(byte[] data, uint canid = 0x000C0103)
         {
 
         }

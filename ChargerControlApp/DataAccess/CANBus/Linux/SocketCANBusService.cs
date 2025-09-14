@@ -116,19 +116,19 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
         [DllImport("libc", SetLastError = true)]
         private static extern int select(int nfds, ref IntPtr readfds, IntPtr writefds, IntPtr exceptfds, ref Timeval timeout);
 
-        public void SendCommand(byte[] data)
+        public void SendCommand(byte[] data, uint canid = 0x000C0103)
         {
-            uint canId = 0x000C0103 | 0x80000000; // 确保是 29-bit 扩展帧
+            uint canId = canid | 0x80000000; // 确保是 29-bit 扩展帧
             if (data.Length <= 8)
             {
                 var frame = new CanFrame(canId, data); // 标准 CAN
-                //Console.WriteLine("STD CAN: " + frame.ToString());
+                Console.WriteLine("STD CAN: " + frame.ToString());
                 _socket.Write(frame);
             }
             else if (data.Length <= 64)
             {
                 var frame = new CanFdFrame(canId, data, CanFdFlags.CANFD_FDF); // CAN FD
-                //Console.WriteLine("CAN FD: " + frame.ToString());
+                Console.WriteLine("CAN FD: " + frame.ToString());
                 _socket.Write(frame);
             }
             else
@@ -141,6 +141,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
         {
             try
             {
+                Console.WriteLine("等待接收 CAN 消息...");
                 var frame = _socket.Read(out CanFrame canFrame);
                 return canFrame.Data;
             }
@@ -148,7 +149,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
             {
                 //_logger.LogError("CANbus ReceiveMessageError: ", ex.Message);
 
-                //Console.WriteLine($"Error while receiving CAN message: {ex.Message}");
+                Console.WriteLine($"Error while receiving CAN message: {ex.Message}");
                 return null; // 返回 null 或其他适当的错误值
             }
 
@@ -182,6 +183,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
                     catch (SocketException ex) when (ex.SocketErrorCode == SocketError.WouldBlock)
                     {
                         // 已無資料可讀，清空完成
+                        //Console.WriteLine("CAN buffer 已清空");
                         break;
                     }
                 }

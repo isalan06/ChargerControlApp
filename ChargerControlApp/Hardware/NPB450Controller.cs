@@ -286,12 +286,14 @@ namespace ChargerControlApp.Hardware
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
+                _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-Start");
                 _canBusService.ClearCANBuffer();
                 // 這裡是實際和硬體通訊的地方
                 this.Voltage = GetVoltage();// TODO: Async有問題，還沒檢查，之後要改 await GetVoltageAsync();
                 this.Current = GetCurrent();
                 this.CHG_STATUS = GetCHG_STATUS();
                 this.FAULT_STATUS = GetFAULT_STATUS();
+                _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-End");
             }
             else
             {
@@ -313,8 +315,11 @@ namespace ChargerControlApp.Hardware
 
         private double GetVoltage()
         {
+            _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-GetVoltage()-Start");
             byte[] VoltageBytes = GetStatusFromDevice2(NPB450Controller.CanbusReadCommand.READ_VOUT);
+            _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-GetVoltage()-Bytes:{BitConverter.ToString(VoltageBytes)}");
             ushort Voltage = BitConverter.ToUInt16(new byte[] { VoltageBytes[2], VoltageBytes[3] }.ToArray(), 0);
+            _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-GetVoltage()-{Voltage}");
             return (double)Voltage / 100;
         }
 
@@ -421,13 +426,14 @@ namespace ChargerControlApp.Hardware
                 return;
             }
 
+            _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StartCharging()");
 
             int numberOfDataBytes = 1;
             byte[] send = new byte[2 + numberOfDataBytes];
             byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
             sendBytes.CopyTo(send, 0);
             send[2] = (byte)0x01;
-            _canBusService.SendCommand(send);
+            _canBusService.SendCommand(send, deviceCanID);
             //_chargingStationStateMachine.TransitionTo<ChargingStateClass>();//TODO 不要寫在這，疑到狀態機裡?
             //Thread.Sleep(50);
             //byte[] receivedMessage = _canBusService.ReceiveMessage();
@@ -471,7 +477,7 @@ namespace ChargerControlApp.Hardware
             byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
             sendBytes.CopyTo(send, 0);
             send[2] = (byte)0x00;
-            _canBusService.SendCommand(send);
+            _canBusService.SendCommand(send, deviceCanID);
             //_chargingStationStateMachine.TransitionTo<OccupiedState>();
             //Thread.Sleep(50);
             //byte[] receivedMessage = _canBusService.ReceiveMessage();
@@ -522,7 +528,7 @@ namespace ChargerControlApp.Hardware
                 byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.CURVE_CC);
                 sendBytes.CopyTo(send, 0);
                 BitConverter.GetBytes(curve_cc_value).CopyTo(send, 2);
-                _canBusService.SendCommand(send);
+                _canBusService.SendCommand(send, deviceCanID);
                 changeCurrentSuccess = true;
             }
             catch (Exception ex)
@@ -611,7 +617,8 @@ namespace ChargerControlApp.Hardware
                 return null;
             }
             byte[] sendBytes = BitConverter.GetBytes((ushort)command);
-            _canBusService.SendCommand(sendBytes);
+            _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-GetStatusFromDevice2()-Command:{command.ToString()} Bytes:{BitConverter.ToString(sendBytes)}");
+            _canBusService.SendCommand(sendBytes, deviceCanID);
 
             Thread.Sleep(50);
 
@@ -628,7 +635,7 @@ namespace ChargerControlApp.Hardware
 
             Console.WriteLine("Test");
             byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusReadCommand.READ_TEMPERATURE_1);
-            _canBusService.SendCommand(sendBytes);
+            _canBusService.SendCommand(sendBytes, deviceCanID);
         }
 
 

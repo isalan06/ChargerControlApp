@@ -54,9 +54,11 @@ namespace ChargerControlApp.Services
                 try
                 {
                     // if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    //await Task.Run(() => _hardwareManager.Charger[0].PollingOnce());
 
                     for (int i = 0; i < HardwareManager.NPB450ControllerInstnaceNumber; i++)
                     {
+                        _logger.LogInformation($"CanBusPollingService-DeviceID: {_hardwareManager.Charger[i].deviceCanID}-PollingOnce()");
                         _hardwareManager.Charger[i].IsUsed = true; 
                         await Task.Run(() => _hardwareManager.Charger[i].PollingOnce());
                     }

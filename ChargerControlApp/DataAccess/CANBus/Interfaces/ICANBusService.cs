@@ -12,7 +12,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Interfaces
     {
         Task<CanMessage?> ReceiveAsync(int timeoutMs);
         Task SendAsync(CanMessage message);
-        public void SendCommand(byte[] data);
+        public void SendCommand(byte[] data, uint canid);
         public byte[] ReceiveMessage();
         public void ClearCANBuffer();
     }
