@@ -434,6 +434,9 @@ namespace ChargerControlApp.Hardware
             sendBytes.CopyTo(send, 0);
             send[2] = (byte)0x01;
             _canBusService.SendCommand(send, deviceCanID);
+<<<<<<<<< Temporary merge branch 1
+            _chargingStationStateMachine.TransitionTo<ChargingStateClass>();//TODO 不要寫在這，疑到狀態機裡?
+=========
             //_chargingStationStateMachine.TransitionTo<ChargingStateClass>();//TODO 不要寫在這，疑到狀態機裡?
             //Thread.Sleep(50);
             //byte[] receivedMessage = _canBusService.ReceiveMessage();
@@ -474,10 +477,13 @@ namespace ChargerControlApp.Hardware
 
             int numberOfDataBytes = 1;
             byte[] send = new byte[2 + numberOfDataBytes];
-            byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
+            _canBusService.SendCommand(send, deviceCanID);
             sendBytes.CopyTo(send, 0);
             send[2] = (byte)0x00;
-            _canBusService.SendCommand(send, deviceCanID);
+            _canBusService.SendCommand(send);
+<<<<<<<<< Temporary merge branch 1
+            _chargingStationStateMachine.TransitionTo<OccupiedState>();
+=========
             //_chargingStationStateMachine.TransitionTo<OccupiedState>();
             //Thread.Sleep(50);
             //byte[] receivedMessage = _canBusService.ReceiveMessage();
