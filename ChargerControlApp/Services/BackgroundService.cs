@@ -54,6 +54,7 @@ namespace ChargerControlApp.Services
                 try
                 {
                     // if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    await Task.Run(() => _hardwareManager.Charger.PollingOnce());
 
                     for (int i = 0; i < HardwareManager.NPB450ControllerInstnaceNumber; i++)
                     {
