@@ -31,9 +31,9 @@ namespace ChargerControlApp.Hardware
         private readonly ICANBusService _canBusService;
         private readonly ChargingStationStateMachine _chargingStationStateMachine;
 
-        private static uint rpb1700DeviceID = 3;
-        private static uint rpb1700MessageID = 0x000C0100;
-        private readonly uint canID = rpb1700DeviceID | rpb1700MessageID;
+        private static uint rpb1700DeviceID = 3; // 此參數為固定測值，後續不使用該數值
+        private static uint rpb1700MessageID = 0x000C0100; 
+        private readonly uint canID = rpb1700DeviceID | rpb1700MessageID; // 此參數為固定測值，後續不使用該數值
         //充電器對控制器的MessageID=0x000C00XX
         //控制器對充電器的MessageID=0x000C01XX
         //控制器對充電氣廣播的MessageID=0x000C01FF
@@ -434,9 +434,7 @@ namespace ChargerControlApp.Hardware
             sendBytes.CopyTo(send, 0);
             send[2] = (byte)0x01;
             _canBusService.SendCommand(send, deviceCanID);
-<<<<<<<<< Temporary merge branch 1
-            _chargingStationStateMachine.TransitionTo<ChargingStateClass>();//TODO 不要寫在這，疑到狀態機裡?
-=========
+
             //_chargingStationStateMachine.TransitionTo<ChargingStateClass>();//TODO 不要寫在這，疑到狀態機裡?
             //Thread.Sleep(50);
             //byte[] receivedMessage = _canBusService.ReceiveMessage();
@@ -460,7 +458,7 @@ namespace ChargerControlApp.Hardware
             //_canBusService.SendCommand(data);
             CanMessage canMessage = new CanMessage()
             {
-                Id = CanId.FromRaw(canID),
+                Id = CanId.FromRaw(deviceCanID),
                 Data = data
             };
 
@@ -477,13 +475,11 @@ namespace ChargerControlApp.Hardware
 
             int numberOfDataBytes = 1;
             byte[] send = new byte[2 + numberOfDataBytes];
-            _canBusService.SendCommand(send, deviceCanID);
+            byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
             sendBytes.CopyTo(send, 0);
             send[2] = (byte)0x00;
-            _canBusService.SendCommand(send);
-<<<<<<<<< Temporary merge branch 1
-            _chargingStationStateMachine.TransitionTo<OccupiedState>();
-=========
+            _canBusService.SendCommand(send, deviceCanID);
+
             //_chargingStationStateMachine.TransitionTo<OccupiedState>();
             //Thread.Sleep(50);
             //byte[] receivedMessage = _canBusService.ReceiveMessage();
