@@ -6,6 +6,7 @@
     <div class="motor-tabs">
         <button class="motor-tab-btn active" onclick="showTab('manual')">手動</button>
         <button class="motor-tab-btn" onclick="showTab('semiAuto')">半自動</button>
+        <button class="motor-tab-btn" onclick="showTab('settings')">設定</button>
     </div>
     <div id="manualTab" class="motor-tab-content">
         <div class="motors-row" id="motorsRow"></div>
@@ -13,8 +14,47 @@
     </div>
     <div id="semiAutoTab" class="motor-tab-content" style="display:none;">
         <div class="semi-auto-content">
-            <!-- 這裡放半自動頁面的內容，依需求填入 -->
             <p>半自動功能區塊（請依需求填入）</p>
+        </div>
+    </div>
+    <div id="settingsTab" class="motor-tab-content" style="display:none;">
+        <div class="settings-content">
+            <h2>參數設定</h2>
+            <div class="settings-subtabs">
+                <button class="settings-subtab-btn active" onclick="showSettingsSubTab('jogHome')">Jog&Home</button>
+                <button class="settings-subtab-btn" onclick="showSettingsSubTab('posVel')">位置&速度</button>
+            </div>
+            <div id="jogHomeTab" class="settings-subtab-content">
+                <h3>Jog&Home 設定</h3>
+                <div style="margin-bottom:12px; display:flex; align-items:center; gap:16px;">
+                    <div id="motorRadioGroup">
+                        <label><input type="radio" name="motorRadio" value="0" checked>馬達1</label>
+                        <label><input type="radio" name="motorRadio" value="1">馬達2</label>
+                        <label><input type="radio" name="motorRadio" value="2">馬達3</label>
+                    </div>
+                    <button id="jogHomeRefreshBtn" type="button">Refresh</button>
+                    <button id="jogHomeSaveBtn" type="button">Save</button>
+                </div>
+                <table id="jogHomeTable" class="table table-bordered" style="width:100%;text-align:center;">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>參數名</th>
+                            <th>數值</th>
+                            <th>寫入數值</th>
+                            <th>動作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 由 JS 動態產生 -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="posVelTab" class="settings-subtab-content" style="display:none;">
+                <h3>位置&速度 設定</h3>
+                <p>這裡可以放位置與速度相關設定內容。</p>
+                <!-- 依需求加入表單或控制項 -->
+            </div>
         </div>
     </div>
 </div>
@@ -23,17 +63,39 @@
     function showTab(tab) {
         document.getElementById('manualTab').style.display = tab === 'manual' ? '' : 'none';
         document.getElementById('semiAutoTab').style.display = tab === 'semiAuto' ? '' : 'none';
+        document.getElementById('settingsTab').style.display = tab === 'settings' ? '' : 'none';
         document.querySelectorAll('.motor-tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelector('.motor-tab-btn' + (tab === 'manual' ? ':first-child' : ':last-child')).classList.add('active');
+        if (tab === 'manual')
+            document.querySelector('.motor-tab-btn:nth-child(1)').classList.add('active');
+        else if (tab === 'semiAuto')
+            document.querySelector('.motor-tab-btn:nth-child(2)').classList.add('active');
+        else if (tab === 'settings')
+            document.querySelector('.motor-tab-btn:nth-child(3)').classList.add('active');
+    }
+
+    function showSettingsSubTab(subTab) {
+        document.getElementById('jogHomeTab').style.display = subTab === 'jogHome' ? '' : 'none';
+        document.getElementById('posVelTab').style.display = subTab === 'posVel' ? '' : 'none';
+        document.querySelectorAll('.settings-subtab-btn').forEach(btn => btn.classList.remove('active'));
+        if (subTab === 'jogHome')
+            document.querySelector('.settings-subtab-btn:nth-child(1)').classList.add('active');
+        else if (subTab === 'posVel')
+            document.querySelector('.settings-subtab-btn:nth-child(2)').classList.add('active');
     }
 
     function renderMotorsStatus(data) {
+        // 馬達名稱對照表
+        const motorNames = {
+            0: '旋轉',
+            1: 'Y軸',
+            2: 'Z軸'
+        };
         let html = '';
         data.forEach(m => {
             html += `
             <div class="motor-status-card">
                 <div class="card-section-top">
-                    <div class="motor-title">馬達 #${m.id}</div>
+                    <div class="motor-title">馬達 #${m.id} (${motorNames[m.id] ?? '未知'})</div>
                     <div class="motor-title-divider"></div>
                     <div class="section-title section-title-io">IO狀態</div>
                     <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; margin-left:12px">
@@ -57,20 +119,55 @@
                             <span>IN-POS</span>
                         </div>
                     </div>
-                    <!-- 其他狀態燈... -->
+                    <div class="lights-row">
+                        <div class="light-item">
+                            <span class="status-light ${m.stopR ? 'on' : 'off'}"></span>
+                            <span>STOP</span>
+                        </div>
+                        <div class="light-item">
+                            <span class="status-light ${m.freeR ? 'on' : 'off'}"></span>
+                            <span>FREE</span>
+                        </div>
+                        <div class="light-item">
+                            <span class="status-light ${m.rdyDdOpe ? 'on' : 'off'}"></span>
+                            <span>DD</span>
+                        </div>
+                    </div>
+                    <div class="lights-row">
+                        <div class="light-item">
+                            <span class="status-light ${m.rdyHomeOpe ? 'on' : 'off'}"></span>
+                            <span>HOME</span>
+                        </div>
+                        <div class="light-item">
+                            <span class="status-light ${m.rdyFwrvOpe ? 'on' : 'off'}"></span>
+                            <span>FWRV</span>
+                        </div>
+                        <div class="light-item">
+                            <span class="status-light ${m.rdySdOpe ? 'on' : 'off'}"></span>
+                            <span>SD</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-divider"></div>
                 <div class="card-section card-section-bottom">
                     <div class="section-title">數據</div>
-                    <div>位置：${m.posActual}</div>
-                    <div>速度：${m.velActual}</div>
+                    <div class="pos-vel-row">
+                        <div>位置：${m.posActual}</div>
+                        <div style="flex:1; text-align:center;">速度：${m.velActual}</div>
+                    </div>
                     <div class="opdata-list">
-                        <div class="opdata-item">選擇資料編號：${m.opData_IdSelect}</div>
-                        <div class="opdata-item">運轉資料編號：${m.opData_IdOp}</div>
-                        <div class="opdata-item">指令位置：${m.opData_Pos_Command}</div>
-                        <div class="opdata-item">指令速度：${m.opData_Vel_Command}</div>
-                        <div class="opdata-item">檢測位置：${m.opData_Pos_Actual}</div>
-                        <div class="opdata-item">檢測速度：${m.opData_Vel_Actual}</div>
+                        <div class="opdata-row">
+                            <div class="opdata-item">選擇資料編號：${m.opData_IdSelect}</div>
+                            <div class="opdata-item">運轉資料編號：${m.opData_IdOp}</div>
+                        </div>
+                        <div class="opdata-row">
+                            <div class="opdata-item">指令位置：${m.opData_Pos_Command}</div>
+                            <div class="opdata-item">指令速度：${m.opData_Vel_Command}</div>
+                        </div>
+                        <div class="opdata-row">
+                            <div class="opdata-item">檢測位置：${m.opData_Pos_Actual}</div>
+                            <div class="opdata-item">檢測速度：${m.opData_Vel_Actual}</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -84,6 +181,17 @@
         data.forEach(m => {
             html += `
             <div class="motor-action-card motor-action-frame">
+                <div class="servo-alarm-row">
+                    <button type="button" class="toggle-servo-btn" data-id="${m.id}">切換伺服</button>
+                    <button type="button"
+                        class="alarm-btn"
+                        data-id="${m.id}"
+                        onmousedown="setAlarm(${m.id}, true)"
+                        onmouseup="setAlarm(${m.id}, false)"
+                        onmouseleave="setAlarm(${m.id}, false)">
+                        Reset Alarm
+                    </button>
+                </div>
                 <div class="action-btn-row">
                     <button type="button"
                         class="action-btn"
@@ -103,15 +211,15 @@
                 <div class="radio-row">
                     <div class="section-title">JOG</div>
                     <label class="radio-item">
-                        <input type="radio" name="jogMode${m.id}" value="2" ${m.jogMode == 2 ? 'checked' : ''} onchange="setJogMode(${m.id}, 2)">
+                        <input type="radio" name="jogMode${m.id}" value="2" ${m.jogMode == 2 ? 'checked' : ''}>
                         吋動
                     </label>
                     <label class="radio-item">
-                        <input type="radio" name="jogMode${m.id}" value="0" ${m.jogMode == 0 ? 'checked' : ''} onchange="setJogMode(${m.id}, 0)">
+                        <input type="radio" name="jogMode${m.id}" value="0" ${m.jogMode == 0 ? 'checked' : ''}>
                         低速
                     </label>
                     <label class="radio-item">
-                        <input type="radio" name="jogMode${m.id}" value="1" ${m.jogMode == 1 ? 'checked' : ''} onchange="setJogMode(${m.id}, 1)">
+                        <input type="radio" name="jogMode${m.id}" value="1" ${m.jogMode == 1 ? 'checked' : ''}>
                         高速
                     </label>
                 </div>
@@ -145,16 +253,6 @@
                         START
                     </button>
                 </div>
-                <button type="button" class="toggle-servo-btn" data-id="${m.id}" style="margin-left:12px;">切換伺服</button>
-                <button type="button"
-                    class="alarm-btn"
-                    data-id="${m.id}"
-                    onmousedown="setAlarm(${m.id}, true)"
-                    onmouseup="setAlarm(${m.id}, false)"
-                    onmouseleave="setAlarm(${m.id}, false)"
-                    style="margin-left:12px;">
-                    Reset Alarm
-                </button>
             </div>
             `;
         });
@@ -163,13 +261,152 @@
         document.querySelectorAll('.toggle-servo-btn').forEach(btn => {
             btn.onclick = function() {
                 const motorId = btn.getAttribute('data-id');
-                fetch('/Home/ToggleServo?motorId=' + motorId, { method: 'POST' })
+                fetch('/Motor/ToggleServo?motorId=' + motorId, { method: 'POST' })
                     .then(response => response.json())
                     .then(data => {
-                        // 不自動刷新狀態
+                        // 可依需求顯示狀態
                     });
             };
         });
+
+        document.querySelectorAll('.alarm-btn').forEach(btn => {
+            btn.onmousedown = function() {
+                const motorId = btn.getAttribute('data-id');
+                fetch('/Motor/SetAlarm?motorId=' + motorId + '&state=true', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        // 可依需求顯示狀態
+                    });
+            };
+            btn.onmouseup = function() {
+                const motorId = btn.getAttribute('data-id');
+                fetch('/Motor/SetAlarm?motorId=' + motorId + '&state=false', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        // 可依需求顯示狀態
+                    });
+            };
+            btn.onmouseleave = function() {
+                const motorId = btn.getAttribute('data-id');
+                fetch('/Motor/SetAlarm?motorId=' + motorId + '&state=false', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        // 可依需求顯示狀態
+                    });
+            };
+        });
+
+        document.querySelectorAll('.action-btn').forEach(btn => {
+    if (btn.textContent.trim() === 'HOME') {
+        btn.onmousedown = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            fetch('/Motor/SetHome?motorId=' + motorId + '&state=true', { method: 'POST' })
+                .then(response => response.json());
+        };
+        btn.onmouseup = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            fetch('/Motor/SetHome?motorId=' + motorId + '&state=false', { method: 'POST' })
+                .then(response => response.json());
+        };
+        btn.onmouseleave = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            fetch('/Motor/SetHome?motorId=' + motorId + '&state=false', { method: 'POST' })
+                .then(response => response.json());
+        };
+    }
+    if (btn.textContent.trim() === 'STOP') {
+        btn.onmousedown = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            fetch('/Motor/SetStop?motorId=' + motorId + '&state=true', { method: 'POST' })
+                .then(response => response.json());
+        };
+        btn.onmouseup = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            fetch('/Motor/SetStop?motorId=' + motorId + '&state=false', { method: 'POST' })
+                .then(response => response.json());
+        };
+        btn.onmouseleave = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            fetch('/Motor/SetStop?motorId=' + motorId + '&state=false', { method: 'POST' })
+                .then(response => response.json());
+        };
+    }
+});
+
+    // ★★★ JOG radio 事件綁定（放在這裡）★★★
+    document.querySelectorAll('.radio-item input[type="radio"]').forEach(radio => {
+        radio.onchange = function() {
+            const motorId = this.name.replace('jogMode', '');
+            const mode = this.value;
+            fetch('/Motor/SetJogMode?motorId=' + motorId + '&mode=' + mode, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    // 可依需求顯示狀態
+                });
+        };
+    });
+
+        // JOG 按鈕事件綁定
+        document.querySelectorAll('.jog-btn').forEach(btn => {
+            btn.onmousedown = function() {
+                const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+                const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
+                fetch(`/Motor/SetJog?motorId=${motorId}&dir=${dir}&state=true`, { method: 'POST' })
+                    .then(response => response.json());
+            };
+            btn.onmouseup = function() {
+                const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+                const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
+                fetch(`/Motor/SetJog?motorId=${motorId}&dir=${dir}&state=false`, { method: 'POST' })
+                    .then(response => response.json());
+            };
+            btn.onmouseleave = function() {
+                const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+                const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
+                fetch(`/Motor/SetJog?motorId=${motorId}&dir=${dir}&state=false`, { method: 'POST' })
+                    .then(response => response.json());
+            };
+        });
+
+            document.querySelectorAll('.start-btn').forEach(btn => {
+        btn.onmousedown = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            fetch(`/Motor/SetStart?motorId=${motorId}&state=true`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    // 可依需求顯示狀態或提示
+                });
+        };
+        btn.onmouseup = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            fetch(`/Motor/SetStart?motorId=${motorId}&state=false`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    // 可依需求顯示狀態或提示
+                });
+        };
+        btn.onmouseleave = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            fetch(`/Motor/SetStart?motorId=${motorId}&state=false`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    // 可依需求顯示狀態或提示
+                });
+        };
+    });
+
+    document.querySelectorAll('.data-select-combo').forEach(combo => {
+    combo.onchange = function() {
+        const motorId = combo.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+        const dataNo = combo.value;
+        fetch(`/Motor/SetDataNo_M?motorId=${motorId}&dataNo=${dataNo}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                // 可依需求顯示狀態或提示
+            });
+    };
+});
+
     }
 
     function updateMotorsStatus() {
@@ -188,4 +425,96 @@
 
     setInterval(updateMotorsStatus, 2000);
     updateMotorsStatus();
+
+    const jogHomeParamNames = [
+        "參數1", "參數2", "參數3", "參數4", "參數5", "參數6", "參數7", "參數8",
+        "參數9", "參數10", "參數11", "參數12", "參數13", "參數14", "參數15", "參數16"
+    ];
+
+    let currentMotorId = 0;
+
+    // 取得 Jog&Home 參數
+    function fetchJogHomeParams(motorId) {
+        return fetch(`/Motor/GetJogHomeParams?motorId=${motorId}`)
+            .then(res => res.json());
+    }
+
+    // 寫入單一參數
+    function setJogHomeParam(motorId, idx, value) {
+        return fetch('/Motor/SetJogHomeParam', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motorId: motorId, index: idx, value: value })
+        }).then(res => res.json());
+    }
+
+    // 寫入全部參數
+    function saveJogHomeParams(motorId, params) {
+        return fetch('/Motor/SaveJogHomeParams', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motorId: motorId, values: params })
+        }).then(res => res.json());
+    }
+
+    // 渲染表格
+    function renderJogHomeTable(paramValues) {
+        const tbody = document.querySelector('#jogHomeTable tbody');
+        tbody.innerHTML = '';
+        for (let i = 0; i < 16; i++) {
+            const value = paramValues[i] ?? '';
+            const paramName = jogHomeParamNames[i] ?? '';
+            tbody.innerHTML += `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${paramName}</td>
+                    <td class="current-value" data-idx="${i}">${value}</td>
+                    <td>
+                        <input type="text" class="write-value" data-idx="${i}" value="${value}">
+                    </td>
+                    <td>
+                        <button type="button" class="set-btn" data-idx="${i}">設定</button>
+                    </td>
+                </tr>
+            `;
+        }
+        // 設定按鈕事件
+        document.querySelectorAll('.set-btn').forEach(btn => {
+            btn.onclick = function() {
+                const idx = btn.getAttribute('data-idx');
+                const input = document.querySelector(`.write-value[data-idx="${idx}"]`);
+                setJogHomeParam(currentMotorId, idx, input.value).then(() => {
+                    fetchJogHomeParams(currentMotorId).then(data => renderJogHomeTable(data));
+                });
+            };
+        });
+    }
+
+    // Radio Button 事件
+    document.querySelectorAll('input[name="motorRadio"]').forEach(radio => {
+        radio.onchange = function() {
+            currentMotorId = parseInt(this.value);
+            fetchJogHomeParams(currentMotorId).then(data => renderJogHomeTable(data));
+        };
+    });
+
+    // Refresh 按鈕
+    document.getElementById('jogHomeRefreshBtn').onclick = function() {
+        fetchJogHomeParams(currentMotorId).then(data => renderJogHomeTable(data));
+    };
+
+    // Save 按鈕
+    document.getElementById('jogHomeSaveBtn').onclick = function() {
+        const params = [];
+        document.querySelectorAll('.write-value').forEach(input => {
+            params.push(input.value);
+        });
+        saveJogHomeParams(currentMotorId, params).then(() => {
+            fetchJogHomeParams(currentMotorId).then(data => renderJogHomeTable(data));
+        });
+    };
+
+    // 頁面載入時自動載入
+    fetchJogHomeParams(currentMotorId).then(data => renderJogHomeTable(data));
 </script>
+

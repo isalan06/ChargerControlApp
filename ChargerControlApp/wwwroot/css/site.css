@@ -142,6 +142,7 @@ body {
     gap: 32px; /* 固定每個燈號間距 */
     margin-top: 12px;
     margin-bottom: 4px;
+    margin-left: 12px
 }
 
 .light-item {
@@ -270,10 +271,14 @@ body {
     gap: 4px;
 }
 
+.opdata-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+
 .opdata-item {
-    font-size: 0.98em;
-    color: #333;
-    padding-left: 2px;
+    flex: 1;
 }
 
 .motor-card {
@@ -437,4 +442,39 @@ body {
 .charger-lights-row span {
     font-size: 1.08em;
     font-weight: 500;
+}
+
+.pos-vel-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.settings-subtabs {
+    margin-bottom: 16px;
+}
+.settings-subtab-btn {
+    padding: 8px 24px;
+    margin-right: 8px;
+    border: none;
+    background: #eee;
+    cursor: pointer;
+    border-radius: 4px 4px 0 0;
+}
+.settings-subtab-btn.active {
+    background: #4285f4;
+    color: #fff;
+}
+.settings-subtab-content {
+    padding: 16px;
+    border: 1px solid #eee;
+    border-radius: 0 4px 4px 4px;
+    background: #fafafa;
+}
+
+.servo-alarm-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
 }

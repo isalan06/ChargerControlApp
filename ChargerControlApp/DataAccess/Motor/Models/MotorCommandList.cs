@@ -38,6 +38,26 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                     DataNumber = 4
                 }
             },
+            new MotorFrame()
+            { 
+                Name = "ReadJogAndHomeSetting",
+                DataFrame = new ModbusRTUFrame()
+                {
+                    FunctionCode = 0x03,
+                    StartAddress = 672,
+                    DataNumber = 32
+                }
+            },
+            new MotorFrame()
+            { 
+                Name = "WriteJogAndHomeSetting",
+                DataFrame = new ModbusRTUFrame()
+                {
+                    FunctionCode = 0x10,
+                    StartAddress = 672,
+                    DataNumber = 32
+                }
+            }
 
         }; 
 
@@ -46,6 +66,8 @@ namespace ChargerControlApp.DataAccess.Motor.Models
             { "WriteInputHigh", Commands.First(c => c.Name == "WriteInputHigh") },
             { "WriteInputLow", Commands.First(c => c.Name == "WriteInputLow") },
             { "WriteJogMode", Commands.First(c => c.Name == "WriteJogMode") },
+            { "ReadJogAndHomeSetting", Commands.First(c => c.Name == "ReadJogAndHomeSetting") },
+            { "WriteJogAndHomeSetting", Commands.First(c => c.Name == "WriteJogAndHomeSetting") },
         };
     }
 }

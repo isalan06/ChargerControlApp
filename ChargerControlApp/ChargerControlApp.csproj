@@ -20,12 +20,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="Views\Motor\JogHome.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Protos\battery_swapping_station.proto" />
     <None Remove="Protos\charger_action_service.proto" />
     <None Remove="Protos\charger_status_service.proto" />
     <None Remove="Protos\kernel_device_common.proto" />
     <None Remove="Protos\kernel_device_registration_service.proto" />
     <None Remove="Protos\kernel_device_status_service.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Views\Motor\JogHome.cshtml" />
   </ItemGroup>
 
   <ItemGroup>

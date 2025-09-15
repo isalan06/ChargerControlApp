@@ -1,5 +1,9 @@
 using ChargerControlApp.Hardware;
 using Microsoft.AspNetCore.Mvc;
+using ChargerControlApp.Models;
+using System.Collections.Generic;
+using ChargerControlApp.DataAccess.Motor.Models;
+using ChargerControlApp.DataAccess.Motor.Services;
 
 namespace ChargerControlApp.Controllers
 {
@@ -79,12 +83,13 @@ namespace ChargerControlApp.Controllers
         {
             if (motorId < 0 || motorId >= _robotController.Motors.Length)
                 return BadRequest();
+            // ㄌ惠―ち传狝篈
+            // ㄒRobotController.ServerOn(motorId, !ヘ玡篈);
+            // 叫沮眤狝篈眔よΑ秸俱
+            bool newState = !_robotController.Motors[motorId].MotorInfo.IO_Input_Low.Bits.S_ON;
+            bool result = _robotController.ServerOn(motorId, newState);
 
-            var motor = _robotController.Motors[motorId];
-            bool current = motor.MotorInfo.IO_Input_Low.Bits.S_ON;
-            bool next = !current;
-            _robotController.ServerOn(motorId, next);
-            return Json(new { serverOn = next });
+            return Json(new { success = result });
         }
 
         [HttpPost]
@@ -153,11 +158,60 @@ namespace ChargerControlApp.Controllers
             return Json(new { success = true });
         }
 
+        // 眔 Jog&Home 把计
         [HttpGet]
-        public IActionResult MotorInfoPartial()
+        public IActionResult GetJogHomeParams(int motorId)
         {
-            var motors = _robotController.Motors.Select(m => m.MotorInfo).ToList();
-            return PartialView("_MotorInfoList", motors);
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+            var motorInfo = _robotController.Motors[motorId].MotorInfo;
+            var values = motorInfo.Jog_Home_Setting.ToArray();
+            return Json(values);
         }
+
+        // 虫把计糶
+        [HttpPost]
+        public IActionResult SetJogHomeParam([FromBody] JogHomeParamUpdateDto dto)
+        {
+            if (dto.MotorId < 0 || dto.MotorId >= _robotController.Motors.Length)
+                return BadRequest();
+            //var motorInfo = _robotController.Motors[dto.MotorId].MotorInfo;
+            //if (dto.Index < 0 || dto.Index >= motorInfo.Motor_Jog_Home_Setting.Count)
+              //  return BadRequest("Index out of range");
+            //motorInfo.Motor_Jog_Home_Setting[dto.Index].Value = dto.Value;
+            // 龟悔纗呸胯
+            return Ok();
+        }
+
+        // уΩ糶场把计
+        [HttpPost]
+        public IActionResult SaveJogHomeParams([FromBody] JogHomeParamBatchUpdateDto dto)
+        {
+            if (dto.MotorId < 0 || dto.MotorId >= _robotController.Motors.Length)
+                return BadRequest();
+            //var motorInfo = _robotController.Motors[dto.MotorId].MotorInfo;
+            //if (dto.Values.Count != motorInfo.Motor_Jog_Home_Setting.Count)
+            //    return BadRequest("把计计秖ぃ才");
+            //for (int i = 0; i < dto.Values.Count; i++)
+            //{
+            //    motorInfo.Motor_Jog_Home_Setting[i].Value = dto.Values[i];
+            //}
+            // 龟悔纗呸胯
+            return Ok();
+        }
+
+    }
+
+    // DTO for 虫把计穝
+    public class JogHomeParamUpdateDto
+    {
+        public int MotorId { get; set; }
+        public int Index { get; set; }
+        public string Value { get; set; }
+    }
+    public class JogHomeParamBatchUpdateDto
+    {
+        public int MotorId { get; set; }
+        public List<string> Values { get; set; }
     }
 }

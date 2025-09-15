@@ -84,20 +84,44 @@ namespace ChargerControlApp.Hardware
         {
             return Task.Run(() =>
             {
+                bool ExecutedOnce = false; // Flag to ensure initialization runs only once
+
                 while (!ct.IsCancellationRequested && IsRunning)
                 {
                     //Console.WriteLine("ModbusRTUService is running...");
                     // Your periodic work here
 
+                    if (_modbusService.IsRunning && !ExecutedOnce)
+                    {
+                        ExecutedOnce = true;
+                        InitializeOnce();
+                    }
+
                     if (_manualCommand.Count > 0)
                     {
                         var command = _manualCommand.Dequeue();
-                        var writeResult = Motors[command.Id].WriteFrame(command);
-                        bool write_finished = writeResult.Result;
 
-                        if (write_finished)
-                        { 
-                        
+
+                        if (command.Name == "ReadJogAndHomeSetting")
+                        {
+                            var readResult = Motors[command.Id].ReadFrame(command);
+                            if (readResult.Result != null)
+                            {
+                                if (readResult.Result.Length == 32)
+                                {
+                                    Motors[command.Id].MotorInfo.Jog_Home_Setting.Set(readResult.Result);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var writeResult = Motors[command.Id].WriteFrame(command);
+                            bool write_finished = writeResult.Result;
+
+                            if (write_finished)
+                            {
+
+                            }
                         }
                     }
 
@@ -119,6 +143,15 @@ namespace ChargerControlApp.Hardware
 
         #region Functions
 
+        // Initialize once - set jog mode to pitch for all motors
+        private void InitializeOnce()
+        {
+            for(int i=0;i< MOTOR_COUNT; i++)
+            {
+                this.SetJogMode(i, 2);
+                this.ReadJogAndHomeSetting(i);
+            }
+        }
         public void Open()
         {
             IsRunning = true;
@@ -137,7 +170,7 @@ namespace ChargerControlApp.Hardware
             if(motorId >= 0 && motorId < MOTOR_COUNT)
             {
                 Motors[motorId].MotorInfo.IO_Input_Low.Bits.S_ON = state;
-                var command = MotorCommandList.CommandMap["WriteInputLow"];
+                var command = MotorCommandList.CommandMap["WriteInputLow"].Clone();
                 command.Id = (byte)motorId;
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_Low.Data };
@@ -156,7 +189,7 @@ namespace ChargerControlApp.Hardware
             if (motorId >= 0 && motorId < MOTOR_COUNT)
             {
                 Motors[motorId].MotorInfo.IO_Input_Low.Bits.ALM_RST = state;
-                var command = MotorCommandList.CommandMap["WriteInputLow"];
+                var command = MotorCommandList.CommandMap["WriteInputLow"].Clone();
                 command.Id = (byte)motorId;
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_Low.Data };
@@ -174,7 +207,7 @@ namespace ChargerControlApp.Hardware
             if (motorId >= 0 && motorId < MOTOR_COUNT)
             {
                 Motors[motorId].MotorInfo.IO_Input_High.Bits.HOME = state;
-                var command = MotorCommandList.CommandMap["WriteInputHigh"];
+                var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
                 command.Id = (byte)motorId;
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
@@ -190,7 +223,7 @@ namespace ChargerControlApp.Hardware
             if (motorId >= 0 && motorId < MOTOR_COUNT)
             {
                 Motors[motorId].MotorInfo.IO_Input_Low.Bits.STOP = state;
-                var command = MotorCommandList.CommandMap["WriteInputLow"];
+                var command = MotorCommandList.CommandMap["WriteInputLow"].Clone();
                 command.Id = (byte)motorId;
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_Low.Data };
@@ -223,7 +256,7 @@ namespace ChargerControlApp.Hardware
             if (motorId >= 0 && motorId < MOTOR_COUNT)
             {
 
-                var command = MotorCommandList.CommandMap["WriteJogMode"];
+                var command = MotorCommandList.CommandMap["WriteJogMode"].Clone();
                 command.Id = (byte)motorId;
                 command.DataFrame.DataNumber = (ushort)_mode.Length;
                 command.DataFrame.Data = _mode ;
@@ -240,7 +273,7 @@ namespace ChargerControlApp.Hardware
             if (motorId >= 0 && motorId < MOTOR_COUNT)
             {
                 Motors[motorId].MotorInfo.IO_Input_High.Bits.FW_JOG_P = state;
-                var command = MotorCommandList.CommandMap["WriteInputHigh"];
+                var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
                 command.Id = (byte)motorId;
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
@@ -256,7 +289,7 @@ namespace ChargerControlApp.Hardware
             if (motorId >= 0 && motorId < MOTOR_COUNT)
             {
                 Motors[motorId].MotorInfo.IO_Input_High.Bits.RV_JOG_P = state;
-                var command = MotorCommandList.CommandMap["WriteInputHigh"];
+                var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
                 command.Id = (byte)motorId;
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
@@ -278,7 +311,7 @@ namespace ChargerControlApp.Hardware
             else
                 return false;
 
-            var command = MotorCommandList.CommandMap["WriteInputHigh"];
+            var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
             command.Id = (byte)motorId;
             command.DataFrame.DataNumber = 1;
             command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
@@ -307,7 +340,7 @@ namespace ChargerControlApp.Hardware
                 Motors[motorId].MotorInfo.IO_Input_High.Bits.M6 = boolArray[6];
                 Motors[motorId].MotorInfo.IO_Input_High.Bits.M7 = boolArray[7];
 
-                var command = MotorCommandList.CommandMap["WriteInputHigh"];
+                var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
                 command.Id = (byte)motorId;
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
@@ -325,10 +358,24 @@ namespace ChargerControlApp.Hardware
             if (motorId >= 0 && motorId < MOTOR_COUNT)
             {
                 Motors[motorId].MotorInfo.IO_Input_High.Bits.START = state;
-                var command = MotorCommandList.CommandMap["WriteInputHigh"];
+                var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
                 command.Id = (byte)motorId;
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+            return result;
+        }
+
+        public bool ReadJogAndHomeSetting(int motorId)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                var command = MotorCommandList.CommandMap["ReadJogAndHomeSetting"].Clone();
+                command.Id = (byte)motorId;
+                command.DataFrame.DataNumber = 32;
                 _manualCommand.Enqueue(command);
                 result = true;
             }

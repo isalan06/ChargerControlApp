@@ -112,12 +112,12 @@ namespace ChargerControlApp.DataAccess.Motor.Services
                             }
                             else if (_routeIndex == 1)
                             {
-                                MotorInfo.Pos_Target = (data.Result.Data[0] << 16) | data.Result.Data[1];
-                                MotorInfo.Pos_Command = (data.Result.Data[2] << 16) | data.Result.Data[3];
-                                MotorInfo.Pos_Actual = (data.Result.Data[4] << 16) | data.Result.Data[5];
-                                MotorInfo.Vel_Target = (data.Result.Data[6] << 16) | data.Result.Data[7];
-                                MotorInfo.Vel_Command = (data.Result.Data[8] << 16) | data.Result.Data[9];
-                                MotorInfo.Vel_Actual = (data.Result.Data[10] << 16) | data.Result.Data[11];
+                                MotorInfo.Pos_Target = CombineInt32(data.Result.Data[0], data.Result.Data[1]);
+                                MotorInfo.Pos_Command = CombineInt32(data.Result.Data[2], data.Result.Data[3]);
+                                MotorInfo.Pos_Actual = CombineInt32(data.Result.Data[4], data.Result.Data[5]);
+                                MotorInfo.Vel_Target = CombineInt32(data.Result.Data[6], data.Result.Data[7]);
+                                MotorInfo.Vel_Command = CombineInt32(data.Result.Data[8], data.Result.Data[9]);
+                                MotorInfo.Vel_Actual = CombineInt32(data.Result.Data[10], data.Result.Data[11]);
                                 MotorInfo.ErrorComm = (data.Result.Data[12] << 16) | data.Result.Data[13];
 
                             }
@@ -125,12 +125,12 @@ namespace ChargerControlApp.DataAccess.Motor.Services
                             {
                                 MotorInfo.OpData_IdSelect = (data.Result.Data[0] << 16) | data.Result.Data[1];
                                 MotorInfo.OpData_IdOp = (data.Result.Data[2] << 16) | data.Result.Data[3];
-                                MotorInfo.OpData_Pos_Command = (data.Result.Data[4] << 16) | data.Result.Data[5];
-                                MotorInfo.OpData_VelR_Command = (data.Result.Data[6] << 16) | data.Result.Data[7];
-                                MotorInfo.OpData_Vel_Command = (data.Result.Data[8] << 16) | data.Result.Data[9];
-                                MotorInfo.OpData_Pos_Actual = (data.Result.Data[10] << 16) | data.Result.Data[11];
-                                MotorInfo.OpData_VelR_Actual = (data.Result.Data[12] << 16) | data.Result.Data[13];
-                                MotorInfo.OpData_Vel_Actual = (data.Result.Data[14] << 16) | data.Result.Data[15];
+                                MotorInfo.OpData_Pos_Command = CombineInt32(data.Result.Data[4], data.Result.Data[5]);
+                                MotorInfo.OpData_VelR_Command = CombineInt32(data.Result.Data[6], data.Result.Data[7]);
+                                MotorInfo.OpData_Vel_Command = CombineInt32(data.Result.Data[8], data.Result.Data[9]);
+                                MotorInfo.OpData_Pos_Actual = CombineInt32(data.Result.Data[10], data.Result.Data[11]);
+                                MotorInfo.OpData_VelR_Actual = CombineInt32(data.Result.Data[12], data.Result.Data[13]);
+                                MotorInfo.OpData_Vel_Actual = CombineInt32(data.Result.Data[14], data.Result.Data[15]);
                             }
                             else if (_routeIndex == 3)
                             { 
@@ -178,9 +178,34 @@ namespace ChargerControlApp.DataAccess.Motor.Services
             return result;
         }
 
+        public async Task<ushort[]> ReadFrame(MotorFrame frame)
+        {
+            ushort[] result = Array.Empty<ushort>();
+            if (_modbusRTUService.IsRunning)
+            {
+                var data = _modbusRTUService.Act(frame.DataFrame);
+                if (data.Result != null)
+                {
+                    if (data.Result.HasResponse == true)
+                    {
+                        result = data.Result.Data;
+                    }
+                }
+            }
+            return result;
+        }
+
         #endregion
 
-        
+        private int CombineInt32(ushort high, ushort low)
+        {
+            uint value = ((uint)high << 16) | (uint)low;
+            // 判斷最高位元是否為 1（負數）
+            if ((value & 0x80000000) != 0)
+                return (int)(value - 0x100000000);
+            else
+                return (int)value;
+        }
 
         #region IDisposable Support and Destructor
 

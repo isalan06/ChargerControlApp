@@ -12,6 +12,7 @@ namespace ChargerControlApp.DataAccess.Motor.Models
         public Motor_IO_Input_Low IO_Input_Low;
         public Motor_IO_Output_High IO_Output_High;
         public Motor_IO_Output_Low IO_Output_Low;
+        public Motor_Jog_Home_Setting Jog_Home_Setting;
         public int ErrorCode { get; set; } = 0;
 
         #endregion
@@ -42,6 +43,8 @@ namespace ChargerControlApp.DataAccess.Motor.Models
         public int CurrentDataNo { get; set; } = 0;
 
         #endregion
+
+        
 
         #region Read Jog Setting
 
@@ -249,6 +252,130 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 public bool TLC => (Value & (1 << 15)) != 0;
             }
         }
+
+        #region Jog And Home Setting
+
+        public struct Motor_Jog_Home_Setting
+        {
+
+            public int JogDistance { get; set; } = 1; // unit: step
+            public int JogSpeed { get; set; } = 100; // unit: r/min
+            public int JogAccDec { get; set; } = 1000; // unit: ms
+            public int JogStartVel { get; set; } = 0; // unit: r/min
+            public int JogHighSpeed { get; set; } = 500; // unit: r/min
+            public int JogHomeOpCommandSTimeConst { get; set; } = 1; // unit: ms
+            public int JogHomeOpTorqueLmt { get; set; } = 10000; // unit: 0.1 %
+            public int HomeType { get; set; } = 1; // 0: 2檢知器; 1: 3檢知器; 2: 單一方向旋轉; 3: 推壓; 
+            public int HomeDir { get; set; } = 1; // 0: 反轉(-側); 1: 正轉(+側)
+            public int HomeAccDec { get; set; } = 1000; // unit: ms
+            public int HomeStartVel { get; set; } = 30; // unit: r/min
+            public int HomeSpeed { get; set; } = 60; // unit: r/min
+            public int HomeDetectVel { get; set; } = 30; // unit: r/min
+            public int HomeSLITDetect { get; set; } = 0; // 0: 無效; 1: 有效
+            public int HomeZSGDetect { get; set; } = 0; // 0: 無效; 2: ZSG
+            public int HomeOffset { get; set; } = 0; // unit: step
+
+
+            public Motor_Jog_Home_Setting() { }
+
+            public void Set(ushort[] setValue)
+            {
+                if (setValue == null || setValue.Length != 32)
+                    throw new ArgumentException("setValue 必須為 32 個 ushort 元素的陣列");
+
+                // 合併高低位元，正確處理負數
+                JogDistance = CombineUShortToInt(setValue[0], setValue[1]);
+                JogSpeed = CombineUShortToInt(setValue[2], setValue[3]);
+                JogAccDec = CombineUShortToInt(setValue[4], setValue[5]);
+                JogStartVel = CombineUShortToInt(setValue[6], setValue[7]);
+                JogHighSpeed = CombineUShortToInt(setValue[8], setValue[9]);
+                JogHomeOpCommandSTimeConst = CombineUShortToInt(setValue[10], setValue[11]);
+                JogHomeOpTorqueLmt = CombineUShortToInt(setValue[12], setValue[13]);
+                HomeType = CombineUShortToInt(setValue[14], setValue[15]);
+                HomeDir = CombineUShortToInt(setValue[16], setValue[17]);
+                HomeAccDec = CombineUShortToInt(setValue[18], setValue[19]);
+                HomeStartVel = CombineUShortToInt(setValue[20], setValue[21]);
+                HomeSpeed = CombineUShortToInt(setValue[22], setValue[23]);
+                HomeDetectVel = CombineUShortToInt(setValue[24], setValue[25]);
+                HomeSLITDetect = CombineUShortToInt(setValue[26], setValue[27]);
+                HomeZSGDetect = CombineUShortToInt(setValue[28], setValue[29]);
+                HomeOffset = CombineUShortToInt(setValue[30], setValue[31]);
+            }
+
+            // 工具方法：合併高低 ushort 為 int，支援負數
+            private static int CombineUShortToInt(ushort high, ushort low)
+            {
+                uint combined = ((uint)high << 16) | (uint)low;
+                return unchecked((int)combined);
+            }
+
+            public ushort[] Get()
+            {
+                ushort[] result = new ushort[32];
+
+                // 依序拆解每個 int 屬性為高低兩個 ushort
+                result[0]  = (ushort)((JogDistance >> 16) & 0xFFFF); // 高位
+                result[1]  = (ushort)(JogDistance & 0xFFFF);         // 低位
+                result[2]  = (ushort)((JogSpeed >> 16) & 0xFFFF);
+                result[3]  = (ushort)(JogSpeed & 0xFFFF);
+                result[4]  = (ushort)((JogAccDec >> 16) & 0xFFFF);
+                result[5]  = (ushort)(JogAccDec & 0xFFFF);
+                result[6]  = (ushort)((JogStartVel >> 16) & 0xFFFF);
+                result[7]  = (ushort)(JogStartVel & 0xFFFF);
+                result[8]  = (ushort)((JogHighSpeed >> 16) & 0xFFFF);
+                result[9]  = (ushort)(JogHighSpeed & 0xFFFF);
+                result[10] = (ushort)((JogHomeOpCommandSTimeConst >> 16) & 0xFFFF);
+                result[11] = (ushort)(JogHomeOpCommandSTimeConst & 0xFFFF);
+                result[12] = (ushort)((JogHomeOpTorqueLmt >> 16) & 0xFFFF);
+                result[13] = (ushort)(JogHomeOpTorqueLmt & 0xFFFF);
+                result[14] = (ushort)((HomeType >> 16) & 0xFFFF);
+                result[15] = (ushort)(HomeType & 0xFFFF);
+                result[16] = (ushort)((HomeDir >> 16) & 0xFFFF);
+                result[17] = (ushort)(HomeDir & 0xFFFF);
+                result[18] = (ushort)((HomeAccDec >> 16) & 0xFFFF);
+                result[19] = (ushort)(HomeAccDec & 0xFFFF);
+                result[20] = (ushort)((HomeStartVel >> 16) & 0xFFFF);
+                result[21] = (ushort)(HomeStartVel & 0xFFFF);
+                result[22] = (ushort)((HomeSpeed >> 16) & 0xFFFF);
+                result[23] = (ushort)(HomeSpeed & 0xFFFF);
+                result[24] = (ushort)((HomeDetectVel >> 16) & 0xFFFF);
+                result[25] = (ushort)(HomeDetectVel & 0xFFFF);
+                result[26] = (ushort)((HomeSLITDetect >> 16) & 0xFFFF);
+                result[27] = (ushort)(HomeSLITDetect & 0xFFFF);
+                result[28] = (ushort)((HomeZSGDetect >> 16) & 0xFFFF);
+                result[29] = (ushort)(HomeZSGDetect & 0xFFFF);
+                result[30] = (ushort)((HomeOffset >> 16) & 0xFFFF);
+                result[31] = (ushort)(HomeOffset & 0xFFFF);
+
+                return result;
+            }
+
+            public int[] ToArray()
+                            {
+                return new int[]
+                {
+                    JogDistance,
+                    JogSpeed,
+                    JogAccDec,
+                    JogStartVel,
+                    JogHighSpeed,
+                    JogHomeOpCommandSTimeConst,
+                    JogHomeOpTorqueLmt,
+                    HomeType,
+                    HomeDir,
+                    HomeAccDec,
+                    HomeStartVel,
+                    HomeSpeed,
+                    HomeDetectVel,
+                    HomeSLITDetect,
+                    HomeZSGDetect,
+                    HomeOffset
+                };
+            }
+
+        }
+
+        #endregion
 
 
         #endregion
