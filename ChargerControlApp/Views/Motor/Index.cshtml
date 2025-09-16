@@ -425,10 +425,12 @@
 
     setInterval(updateMotorsStatus, 2000);
     updateMotorsStatus();
+</script>
 
+<script>
     const jogHomeParamNames = [
-        "參數1", "參數2", "參數3", "參數4", "參數5", "參數6", "參數7", "參數8",
-        "參數9", "參數10", "參數11", "參數12", "參數13", "參數14", "參數15", "參數16"
+        "Jog移動量", "Jog運轉速度", "Jog加減速", "Jog起動速度", "Jog運轉速度高", "Jog Home平滑時間常數", "Jog Home轉矩限制值", "Home方式",
+        "Home開始方向", "Home加減速", "Home起動速度", "Home運轉速度", "Home原點檢測速度", "Home SLIT 檢測", "Home ZSG 檢測", "Home追加運轉移動量"
     ];
 
     let currentMotorId = 0;
@@ -483,8 +485,12 @@
             btn.onclick = function() {
                 const idx = btn.getAttribute('data-idx');
                 const input = document.querySelector(`.write-value[data-idx="${idx}"]`);
+                // 立即更新第3欄
+                document.querySelector(`.current-value[data-idx="${idx}"]`).textContent = input.value;
+                // 同步送出到後端
                 setJogHomeParam(currentMotorId, idx, input.value).then(() => {
-                    fetchJogHomeParams(currentMotorId).then(data => renderJogHomeTable(data));
+                    // 可選：如需與後端同步，重新取得資料
+                    // fetchJogHomeParams(currentMotorId).then(data => renderJogHomeTable(data));
                 });
             };
         });

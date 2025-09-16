@@ -3,6 +3,7 @@ using ChargerControlApp.DataAccess.Motor.Interfaces;
 using ChargerControlApp.DataAccess.Motor.Models;
 using ChargerControlApp.DataAccess.Motor.Services;
 using System.Collections;
+using System.Diagnostics.Eventing.Reader;
 using System.Runtime.Serialization.DataContracts;
 using System.Security.Cryptography.X509Certificates;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -19,6 +20,14 @@ namespace ChargerControlApp.Hardware
         public bool IsRunning { get; internal set; } = false;
 
         private Queue<MotorFrame> _manualCommand = new Queue<MotorFrame>();
+        private bool _procedureStop = false;
+        public bool IsProcedureRunnging { get; internal set; } = false;
+        public bool CanHome { get {
+                return Motors[0].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE &&
+                        Motors[1].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE &&
+                        Motors[2].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE;
+            } }
+        public int HomeProcedureCase { get; internal set; } = 0;
 
         #region Constructor
 
@@ -233,6 +242,25 @@ namespace ChargerControlApp.Hardware
             return result;
         }
 
+        public void AllStop()
+        {
+            this.Stop(0, true);
+            this.Stop(1, true);
+            this.Stop(2, true);
+
+            Task.Delay(50).Wait();
+
+            this.Stop(0, false);
+            this.Stop(1, false);
+            this.Stop(2, false);
+        }
+        public void SetAllServo(bool state)
+        {
+            this.ServerOn(0, state);
+            this.ServerOn(1, state);
+            this.ServerOn(2, state);
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -381,6 +409,143 @@ namespace ChargerControlApp.Hardware
             }
             return result;
         }
+
+        public bool WriteJogAndHomeSetting(int motorId)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                var command = MotorCommandList.CommandMap["WriteJogAndHomeSetting"].Clone();
+                command.Id = (byte)motorId;
+                command.DataFrame.DataNumber = 32;
+                command.DataFrame.Data = Motors[motorId].MotorInfo.Jog_Home_Setting.Get();
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+            return result;
+        }
+
+        #endregion
+
+        #region Procedure
+
+        // 三軸復歸程序
+        public async Task<bool> HomeProcedure()
+        {
+            bool result = false;
+            HomeProcedureCase = 0;
+            IsProcedureRunnging = true;
+            try
+            {
+                if (_modbusService.IsRunning)
+                {
+                    do
+                    {
+                        // 程序中止
+                        if (this._procedureStop)
+                        {
+                            this._procedureStop = false;
+                            break;
+                        }
+
+                        switch (HomeProcedureCase)
+                        {
+                            case 0: // 等待三軸 RDY-HOME-OPE
+                                if (CanHome)
+                                {
+                                    this.Home(1, true);
+                                    HomeProcedureCase = 10;
+                                }
+                                break;
+
+                            case 10: // Y軸復歸, 確認RDY-HOME-OPE訊號 -> OFF 且 MOVE訊號 -> ON
+                                if ((this.Motors[1].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
+                                    (this.Motors[1].MotorInfo.IO_Output_Low.Bits.MOVE == true))
+                                {
+                                    this.Home(1, false);
+                                    HomeProcedureCase = 11;
+                                }
+                                break;
+
+                            case 11: // 等待 RDY-HOME-OPE訊號 -> ON 且 MOVE訊號 -> OFF
+                                if ((this.Motors[1].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
+                                    (this.Motors[1].MotorInfo.IO_Output_Low.Bits.MOVE == false))
+                                {
+                                    HomeProcedureCase = 20; // Y軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
+                                }
+                                break;
+
+                            case 20: // 等待三軸 RDY-HOME-OPE
+                                if (CanHome)
+                                {
+                                    this.Home(2, true);
+                                    HomeProcedureCase = 21;
+                                }
+                                break;
+
+                            case 21: // Z軸復歸, 確認RDY-HOME-OPE訊號 -> OFF 且 MOVE訊號 -> ON
+                                if ((this.Motors[2].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
+                                    (this.Motors[2].MotorInfo.IO_Output_Low.Bits.MOVE == true))
+                                {
+                                    this.Home(2, false);
+                                    HomeProcedureCase = 22;
+                                }
+                                break;
+
+                            case 22: // 等待 RDY-HOME-OPE訊號 -> ON 且 MOVE訊號 -> OFF
+                                if ((this.Motors[2].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
+                                    (this.Motors[2].MotorInfo.IO_Output_Low.Bits.MOVE == false))
+                                {
+                                    HomeProcedureCase = 30; // Z軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
+                                }
+                                break;
+
+                            case 30: // 等待三軸 RDY-HOME-OPE
+                                if (CanHome)
+                                {
+                                    this.Home(0, true);
+                                    HomeProcedureCase = 31;
+                                }
+                                break;
+
+                            case 31: // 旋轉軸復歸, 確認RDY-HOME-OPE訊號 -> OFF 且 MOVE訊號 -> ON
+                                if ((this.Motors[0].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
+                                    (this.Motors[0].MotorInfo.IO_Output_Low.Bits.MOVE == true))
+                                {
+                                    this.Home(0, false);
+                                    HomeProcedureCase = 32;
+                                }
+                                break;
+
+                            case 32: // 等待 RDY-HOME-OPE訊號 -> ON 且 MOVE訊號 -> OFF
+                                if ((this.Motors[0].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
+                                    (this.Motors[0].MotorInfo.IO_Output_Low.Bits.MOVE == false))
+                                {
+                                    HomeProcedureCase = 100; // 旋轉軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
+                                }
+                                break;
+
+                            case 99: // Unknow Error
+                            default:
+                                this.AllStop();
+                                HomeProcedureCase = 100;
+                                break;
+                        }
+
+
+                        Thread.Sleep(100);
+                    } while (HomeProcedureCase > 99);
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"RobotController HomeProcedure Exception: {ex.Message}");
+            }
+            IsProcedureRunnging = false;
+            return result;
+        }
+
 
         #endregion
     }

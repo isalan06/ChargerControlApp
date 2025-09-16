@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ChargerControlApp.Services;
 using ChargerControlApp.DataAccess.Slot.Services;
+using System.Linq;
 
 namespace ChargerControlApp.Controllers
 {
@@ -15,7 +16,7 @@ namespace ChargerControlApp.Controllers
 
         public IActionResult Index(string tab = "server")
         {
-            var stationState = _slotServices.StationState.ToString() ?? "Unknown";
+            var stationState = _slotServices.StationState?.ToString() ?? "Unknown";
             var logMessages = SwappingStationService.LogMessages.Reverse().Take(100).ToList();
 
             ViewBag.StationState = stationState;

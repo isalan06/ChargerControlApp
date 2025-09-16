@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "gRPC 狀態";
+    var activeTab = ViewBag.ActiveTab as string ?? "server";
+    var stationState = ViewBag.StationState as string ?? "Unknown";
+    var logMessages = ViewBag.LogMessages as List<string> ?? new List<string>();
+}
+
+<h2>gRPC 狀態</h2>
+
+<ul class="nav nav-tabs">
+    <li class="nav-item">
+        <a class="nav-link @(activeTab == "server" ? "active" : "")" href="?tab=server">Server</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(activeTab == "client" ? "active" : "")" href="?tab=client">Client</a>
+    </li>
+</ul>
+
+<div class="tab-content mt-3">
+    @if (activeTab == "server")
+    {
+        <div>
+            <h4>gRPC Service 狀態</h4>
+            <p>目前站台狀態：<strong>@stationState</strong></p>
+            <h4>SwappingStationService Log</h4>
+            <ul style="max-height:300px;overflow:auto;">
+                @foreach (var log in logMessages)
+                {
+                    <li>@log</li>
+                }
+            </ul>
+        </div>
+    }
+    else if (activeTab == "client")
+    {
+        <div>
+            <h4>Client 功能（請自行擴充）</h4>
+            <p>這裡可顯示 client 相關資訊。</p>
+        </div>
+    }
+</div>

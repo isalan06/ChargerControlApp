@@ -3,10 +3,13 @@ using ChargerControlApp.DataAccess.CANBus.Linux;
 using ChargerControlApp.DataAccess.Modbus.Interfaces;
 using ChargerControlApp.DataAccess.Modbus.Models;
 using ChargerControlApp.DataAccess.Modbus.Services;
+using ChargerControlApp.DataAccess.Slot.Models;
+using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
 using ChargerControlApp.Services;
 using ChargerControlApp.Utilities;
 using Grpc.Net.Client;
+using Microsoft.Extensions.Logging;
 using RJCP.IO.Ports;
 using Smart.Modbus;
 using System.Collections;
@@ -43,6 +46,34 @@ public class Program
         //{
         //    return new SocketCANBusService();
         //});
+
+        // 註冊 SlotStateMachine
+        builder.Services.AddSingleton<SlotStateMachine[]>(sp => {
+            var arr = new SlotStateMachine[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+
+            for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
+            {
+                arr[i] = new SlotStateMachine(); 
+               
+            }
+
+            return arr;
+        });
+        builder.Services.AddSingleton<SlotInfo[]>(sp =>
+        {
+            var arr = new SlotInfo[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+            for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
+            {
+                arr[i] = new SlotInfo();
+                arr[i].Id = i + 1; // SlotId 從 1 開始
+                arr[i].Name = $"Slot {i + 1}";
+                if (i < HardwareManager.NPB450ControllerInstnaceNumber)
+                    arr[i].IsEnabled = true;
+            }
+            return arr;
+        });
+
+        builder.Services.AddSingleton<SlotServices>();
 
         // RobotController
         builder.Services.AddSingleton<RobotController>(sp =>

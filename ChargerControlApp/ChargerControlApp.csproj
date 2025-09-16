@@ -37,10 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DataAccess\GPIO\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
     <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
     <PackageReference Include="Grpc.Tools" Version="2.72.0">
@@ -52,6 +48,7 @@
     <PackageReference Include="RJCP.SerialPortStream" Version="3.0.3" />
     <PackageReference Include="Smart.Modbus" Version="1.0.1" />
     <PackageReference Include="SocketCANSharp" Version="0.13.0" />
+    <PackageReference Include="System.Device.Gpio" Version="4.0.1" />
     <PackageReference Include="System.IO.Ports" Version="9.0.8" />
   </ItemGroup>
 
@@ -68,6 +65,11 @@
     <Content Update="wwwroot\css\site.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DataAccess\Robot\Services\" />
+    <Folder Include="DataAccess\Robot\Templates\" />
   </ItemGroup>
 
 </Project>

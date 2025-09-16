@@ -189,14 +189,18 @@ namespace ChargerControlApp.Controllers
         {
             if (dto.MotorId < 0 || dto.MotorId >= _robotController.Motors.Length)
                 return BadRequest();
-            //var motorInfo = _robotController.Motors[dto.MotorId].MotorInfo;
-            //if (dto.Values.Count != motorInfo.Motor_Jog_Home_Setting.Count)
-            //    return BadRequest("把计计秖ぃ才");
-            //for (int i = 0; i < dto.Values.Count; i++)
-            //{
-            //    motorInfo.Motor_Jog_Home_Setting[i].Value = dto.Values[i];
-            //}
+            var motorInfo  = _robotController.Motors[dto.MotorId].MotorInfo;
+            if (dto.Values.Count != motorInfo.Jog_Home_Setting.ToArray().Length)
+                return BadRequest("把计计秖ぃ才");
+            int[] setValues = new int[dto.Values.Count];
+            for (int i = 0; i < dto.Values.Count; i++)
+            {
+                setValues[i] = int.TryParse(dto.Values[i], out int val) ? val : 0;
+            }
+
+            motorInfo.Jog_Home_Setting.FromArray(setValues);
             // 龟悔纗呸胯
+            _robotController.WriteJogAndHomeSetting(dto.MotorId);
             return Ok();
         }
 

@@ -1,4 +1,5 @@
-﻿using ChargerControlApp.DataAccess.Modbus.Models;
+﻿using ChargerControlApp.DataAccess.GPIO.Services;
+using ChargerControlApp.DataAccess.Modbus.Models;
 using ChargerControlApp.DataAccess.Modbus.Services;
 using ChargerControlApp.Hardware;
 using ChargerControlApp.Utilities;
@@ -58,10 +59,13 @@ namespace ChargerControlApp.Services
 
                     for (int i = 0; i < HardwareManager.NPB450ControllerInstnaceNumber; i++)
                     {
-                        _logger.LogInformation($"CanBusPollingService-DeviceID: {_hardwareManager.Charger[i].deviceCanID}-PollingOnce()");
+                        //_logger.LogInformation($"CanBusPollingService-DeviceID: {_hardwareManager.Charger[i].deviceCanID}-PollingOnce()");
                         _hardwareManager.Charger[i].IsUsed = true; 
                         await Task.Run(() => _hardwareManager.Charger[i].PollingOnce());
                     }
+
+                    // Read GPIO Inputs
+                    GPIOService.ReadInputsFromHardware();
 
                     //_hardwareManager.Charger.PollingOnce();
                     //_logger.LogDebug("輪詢成功，電壓: {Voltage}", _hardwareManager.Charger.GetCachedVoltage());

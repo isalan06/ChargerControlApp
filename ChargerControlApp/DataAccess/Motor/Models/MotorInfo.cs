@@ -373,6 +373,28 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 };
             }
 
+            public void FromArray(int[] values)
+            {
+                if (values == null || values.Length != 16)
+                    throw new ArgumentException("values 必須為 16 個 int 元素的陣列");
+                JogDistance = values[0];
+                JogSpeed = values[1];
+                JogAccDec = values[2];
+                JogStartVel = values[3];
+                JogHighSpeed = values[4];
+                JogHomeOpCommandSTimeConst = values[5];
+                JogHomeOpTorqueLmt = values[6];
+                HomeType = values[7];
+                HomeDir = values[8];
+                HomeAccDec = values[9];
+                HomeStartVel = values[10];
+                HomeSpeed = values[11];
+                HomeDetectVel = values[12];
+                HomeSLITDetect = values[13];
+                HomeZSGDetect = values[14];
+                HomeOffset = values[15];
+            }
+
         }
 
         #endregion
