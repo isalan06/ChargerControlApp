@@ -478,3 +478,10 @@ body {
     gap: 12px;
     margin-bottom: 8px;
 }
+
+.spd-btn-row {
+    display: flex;
+    gap: 24px;
+    justify-content: flex-start;
+    margin-top: 8px;
+}

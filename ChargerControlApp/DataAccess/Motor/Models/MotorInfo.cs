@@ -42,15 +42,16 @@ namespace ChargerControlApp.DataAccess.Motor.Models
 
         public int CurrentDataNo { get; set; } = 0;
 
-        #endregion
+        public MotorOpDataDto[] OpDataArray { get; set; } = new MotorOpDataDto[20];
 
-        
+        #endregion
 
         #region Read Jog Setting
 
         public int JogMode { get; set; } = 2;  // 0: Low Ppeed; 1; High Speed; 2: Pitch
 
         #endregion
+
 
 
         #region structure
@@ -393,6 +394,78 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 HomeSLITDetect = values[13];
                 HomeZSGDetect = values[14];
                 HomeOffset = values[15];
+            }
+
+        }
+
+        #endregion
+
+        #region Motor Data Info
+
+        public struct MotorOpDataDto
+        { 
+            public int OpType { get; set; } = 0; 
+            public int Position { get; set; } = 0; // unit: step
+            public int Velocity { get; set; } = 0; // unit: r/min
+
+            public MotorOpDataDto() { }
+
+            // 工具方法：合併高低 ushort 為 int，支援負數
+            private static int CombineUShortToInt(ushort high, ushort low)
+            {
+                uint combined = ((uint)high << 16) | (uint)low;
+                return unchecked((int)combined);
+            }
+
+            public void FromUShortArray(ushort[] setValue)
+            {
+                if (setValue == null || setValue.Length != 6)
+                    throw new ArgumentException("setValue 必須為 6 個 ushort 元素的陣列");
+                // 合併高低位元，正確處理負數
+                OpType = CombineUShortToInt(setValue[0], setValue[1]);
+                Position = CombineUShortToInt(setValue[2], setValue[3]);
+                Velocity = CombineUShortToInt(setValue[4], setValue[5]);
+            }
+
+            public void FromIntArray(int[] values)
+            {
+                if (values == null || values.Length != 3)
+                    throw new ArgumentException("values 必須為 3 個 int 元素的陣列");
+                OpType = values[0];
+                Position = values[1];
+                Velocity = values[2];
+            }
+
+            public ushort[] ToUShortArray()
+            {
+                ushort[] result = new ushort[6];
+                // 依序拆解每個 int 屬性為高低兩個 ushort
+                result[0] = (ushort)((OpType >> 16) & 0xFFFF); // 高位
+                result[1] = (ushort)(OpType & 0xFFFF);         // 低位
+                result[2] = (ushort)((Position >> 16) & 0xFFFF);
+                result[3] = (ushort)(Position & 0xFFFF);
+                result[4] = (ushort)((Velocity >> 16) & 0xFFFF);
+                result[5] = (ushort)(Velocity & 0xFFFF);
+                return result;
+            }
+
+            public ushort[] ToPositionUShortArray()
+            {
+                ushort[] result = new ushort[2];
+                // 依序拆解 Position 屬性為高低兩個 ushort
+                result[0] = (ushort)((Position >> 16) & 0xFFFF);
+                result[1] = (ushort)(Position & 0xFFFF);
+                return result;
+            }
+
+            public int[] ToIntArray()
+            {
+                return new int[]
+                {
+                    OpType,
+                    Position,
+                    Velocity
+                };
             }
 
         }

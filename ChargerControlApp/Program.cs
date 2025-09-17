@@ -7,6 +7,7 @@ using ChargerControlApp.DataAccess.Slot.Models;
 using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
 using ChargerControlApp.Services;
+using ChargerControlApp.Test.Robot;
 using ChargerControlApp.Utilities;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
@@ -92,7 +93,7 @@ public class Program
             return arr;
         });
 
-        
+        builder.Services.AddSingleton<RobotTestProcedure>();
 
         // 註冊 Grpc 相關服務
         ConfigLoader.Load();

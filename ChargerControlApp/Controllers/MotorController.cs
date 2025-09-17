@@ -4,6 +4,7 @@ using ChargerControlApp.Models;
 using System.Collections.Generic;
 using ChargerControlApp.DataAccess.Motor.Models;
 using ChargerControlApp.DataAccess.Motor.Services;
+using ChargerControlApp.Test.Robot;
 
 namespace ChargerControlApp.Controllers
 {
@@ -11,11 +12,13 @@ namespace ChargerControlApp.Controllers
     {
         private readonly ILogger<MotorController> _logger;
         private readonly RobotController _robotController;
+        private readonly RobotTestProcedure _robotTestProcedure;
 
-        public MotorController(ILogger<MotorController> logger, RobotController robotController)
+        public MotorController(ILogger<MotorController> logger, RobotController robotController, RobotTestProcedure robotTestProcedure)
         {
             _logger = logger;
             _robotController = robotController;
+            _robotTestProcedure = robotTestProcedure;
         }
         public IActionResult Index()
         {
@@ -204,6 +207,135 @@ namespace ChargerControlApp.Controllers
             return Ok();
         }
 
+        
+        [HttpPost]
+        public IActionResult SetSpd(int motorId, string dir, bool state)
+        {
+            // 依照 dir（"FW" 或 "RV"）與 state（true/false）呼叫服務
+            var result = _robotController.SetJogSpd(motorId, dir, state);
+            return Json(new { success = result });
+        }
+
+        [HttpGet]
+        public IActionResult GetPosVelData(int motorId = 0)
+        {
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+
+            // 先從 Modbus 讀取最新資料
+            _robotController.ReadOpData(motorId);
+
+            // 建議加一點延遲，確保資料已經回來（依你的架構可調整，或用 await/Task）
+            System.Threading.Thread.Sleep(100); // 100ms，依實際情況可調整
+
+            var opDataArray = _robotController.Motors[motorId].MotorInfo.OpDataArray;
+            var result = new List<object>();
+            for (int i = 0; i < 20; i++)
+            {
+                var op = (opDataArray != null && i < opDataArray.Length)
+                    ? opDataArray[i]
+                    : new MotorInfo.MotorOpDataDto();
+                result.Add(new
+                {
+                    opType = op.OpType,
+                    position = op.Position,
+                    velocity = op.Velocity
+                });
+            }
+            return Json(result);
+        }
+
+        [HttpPost]
+        public IActionResult SetPosVelData([FromBody] PosVelUpdateDto dto)
+        {
+            // dto.index, dto.type ('position' or 'velocity'), dto.value
+            // 請根據你的資料結構寫入對應 MotorInfo.OpDataArray
+            // ...
+            if(dto.MotorId < 0 || dto.MotorId >= _robotController.Motors.Length)
+                return BadRequest();
+            if (dto.Index < 0 || dto.Index >= _robotController.Motors[dto.MotorId].MotorInfo.OpDataArray.Length)
+            {
+                if (dto.Type == "position")
+                    _robotController.Motors[dto.MotorId].MotorInfo.OpDataArray[dto.Index].Position = int.TryParse(dto.Value, out int pos) ? pos : 0;
+                else if (dto.Type == "velocity")
+                    _robotController.Motors[dto.MotorId].MotorInfo.OpDataArray[dto.Index].Velocity = int.TryParse(dto.Value, out int vel) ? vel : 0;
+            }
+            return Ok();
+        }
+
+        [HttpPost]
+        public IActionResult SavePosVelData([FromBody] SavePosVelDto dto)
+        {
+            if (dto.MotorId < 0 || dto.MotorId >= _robotController.Motors.Length)
+                return BadRequest();
+
+            var opDataArray = _robotController.Motors[dto.MotorId].MotorInfo.OpDataArray;
+            foreach (var item in dto.OpDataList)
+            {
+                if (item.Index >= 0 && item.Index < opDataArray.Length)
+                {
+                    if (int.TryParse(item.Position, out int pos))
+                        opDataArray[item.Index].Position = pos;
+                    if (int.TryParse(item.Velocity, out int vel))
+                        opDataArray[item.Index].Velocity = vel;
+                }
+            }
+            // 呼叫 WriteOpData
+            _robotController.WriteOpData(dto.MotorId);
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult SetPosition([FromBody] SetPositionRequest req)
+        {
+            // 取得 RobotController 實例，依你的注入方式調整
+  
+            var result = _robotController.WriteOpData_Position(req.MotorId, req.PosIndex, req.Position);
+            return Json(new { success = result });
+        }
+
+        [HttpPost]
+        public IActionResult SetAllServoOn()
+        {
+            _robotController.SetAllServo(true);
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult SetAllServoOff()
+        {
+            _robotController.SetAllServo(false);
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult AllStop()
+        {
+            _robotController.AllStop();
+            return Json(new { success = true });
+        }
+
+        [HttpGet]
+        public IActionResult GetTestProcedureStatus()
+        {
+            return Json(new { isRunning = _robotTestProcedure.IsRunning });
+        }
+
+        [HttpPost]
+        public IActionResult StartTestProcedure1()
+        {
+            _robotTestProcedure.TryStartTestProcedure1Background();
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult StopTestProcedure()
+        {
+            _robotTestProcedure.StopProcedure();
+            return Json(new { success = true });
+        }
+
     }
 
     // DTO for 單一參數更新
@@ -218,4 +350,32 @@ namespace ChargerControlApp.Controllers
         public int MotorId { get; set; }
         public List<string> Values { get; set; }
     }
+
+    public class PosVelUpdateDto
+    {
+        public int MotorId { get; set; }
+        public int Index { get; set; }
+        public string Type { get; set; }
+        public string Value { get; set; }
+    }
+
+    public class SavePosVelDto
+    {
+        public int MotorId { get; set; }
+        public List<OpDataInput> OpDataList { get; set; }
+        public class OpDataInput
+        {
+            public int Index { get; set; }
+            public string Position { get; set; }
+            public string Velocity { get; set; }
+        }
+    }
+
+    public class SetPositionRequest
+    {
+        public int MotorId { get; set; }
+        public int PosIndex { get; set; }
+        public int Position { get; set; }
+    }
 }
+

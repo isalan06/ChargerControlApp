@@ -168,5 +168,10 @@ namespace ChargerControlApp.DataAccess.Modbus.Models
         {
             Set(frame.SlaveAddress, frame.FunctionCode, frame.StartAddress, frame.DataNumber, frame.Data, frame.HasResponse, frame.HasException);
         }
+
+        public ModbusRTUFrame Clone()
+        {
+            return new ModbusRTUFrame(this);
+        }
     }
 }

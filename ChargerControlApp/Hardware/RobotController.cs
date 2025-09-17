@@ -2,6 +2,8 @@
 using ChargerControlApp.DataAccess.Motor.Interfaces;
 using ChargerControlApp.DataAccess.Motor.Models;
 using ChargerControlApp.DataAccess.Motor.Services;
+using ChargerControlApp.DataAccess.Robot.Models;
+using Google.Protobuf.WellKnownTypes;
 using System.Collections;
 using System.Diagnostics.Eventing.Reader;
 using System.Runtime.Serialization.DataContracts;
@@ -122,6 +124,35 @@ namespace ChargerControlApp.Hardware
                                 }
                             }
                         }
+                        else if (command.Name == "ReadOpData")
+                        {
+                            if (command.SubFrames != null)
+                            {
+                                for (int i = 0; i < command.SubFrames.Count; i++)
+                                {
+                                    var readResult = Motors[command.Id].ReadFrame(command.SubFrames[i]);
+
+                                    if (readResult.Result != null)
+                                    {
+                                        Motors[command.Id].MotorInfo.OpDataArray[i].FromUShortArray(readResult.Result);
+                                    }
+                                }
+                            }
+                        }
+                        else if (command.Name == "WriteOpData")
+                        {
+                            if (command.SubFrames != null)
+                            {
+                                for (int i = 0; i < command.SubFrames.Count; i++)
+                                {
+                                    var writeResult = Motors[command.Id].WriteFrame(command.SubFrames[i]);
+                                    bool write_finished = writeResult.Result;
+                                    if (write_finished)
+                                    {
+                                    }
+                                }
+                            }
+                        }
                         else
                         {
                             var writeResult = Motors[command.Id].WriteFrame(command);
@@ -159,6 +190,7 @@ namespace ChargerControlApp.Hardware
             {
                 this.SetJogMode(i, 2);
                 this.ReadJogAndHomeSetting(i);
+                this.ReadOpData(i);
             }
         }
         public void Open()
@@ -347,6 +379,26 @@ namespace ChargerControlApp.Hardware
             return true;
         }
 
+        public bool SetJogSpd(int motorId, string dir, bool state)
+        {
+            if (motorId < 0 || motorId >= MOTOR_COUNT)
+                return false;
+
+            if (dir == "FW")
+                Motors[motorId].MotorInfo.IO_Input_High.Bits.FW_SPD = state;
+            else if (dir == "RV")
+                Motors[motorId].MotorInfo.IO_Input_High.Bits.RV_SPD = state;
+            else
+                return false;
+
+            var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
+            command.Id = (byte)motorId;
+            command.DataFrame.DataNumber = 1;
+            command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
+            _manualCommand.Enqueue(command);
+            return true;
+        }
+
         public bool SetDataNo_M(int motorId, int dataNo)
         {
             bool result = false;
@@ -424,6 +476,68 @@ namespace ChargerControlApp.Hardware
             }
             return result;
         }
+
+        public bool ReadOpData(int motorId)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                var command = MotorCommandList.CommandMap["ReadOpData"].Clone();
+                command.Id = (byte)motorId;
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+            return result;
+        }
+
+        public bool WriteOpData(int motorId)
+        {
+            bool result = false;
+
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                var command = MotorCommandList.CommandMap["WriteOpData"].Clone();
+                command.Id = (byte)motorId;
+                if(command.SubFrames != null)
+                {
+                    for(int i=0; i< command.SubFrames.Count; i++)
+                    {
+                        command.SubFrames[i].DataFrame.DataNumber = 6;
+                        command.SubFrames[i].DataFrame.Data = Motors[motorId].MotorInfo.OpDataArray[i].ToUShortArray();
+                    }
+                    _manualCommand.Enqueue(command);
+                    result = true;
+                }
+            }
+
+            return result;
+        }
+
+        public bool WriteOpData_Position(int motorId, int posIndex, int position) 
+        {
+            bool result = false;
+
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                if (posIndex >= 0 && posIndex < Motors[motorId].MotorInfo.OpDataArray.Length)
+                {
+                    Motors[motorId].MotorInfo.OpDataArray[posIndex].Position = position;
+                    var command = MotorCommandList.CommandMap["WriteOpData_Position"].Clone();
+                    command.Id = (byte)motorId;
+                    if (command.SubFrames != null)
+                    {
+                        command.DataFrame = command.SubFrames[posIndex].DataFrame.Clone();
+                        command.DataFrame.DataNumber = 2;
+                        command.DataFrame.Data = Motors[motorId].MotorInfo.OpDataArray[posIndex].ToPositionUShortArray();
+                        _manualCommand.Enqueue(command);
+                        result = true;
+                    }
+                }
+            }
+
+            return result;
+        }
+        
 
         #endregion
 
@@ -546,7 +660,37 @@ namespace ChargerControlApp.Hardware
             return result;
         }
 
+        public async Task MoveToPositionAsync(int axisId, int posDataNo, CancellationToken cancellationToken)
+        {
+            while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Task.Delay(100, cancellationToken);
+            }
 
+            var result = this.SetDataNo_M(axisId, posDataNo);
+            result = this.SetStart(axisId, true);
+
+            while (Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Task.Delay(100, cancellationToken);
+            }
+
+            result = this.SetStart(axisId, false);
+
+            while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Task.Delay(100, cancellationToken);
+            }
+
+            while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.IN_POS)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Task.Delay(100, cancellationToken);
+            }
+        }
         #endregion
     }
 

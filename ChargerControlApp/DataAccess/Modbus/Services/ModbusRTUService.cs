@@ -185,6 +185,8 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
             if (_serialPort.IsOpen)
             {
                 // 清空所有狀態
+                _serialPort.DiscardInBuffer();
+                _serialPort.DiscardOutBuffer();
                 _buffer.Clear();
                 _readResult = false;
                 _readData = null;

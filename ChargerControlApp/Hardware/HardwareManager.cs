@@ -16,7 +16,7 @@ namespace ChargerControlApp.Hardware
 {
     public class HardwareManager
     {
-        public const int NPB450ControllerInstnaceNumber = 1; // NP-B450 控制器實例數量
+        public const int NPB450ControllerInstnaceNumber = 4; // NP-B450 控制器實例數量
         public static IServiceProvider? Services { get; private set; }
         public NPB450Controller[] Charger { get; private set; }
         private SocketCANBusService canBusService { get; set; }

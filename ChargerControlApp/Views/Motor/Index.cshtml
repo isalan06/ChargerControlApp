@@ -13,8 +13,44 @@
         <div class="motors-actions-flex" id="motorsActions"></div>
     </div>
     <div id="semiAutoTab" class="motor-tab-content" style="display:none;">
-        <div class="semi-auto-content">
-            <p>半自動功能區塊（請依需求填入）</p>
+        <div class="semi-auto-content d-flex" style="gap:24px; align-items:flex-start;">
+            <!-- 左側基本操作區 -->
+            <div class="col-3" style="min-width:220px;">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        基本操作區
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <button type="button" id="servoOnBtn" class="btn btn-success w-100 mb-2">伺服啟動</button>
+                        </form>
+                        <form>
+                            <button type="button" id="servoOffBtn" class="btn btn-warning w-100 mb-2">伺服關閉</button>
+                        </form>
+                        <form>
+                            <button type="button" id="allStopBtn" class="btn btn-danger w-100">動作停止</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- 右側狀態方框 -->
+            <div style="min-width:220px;">
+                <div class="card mb-3">
+                    <div class="card-header">測試程序狀態</div>
+                    <div class="card-body">
+                        <div>
+                            <span>執行中：</span>
+                            <span id="testProcedureStatus" style="font-weight:bold; color:#007bff;">-</span>
+                        </div>
+                        <button type="button" id="stopTestProcedureBtn" class="btn btn-danger mt-3 w-100">Stop Procedure</button>
+                        <button type="button" id="startTestProcedureBtn" class="btn btn-primary mt-3 w-100">Test Procedure 1</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 右側可放其他內容 -->
+            <div style="flex:1;">
+                @* 其他 semiAutoTab 內容 *@
+            </div>
         </div>
     </div>
     <div id="settingsTab" class="motor-tab-content" style="display:none;">
@@ -52,8 +88,32 @@
             </div>
             <div id="posVelTab" class="settings-subtab-content" style="display:none;">
                 <h3>位置&速度 設定</h3>
-                <p>這裡可以放位置與速度相關設定內容。</p>
-                <!-- 依需求加入表單或控制項 -->
+                <div style="margin-bottom:12px; display:flex; align-items:center; gap:16px;">
+                    <div id="posVelMotorRadioGroup">
+                        <label><input type="radio" name="posVelMotorRadio" value="0" checked>馬達1</label>
+                        <label><input type="radio" name="posVelMotorRadio" value="1">馬達2</label>
+                        <label><input type="radio" name="posVelMotorRadio" value="2">馬達3</label>
+                    </div>
+                    <button id="posVelRefreshBtn" type="button">Refresh</button>
+                    <button id="posVelSaveBtn" type="button">Save</button>
+                </div>
+                <table id="posVelTable" class="table table-bordered" style="width:100%;text-align:center;">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>運轉方式</th>
+                            <th>位置</th>
+                            <th>位置輸入</th>
+                            <th>位置設定</th>
+                            <th>速度</th>
+                            <th>速度輸入</th>
+                            <th>速度設定</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 由 JS 動態產生 -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -250,7 +310,29 @@
                         onmouseup="setStart(${m.id}, false)"
                         onmouseleave="setStart(${m.id}, false)"
                         style="margin-left:12px;">
-                        START
+                        MOVE
+                    </button>
+                </div>
+                <div class="spd-btn-row" style="margin-top:8px; display:flex; gap:12px;">
+                    <button type="button"
+                        class="jog-btn"
+                        onmousedown="setSpd(${m.id}, 'FW', true)"
+                        onmouseup="setSpd(${m.id}, 'FW', false)"
+                        onmouseleave="setSpd(${m.id}, 'FW', false)">
+                        FW-SPD
+                    </button>
+                    <button type="button"
+                        class="jog-btn"
+                        onmousedown="setSpd(${m.id}, 'RV', true)"
+                        onmouseup="setSpd(${m.id}, 'RV', false)"
+                        onmouseleave="setSpd(${m.id}, 'RV', false)">
+                        RV-SPD
+                    </button>
+                        <button type="button"
+                        class="set-pos-btn"
+                        data-motor-id="${m.id}"
+                        style="margin-left:8px;">
+                        SET
                     </button>
                 </div>
             </div>
@@ -346,29 +428,91 @@
         };
     });
 
-        // JOG 按鈕事件綁定
-        document.querySelectorAll('.jog-btn').forEach(btn => {
-            btn.onmousedown = function() {
-                const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
-                const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
-                fetch(`/Motor/SetJog?motorId=${motorId}&dir=${dir}&state=true`, { method: 'POST' })
-                    .then(response => response.json());
-            };
-            btn.onmouseup = function() {
-                const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
-                const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
-                fetch(`/Motor/SetJog?motorId=${motorId}&dir=${dir}&state=false`, { method: 'POST' })
-                    .then(response => response.json());
-            };
-            btn.onmouseleave = function() {
-                const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
-                const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
-                fetch(`/Motor/SetJog?motorId=${motorId}&dir=${dir}&state=false`, { method: 'POST' })
-                    .then(response => response.json());
-            };
-        });
+    // JOG 按鈕事件綁定
+    document.querySelectorAll('.jog-btn-row .jog-btn').forEach(btn => {
+        btn.onmousedown = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
+            fetch(`/Motor/SetJog?motorId=${motorId}&dir=${dir}&state=true`, { method: 'POST' })
+                .then(response => response.json());
+        };
+        btn.onmouseup = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
+            fetch(`/Motor/SetJog?motorId=${motorId}&dir=${dir}&state=false`, { method: 'POST' })
+                .then(response => response.json());
+        };
+        btn.onmouseleave = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
+            fetch(`/Motor/SetJog?motorId=${motorId}&dir=${dir}&state=false`, { method: 'POST' })
+                .then(response => response.json());
+        };
+    });
 
-            document.querySelectorAll('.start-btn').forEach(btn => {
+    // SPD 按鈕事件綁定
+    document.querySelectorAll('.spd-btn-row .jog-btn').forEach(btn => {
+        btn.onmousedown = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
+            fetch(`/Motor/SetSpd?motorId=${motorId}&dir=${dir}&state=true`, { method: 'POST' })
+                .then(response => response.json());
+        };
+        btn.onmouseup = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
+            fetch(`/Motor/SetSpd?motorId=${motorId}&dir=${dir}&state=false`, { method: 'POST' })
+                .then(response => response.json());
+        };
+        btn.onmouseleave = function() {
+            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
+            fetch(`/Motor/SetSpd?motorId=${motorId}&dir=${dir}&state=false`, { method: 'POST' })
+                .then(response => response.json());
+        };
+    });
+
+        // 新增 SET 按鈕事件
+        document.querySelectorAll('.set-pos-btn').forEach(btn => {
+            btn.onclick = function() {
+                const card = btn.closest('.motor-action-card');
+                const motorId = parseInt(btn.getAttribute('data-motor-id'), 10);
+                const posIndex = parseInt(card.querySelector('.data-select-combo').value, 10);
+                // 取得目前位置，這裡假設 m.posActual 會在 data 裡帶回來
+                // 若要即時抓取，建議同步更新 motorsStatus 資料
+                const statusCard = document.querySelectorAll('.motor-status-card')[motorId];
+                let currentPosition = 0;
+                if (statusCard) {
+                    // 從狀態卡片抓取位置
+                    const posDiv = statusCard.querySelector('.pos-vel-row div');
+                    if (posDiv) {
+                        currentPosition = parseInt(posDiv.textContent.replace(/\D/g, ''), 10);
+                    }
+                } else {
+                    // 從 data 傳入
+                    currentPosition = data[motorId].posActual;
+                }
+
+                fetch('/Motor/SetPosition', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        motorId: motorId,
+                        posIndex: posIndex,
+                        position: currentPosition
+                    })
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('位置已寫入');
+                    } else {
+                        alert('寫入失敗');
+                    }
+                });
+                }});
+
+     document.querySelectorAll('.start-btn').forEach(btn => {
         btn.onmousedown = function() {
             const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
             fetch(`/Motor/SetStart?motorId=${motorId}&state=true`, { method: 'POST' })
@@ -404,8 +548,10 @@
             .then(data => {
                 // 可依需求顯示狀態或提示
             });
-    };
-});
+        };
+    });
+
+        
 
     }
 
@@ -422,6 +568,8 @@
         .then(data => {
             renderMotorsActions(data);
         });
+
+    
 
     setInterval(updateMotorsStatus, 2000);
     updateMotorsStatus();
@@ -524,3 +672,150 @@
     fetchJogHomeParams(currentMotorId).then(data => renderJogHomeTable(data));
 </script>
 
+<script>
+    let posVelCurrentMotorId = 0;
+
+    function fetchPosVelData(motorId) {
+        return fetch(`/Motor/GetPosVelData?motorId=${motorId}`)
+            .then(res => res.json());
+    }
+
+    function renderPosVelTable(data) {
+        const tbody = document.querySelector('#posVelTable tbody');
+        tbody.innerHTML = '';
+        for (let i = 0; i < 20; i++) {
+            const opData = data && data[i] ? data[i] : { opType: '', position: '', velocity: '' };
+            tbody.innerHTML += `
+                <tr>
+                    <td>${i}</td>
+                    <td>${opData.opType ?? ''}</td>
+                    <td class="pos-value">${opData.position ?? ''}</td>
+                    <td>
+                        <input type="text" class="form-control pos-input" value="${opData.position ?? ''}" data-index="${i}" />
+                    </td>
+                    <td>
+                        <button type="button" class="set-pos-btn" data-index="${i}">設定</button>
+                    </td>
+                    <td class="vel-value">${opData.velocity ?? ''}</td>
+                    <td>
+                        <input type="text" class="form-control vel-input" value="${opData.velocity ?? ''}" data-index="${i}" />
+                    </td>
+                    <td>
+                        <button type="button" class="set-vel-btn" data-index="${i}">設定</button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // 綁定位置設定按鈕
+        tbody.querySelectorAll('.set-pos-btn').forEach(btn => {
+            btn.onclick = function() {
+                const idx = btn.getAttribute('data-index');
+                const input = tbody.querySelector(`.pos-input[data-index="${idx}"]`);
+                const value = input.value;
+                tbody.querySelectorAll('tr')[idx].querySelector('.pos-value').textContent = value;
+                savePosVelData(posVelCurrentMotorId, idx, 'position', value);
+            };
+        });
+
+        // 綁定速度設定按鈕
+        tbody.querySelectorAll('.set-vel-btn').forEach(btn => {
+            btn.onclick = function() {
+                const idx = btn.getAttribute('data-index');
+                const input = tbody.querySelector(`.vel-input[data-index="${idx}"]`);
+                const value = input.value;
+                tbody.querySelectorAll('tr')[idx].querySelector('.vel-value').textContent = value;
+                savePosVelData(posVelCurrentMotorId, idx, 'velocity', value);
+            };
+        });
+    }
+
+    function savePosVelData(motorId, index, type, value) {
+        fetch('/Motor/SetPosVelData', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motorId, index, type, value })
+        });
+    }
+
+    // Radio Button 事件
+    document.querySelectorAll('input[name="posVelMotorRadio"]').forEach(radio => {
+        radio.onchange = function() {
+            posVelCurrentMotorId = parseInt(this.value);
+            fetchPosVelData(posVelCurrentMotorId).then(data => renderPosVelTable(data));
+        };
+    });
+
+    // Refresh 按鈕事件
+    document.getElementById('posVelRefreshBtn').onclick = function() {
+        fetchPosVelData(posVelCurrentMotorId).then(data => renderPosVelTable(data));
+    };
+
+	// Save 按鈕事件（儲存所有數據的值）
+    document.getElementById('posVelSaveBtn').onclick = function() {
+    const rows = document.querySelectorAll('#posVelTable tbody tr');
+    const opDataList = [];
+    rows.forEach((tr, i) => {
+        const posInput = tr.querySelector('input.pos-input');
+        const velInput = tr.querySelector('input.vel-input');
+        opDataList.push({
+            index: i,
+            position: posInput ? posInput.value : '',
+            velocity: velInput ? velInput.value : ''
+        });
+    });
+    fetch('/Motor/SavePosVelData', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            motorId: posVelCurrentMotorId,
+            opDataList: opDataList
+        })
+    }).then(res => res.json())
+        .then(data => {
+            // 可選：顯示提示訊息
+            if(data.success) alert('儲存成功');
+        });
+    };
+
+    // 頁面載入時自動載入
+    fetchPosVelData(posVelCurrentMotorId).then(data => renderPosVelTable(data));
+</script>
+
+<script>
+
+    document.getElementById('servoOnBtn').onclick = function() {
+        fetch('/Motor/SetAllServoOn', { method: 'POST' });
+    };
+    document.getElementById('servoOffBtn').onclick = function() {
+        fetch('/Motor/SetAllServoOff', { method: 'POST' });
+    };
+    document.getElementById('allStopBtn').onclick = function() {
+        fetch('/Motor/AllStop', { method: 'POST' });
+    };
+
+    function updateTestProcedureStatus() {
+        fetch('/Motor/GetTestProcedureStatus')
+            .then(res => res.json())
+            .then(data => {
+                const el = document.getElementById('testProcedureStatus');
+                if (el) {
+                    el.textContent = data.isRunning ? '是' : '否';
+                    el.style.color = data.isRunning ? '#28a745' : '#dc3545';
+                }
+            });
+    }
+
+
+    document.getElementById('startTestProcedureBtn').onclick = function() {
+        fetch('/Motor/StartTestProcedure1', { method: 'POST' });
+    };
+
+    document.getElementById('stopTestProcedureBtn').onclick = function() {
+        fetch('/Motor/StopTestProcedure', { method: 'POST' });
+    };
+
+    setInterval(updateTestProcedureStatus, 1000);
+    updateTestProcedureStatus();
+
+</script>

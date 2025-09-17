@@ -68,7 +68,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DataAccess\Robot\Services\" />
     <Folder Include="DataAccess\Robot\Templates\" />
   </ItemGroup>
 
