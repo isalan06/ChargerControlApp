@@ -475,45 +475,51 @@
         };
     });
 
-        // 新增 SET 按鈕事件
-        document.querySelectorAll('.set-pos-btn').forEach(btn => {
-            btn.onclick = function() {
-                const card = btn.closest('.motor-action-card');
-                const motorId = parseInt(btn.getAttribute('data-motor-id'), 10);
-                const posIndex = parseInt(card.querySelector('.data-select-combo').value, 10);
-                // 取得目前位置，這裡假設 m.posActual 會在 data 裡帶回來
-                // 若要即時抓取，建議同步更新 motorsStatus 資料
+    // 新增 SET 按鈕事件
+    document.querySelectorAll('.set-pos-btn').forEach(btn => {
+        btn.onclick = function() {
+            const card = btn.closest('.motor-action-card');
+            const motorId = parseInt(btn.getAttribute('data-motor-id'), 10);
+            const posIndex = parseInt(card.querySelector('.data-select-combo').value, 10);
+
+            // 建議直接從 data 取得
+            let currentPosition = 0;
+            if (typeof data !== 'undefined' && data[motorId]) {
+                currentPosition = data[motorId].posActual;
+            } else {
+                // 從畫面抓（備用）
                 const statusCard = document.querySelectorAll('.motor-status-card')[motorId];
-                let currentPosition = 0;
                 if (statusCard) {
-                    // 從狀態卡片抓取位置
                     const posDiv = statusCard.querySelector('.pos-vel-row div');
                     if (posDiv) {
-                        currentPosition = parseInt(posDiv.textContent.replace(/\D/g, ''), 10);
+                        // 這裡用正則抓第一個帶負號的整數
+                        const match = posDiv.textContent.match(/-?\d+/);
+                        if (match) {
+                            currentPosition = Number(match[0]);
+                        }
                     }
-                } else {
-                    // 從 data 傳入
-                    currentPosition = data[motorId].posActual;
                 }
+            }
 
-                fetch('/Motor/SetPosition', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        motorId: motorId,
-                        posIndex: posIndex,
-                        position: currentPosition
-                    })
+            fetch('/Motor/SetPosition', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    motorId: motorId,
+                    posIndex: posIndex,
+                    position: currentPosition
                 })
-                .then(res => res.json())
-                .then(result => {
-                    if (result.success) {
-                        alert('位置已寫入');
-                    } else {
-                        alert('寫入失敗');
-                    }
-                });
-                }});
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    alert('位置已寫入');
+                } else {
+                    alert('寫入失敗');
+                }
+            });
+        }
+    });
 
      document.querySelectorAll('.start-btn').forEach(btn => {
         btn.onmousedown = function() {

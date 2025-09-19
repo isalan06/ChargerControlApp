@@ -175,7 +175,7 @@ namespace ChargerControlApp.Hardware
                     }
 
                     //Thread.Sleep(10); // Adjust the delay as needed
-                    await Task.Delay(5); // Adjust the delay as needed
+                    await Task.Delay(10); // Adjust the delay as needed
                 }
             }, ct);
         }
