@@ -71,7 +71,7 @@ namespace ChargerControlApp.Test.Robot
                     AxisId = 1,
                     Name = "P0",
                     Description = "Y軸縮回取出車輛電池",
-                    PosDataNo = 1
+                    PosDataNo = 0
                 },
                 new PosFrame()
                 {                     

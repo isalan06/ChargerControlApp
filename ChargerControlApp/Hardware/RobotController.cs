@@ -93,7 +93,7 @@ namespace ChargerControlApp.Hardware
 
         private Task DoWork()
         {
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
                 bool ExecutedOnce = false; // Flag to ensure initialization runs only once
 
@@ -174,7 +174,8 @@ namespace ChargerControlApp.Hardware
                             _routeIndex = 0;
                     }
 
-                    Thread.Sleep(10); // Adjust the delay as needed
+                    //Thread.Sleep(10); // Adjust the delay as needed
+                    await Task.Delay(5); // Adjust the delay as needed
                 }
             }, ct);
         }
@@ -214,6 +215,7 @@ namespace ChargerControlApp.Hardware
                 var command = MotorCommandList.CommandMap["WriteInputLow"].Clone();
                 command.Id = (byte)motorId;
                 command.DataFrame.DataNumber = 1;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_Low.Data };
 
                 _manualCommand.Enqueue(command);
@@ -232,6 +234,7 @@ namespace ChargerControlApp.Hardware
                 Motors[motorId].MotorInfo.IO_Input_Low.Bits.ALM_RST = state;
                 var command = MotorCommandList.CommandMap["WriteInputLow"].Clone();
                 command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_Low.Data };
 
@@ -250,6 +253,7 @@ namespace ChargerControlApp.Hardware
                 Motors[motorId].MotorInfo.IO_Input_High.Bits.HOME = state;
                 var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
                 command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
                 _manualCommand.Enqueue(command);
@@ -266,6 +270,7 @@ namespace ChargerControlApp.Hardware
                 Motors[motorId].MotorInfo.IO_Input_Low.Bits.STOP = state;
                 var command = MotorCommandList.CommandMap["WriteInputLow"].Clone();
                 command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_Low.Data };
                 _manualCommand.Enqueue(command);
@@ -318,6 +323,7 @@ namespace ChargerControlApp.Hardware
 
                 var command = MotorCommandList.CommandMap["WriteJogMode"].Clone();
                 command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                 command.DataFrame.DataNumber = (ushort)_mode.Length;
                 command.DataFrame.Data = _mode ;
                 _manualCommand.Enqueue(command);
@@ -335,6 +341,7 @@ namespace ChargerControlApp.Hardware
                 Motors[motorId].MotorInfo.IO_Input_High.Bits.FW_JOG_P = state;
                 var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
                 command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
                 _manualCommand.Enqueue(command);
@@ -351,6 +358,7 @@ namespace ChargerControlApp.Hardware
                 Motors[motorId].MotorInfo.IO_Input_High.Bits.RV_JOG_P = state;
                 var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
                 command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
                 _manualCommand.Enqueue(command);
@@ -373,6 +381,7 @@ namespace ChargerControlApp.Hardware
 
             var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
             command.Id = (byte)motorId;
+            command.DataFrame.SlaveAddress = (byte)(motorId + 1);
             command.DataFrame.DataNumber = 1;
             command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
             _manualCommand.Enqueue(command);
@@ -393,6 +402,7 @@ namespace ChargerControlApp.Hardware
 
             var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
             command.Id = (byte)motorId;
+            command.DataFrame.SlaveAddress = (byte)(motorId + 1);
             command.DataFrame.DataNumber = 1;
             command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
             _manualCommand.Enqueue(command);
@@ -422,6 +432,7 @@ namespace ChargerControlApp.Hardware
 
                 var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
                 command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
                 _manualCommand.Enqueue(command);
@@ -440,6 +451,7 @@ namespace ChargerControlApp.Hardware
                 Motors[motorId].MotorInfo.IO_Input_High.Bits.START = state;
                 var command = MotorCommandList.CommandMap["WriteInputHigh"].Clone();
                 command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
                 _manualCommand.Enqueue(command);
@@ -455,6 +467,7 @@ namespace ChargerControlApp.Hardware
             {
                 var command = MotorCommandList.CommandMap["ReadJogAndHomeSetting"].Clone();
                 command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                 command.DataFrame.DataNumber = 32;
                 _manualCommand.Enqueue(command);
                 result = true;
@@ -469,6 +482,7 @@ namespace ChargerControlApp.Hardware
             {
                 var command = MotorCommandList.CommandMap["WriteJogAndHomeSetting"].Clone();
                 command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                 command.DataFrame.DataNumber = 32;
                 command.DataFrame.Data = Motors[motorId].MotorInfo.Jog_Home_Setting.Get();
                 _manualCommand.Enqueue(command);
@@ -484,6 +498,8 @@ namespace ChargerControlApp.Hardware
             {
                 var command = MotorCommandList.CommandMap["ReadOpData"].Clone();
                 command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
+                command.SetSubFramesSlaveAddress((byte)(motorId + 1));
                 _manualCommand.Enqueue(command);
                 result = true;
             }
@@ -502,6 +518,7 @@ namespace ChargerControlApp.Hardware
                 {
                     for(int i=0; i< command.SubFrames.Count; i++)
                     {
+                        command.SubFrames[i].DataFrame.SlaveAddress = (byte)(motorId + 1);
                         command.SubFrames[i].DataFrame.DataNumber = 6;
                         command.SubFrames[i].DataFrame.Data = Motors[motorId].MotorInfo.OpDataArray[i].ToUShortArray();
                     }
@@ -527,6 +544,7 @@ namespace ChargerControlApp.Hardware
                     if (command.SubFrames != null)
                     {
                         command.DataFrame = command.SubFrames[posIndex].DataFrame.Clone();
+                        command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                         command.DataFrame.DataNumber = 2;
                         command.DataFrame.Data = Motors[motorId].MotorInfo.OpDataArray[posIndex].ToPositionUShortArray();
                         _manualCommand.Enqueue(command);
@@ -647,7 +665,8 @@ namespace ChargerControlApp.Hardware
                         }
 
 
-                        Thread.Sleep(100);
+                        //Thread.Sleep(100);
+                        await Task.Delay(100);
                     } while (HomeProcedureCase > 99);
 
                 }
@@ -685,11 +704,11 @@ namespace ChargerControlApp.Hardware
                 await Task.Delay(100, cancellationToken);
             }
 
-            while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.IN_POS)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                await Task.Delay(100, cancellationToken);
-            }
+            //while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.IN_POS)
+            //{
+            //    cancellationToken.ThrowIfCancellationRequested();
+            //    await Task.Delay(100, cancellationToken);
+            //}
         }
         #endregion
     }

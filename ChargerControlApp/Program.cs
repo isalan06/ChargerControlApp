@@ -20,6 +20,8 @@ public class Program
 {
     public static void Main(string[] args)
     {
+        ThreadPool.SetMinThreads(100, 100);
+
         var builder = WebApplication.CreateBuilder(args);
 
         // 讀取 appsettings.json
@@ -109,7 +111,7 @@ public class Program
 
 #if RELEASE
         // 監聽所有網卡 (0.0.0.0)，可自訂 port
-        builder.WebHost.UseUrls("http://0.0.0.0:5000", "https://0.0.0.0:5001");
+        builder.WebHost.UseUrls("http://0.0.0.0:5000");//, "https://0.0.0.0:5001");
 #endif
 
 

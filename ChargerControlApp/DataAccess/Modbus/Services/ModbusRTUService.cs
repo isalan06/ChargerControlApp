@@ -1,15 +1,16 @@
 ﻿using ChargerControlApp.DataAccess.Modbus.Interfaces;
 using ChargerControlApp.DataAccess.Modbus.Models;
 using System;
-//using System.IO.Ports;
-using RJCP.IO.Ports;
+using System.IO.Ports;
+//using RJCP.IO.Ports;
 
 
 namespace ChargerControlApp.DataAccess.Modbus.Services
 {
     public class ModbusRTUService : IModbusRTUService, IDisposable
     {
-        private SerialPortStream _serialPort = new SerialPortStream();
+        //private SerialPortStream _serialPort = new SerialPortStream();
+        private SerialPort _serialPort = new SerialPort();
         public string PortName { get; set; } = "COM1";
         public int BaudRate { get; set; } = 230400;
         public Parity Parity { get; set; } = Parity.Even;
@@ -224,7 +225,8 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
                         break;
                     }
 
-                    Thread.Sleep(10);
+                    //Thread.Sleep(10);
+                    await Task.Delay(1);
                 }
 
             }

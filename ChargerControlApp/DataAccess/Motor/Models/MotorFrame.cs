@@ -29,5 +29,15 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 }*/
             };
         }
+        public void SetSubFramesSlaveAddress(byte slaveAddress)
+        {
+            if (SubFrames != null)
+            {
+                foreach (var subFrame in SubFrames)
+                {
+                    subFrame.DataFrame.SlaveAddress = slaveAddress;
+                }
+            }
+        }
     }
 }

@@ -41,10 +41,11 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
         /// <exception cref="IOException"></exception>
         public async Task<CanMessage?> ReceiveAsync(int timeoutMs)
         {
-            return await Task.Run(() =>
-            {
-                CanFrame frame = default;
+            var start = DateTime.UtcNow;
+            CanFrame frame = default;
 
+            while ((DateTime.UtcNow - start).TotalMilliseconds < timeoutMs)
+            {
                 IntPtr fdSet = Marshal.AllocHGlobal(128);
                 try
                 {
@@ -58,34 +59,37 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
 
                         var timeout = new Timeval
                         {
-                            tv_sec = timeoutMs / 1000,
-                            tv_usec = (timeoutMs % 1000) * 1000
+                            tv_sec = 0,
+                            tv_usec = 0 // 非阻塞
                         };
 
                         int result = select(fd + 1, ref fdSet, IntPtr.Zero, IntPtr.Zero, ref timeout);
 
-                        if (result == 0)
-                            return (CanMessage?)null;
-
-                        if (result < 0)
-                            throw new IOException("select() failed");
-
-                        int num = LibcNativeMethods.Read(_socket.SafeHandle, ref frame, Marshal.SizeOf(typeof(CanFrame)));
-                        if (num == -1)
-                            throw new IOException("CAN socket read failed");
-
-                        return new CanMessage
+                        if (result > 0)
                         {
-                            Id = CanId.FromRaw(frame.CanId),
-                            Data = frame.Data.Take(frame.Length).ToArray()
-                        };
+                            int num = LibcNativeMethods.Read(_socket.SafeHandle, ref frame, Marshal.SizeOf(typeof(CanFrame)));
+                            if (num == -1)
+                                throw new IOException("CAN socket read failed");
+
+                            return new CanMessage
+                            {
+                                Id = CanId.FromRaw(frame.CanId),
+                                Data = frame.Data.Take(frame.Length).ToArray()
+                            };
+                        }
+                        else if (result < 0)
+                        {
+                            throw new IOException("select() failed");
+                        }
                     }
                 }
                 finally
                 {
                     Marshal.FreeHGlobal(fdSet);
                 }
-            });
+                await Task.Delay(1); // 非同步等待，釋放執行緒
+            }
+            return null; // timeout
         }
 
         /// <summary>
@@ -161,6 +165,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
 
         public void ClearCANBuffer()
         {
+            
             try
             {
                 _socket.Blocking = false;

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using ChargerControlApp.DataAccess.Motor.Models;
 using ChargerControlApp.DataAccess.Motor.Services;
 using ChargerControlApp.Test.Robot;
+using System.Threading.Tasks;
 
 namespace ChargerControlApp.Controllers
 {
@@ -217,7 +218,7 @@ namespace ChargerControlApp.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetPosVelData(int motorId = 0)
+        public async Task<IActionResult> GetPosVelData(int motorId)
         {
             if (motorId < 0 || motorId >= _robotController.Motors.Length)
                 return BadRequest();
@@ -226,7 +227,8 @@ namespace ChargerControlApp.Controllers
             _robotController.ReadOpData(motorId);
 
             // 建議加一點延遲，確保資料已經回來（依你的架構可調整，或用 await/Task）
-            System.Threading.Thread.Sleep(100); // 100ms，依實際情況可調整
+            //System.Threading.Thread.Sleep(100); // 100ms，依實際情況可調整
+            await Task.Delay(100);
 
             var opDataArray = _robotController.Motors[motorId].MotorInfo.OpDataArray;
             var result = new List<object>();
@@ -334,6 +336,14 @@ namespace ChargerControlApp.Controllers
         {
             _robotTestProcedure.StopProcedure();
             return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> HomeProcedure()
+        {
+            // 假設 _robotController 是你的 RobotController 實例
+            await _robotController.HomeProcedure();
+            return Ok(new { success = true });
         }
 
     }
