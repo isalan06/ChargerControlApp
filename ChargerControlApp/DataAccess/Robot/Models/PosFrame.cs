@@ -21,6 +21,17 @@
         /// 位置資料編號 (0~255)
         /// </summary>
         public int PosDataNo { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the current position within the sequence.
+        /// </summary>
+        public int Position { get; set; }
+
+        /// <summary>
+        /// Gets or sets the delay time in milliseconds.
+        /// When the robot reaches this position, it will wait for the specified time before proceeding to the next action.
+        /// </summary>
+        public double DelayTime_ms { get; set; } = 0.0;
 
         /// <summary>
         /// 建立此物件的淺層複製
@@ -33,7 +44,9 @@
                 Name = this.Name,
                 Description = this.Description,
                 PosDataNo = this.PosDataNo,
-                ClassName = this.ClassName
+                ClassName = this.ClassName,
+                Position = this.Position,
+                DelayTime_ms = this.DelayTime_ms
             };
         }
     }

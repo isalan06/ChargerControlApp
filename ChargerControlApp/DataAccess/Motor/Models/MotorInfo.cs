@@ -168,9 +168,9 @@ namespace ChargerControlApp.DataAccess.Motor.Models
         /// bit 7: R-OUT23 [INFO-VOLT-L]
         /// bit 8: R-OUT24 [INFO-START-G]
         /// bit 9: R-OUT25 [INFO-USRIO-G]
-        /// bit 10: R-OUT26 [CONST-OFF]
-        /// bit 11: R-OUT27 [CONST-OFF]
-        /// bit 12: R-OUT28 [CONST-OFF]
+        /// bit 10: R-OUT26 [CONST-OFF] -> R0_R
+        /// bit 11: R-OUT27 [CONST-OFF] -> R1_R
+        /// bit 12: R-OUT28 [CONST-OFF] -> HOME-END
         /// bit 13: R-OUT29 [CONST-OFF]
         /// bit 14: R-OUT30 [USR-OUT0]
         /// bit 15: R-OUT31 [USR-OUT1]
@@ -197,14 +197,17 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 public bool INFO_VOLT_L => (Value & (1 << 7)) != 0;
                 public bool INFO_START_G => (Value & (1 << 8)) != 0;
                 public bool INFO_USRIO_G => (Value & (1 << 9)) != 0;
-                public bool CONST_OFF => (Value & (1 << 10)) != 0;
-                public bool CONST_OFF2 => (Value & (1 << 11)) != 0;
-                public bool CONST_OFF3 => (Value & (1 << 12)) != 0;
+                public bool R0_R => (Value & (1 << 10)) != 0;
+                public bool R1_R => (Value & (1 << 11)) != 0;
+                public bool HOME_END => (Value & (1 << 12)) != 0;
                 public bool CONST_OFF4 => (Value & (1 << 13)) != 0;
                 public bool USR_OUT0 => (Value & (1 << 14)) != 0;
                 public bool USR_OUT1 => (Value & (1 << 15)) != 0;
             }
-        }/// <summary> 
+        }
+        
+        
+         /// <summary> 
          /// Sturcture of Motor IO Output Low 127 (7Fh)
          /// bit 0: R-OUT0 [SON-MON]
          /// bit 1: R-OUT1 [PLOOP-MON]

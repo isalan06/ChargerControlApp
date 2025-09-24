@@ -138,6 +138,29 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                     new MotorFrame { Name = "WriteOpData_Position_No_18", DataFrame = new ModbusRTUFrame{ FunctionCode = 0x10, StartAddress = 0x1C82, DataNumber = 2 } },
                     new MotorFrame { Name = "WriteOpData_Position_No_19", DataFrame = new ModbusRTUFrame{ FunctionCode = 0x10, StartAddress = 0x1CC2, DataNumber = 2 } }
                 }
+            },
+            new MotorFrame()
+            { 
+                Name = "WriteOpData_DefaultVelocityForJog",
+                SubFrames = new List<MotorFrame>()
+                {
+                    new MotorFrame { Name = "WriteOpData_DefaultVelocityForJog_No_0", DataFrame = new ModbusRTUFrame{ FunctionCode = 0x10, StartAddress = 0x1D04, DataNumber = 2, Data = new ushort[] { 0, 10 } } },
+                    new MotorFrame { Name = "WriteOpData_DefaultVelocityForJog_No_1", DataFrame = new ModbusRTUFrame{ FunctionCode = 0x10, StartAddress = 0x1D44, DataNumber = 2, Data = new ushort[] { 0, 25 } } },
+                    new MotorFrame { Name = "WriteOpData_DefaultVelocityForJog_No_2", DataFrame = new ModbusRTUFrame{ FunctionCode = 0x10, StartAddress = 0x1D84, DataNumber = 2, Data = new ushort[] { 0, 50 } } },
+                    new MotorFrame { Name = "WriteOpData_DefaultVelocityForJog_No_3", DataFrame = new ModbusRTUFrame{ FunctionCode = 0x10, StartAddress = 0x1DC4, DataNumber = 2, Data = new ushort[] { 0, 100 } } },
+                    new MotorFrame { Name = "WriteOpData_DefaultVelocityForJog_No_4", DataFrame = new ModbusRTUFrame{ FunctionCode = 0x10, StartAddress = 0x1E04, DataNumber = 2, Data = new ushort[] { 0, 300 } } }
+                }
+            },
+            new MotorFrame()
+            {
+                Name = "WriteROutFunction_26to29",
+                DataFrame = new ModbusRTUFrame()
+                {
+                    FunctionCode = 0x10,
+                    StartAddress = 0x8874,
+                    DataNumber = 8,
+                    Data = new ushort[] { 0, 96, 0, 97, 0, 176, 0, 128 } // ROut26 = 96(R0_R), ROut27 = 97(R1_R), ROut28 = 176(HOME-END), ROut29 = 128(CONST-OFF)
+                }
             }
 
         }; 
@@ -151,7 +174,9 @@ namespace ChargerControlApp.DataAccess.Motor.Models
             { "WriteJogAndHomeSetting", Commands.First(c => c.Name == "WriteJogAndHomeSetting") },
             { "ReadOpData", Commands.First(c => c.Name == "ReadOpData") },
             { "WriteOpData", Commands.First(c => c.Name == "WriteOpData") },
-            { "WriteOpData_Position", Commands.First(c => c.Name == "WriteOpData_Position") }
+            { "WriteOpData_Position", Commands.First(c => c.Name == "WriteOpData_Position") },
+            { "WriteOpData_DefaultVelocityForJog", Commands.First(c => c.Name == "WriteOpData_DefaultVelocityForJog") },
+            { "WriteROutFunction_26to29", Commands.First(c => c.Name == "WriteROutFunction_26to29") }
         };
     }
 }

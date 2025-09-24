@@ -77,7 +77,10 @@ namespace ChargerControlApp.Controllers
                 opData_Pos_Command = m.MotorInfo.OpData_Pos_Command,
                 opData_Vel_Command = m.MotorInfo.OpData_Vel_Command,
                 opData_Pos_Actual = m.MotorInfo.OpData_Pos_Actual,
-                opData_Vel_Actual = m.MotorInfo.OpData_Vel_Actual
+                opData_Vel_Actual = m.MotorInfo.OpData_Vel_Actual,
+                r0R = m.MotorInfo.IO_Output_High.Bits.R0_R,
+                r1R = m.MotorInfo.IO_Output_High.Bits.R1_R,
+                homeEnd = m.MotorInfo.IO_Output_High.Bits.HOME_END
             }).ToList();
             return Json(result);
         }
@@ -344,6 +347,18 @@ namespace ChargerControlApp.Controllers
             // 假設 _robotController 是你的 RobotController 實例
             await _robotController.HomeProcedure();
             return Ok(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult SetSpeedDataNo_M(int motorId, int speedDataNo)
+        {
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+
+            // 這裡假設你有對應的設定方法，請依實際需求調整
+            _robotController.SetDataNo_M(motorId, speedDataNo);
+
+            return Json(new { success = true });
         }
 
     }

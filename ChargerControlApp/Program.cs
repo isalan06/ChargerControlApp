@@ -3,6 +3,7 @@ using ChargerControlApp.DataAccess.CANBus.Linux;
 using ChargerControlApp.DataAccess.Modbus.Interfaces;
 using ChargerControlApp.DataAccess.Modbus.Models;
 using ChargerControlApp.DataAccess.Modbus.Services;
+using ChargerControlApp.DataAccess.Robot.Services;
 using ChargerControlApp.DataAccess.Slot.Models;
 using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
@@ -96,6 +97,9 @@ public class Program
         });
 
         builder.Services.AddSingleton<RobotTestProcedure>();
+
+        // 註冊 RobotService
+        builder.Services.AddSingleton<RobotService>();
 
         // 註冊 Grpc 相關服務
         ConfigLoader.Load();

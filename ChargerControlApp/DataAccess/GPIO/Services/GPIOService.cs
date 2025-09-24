@@ -1,13 +1,21 @@
 ﻿using ChargerControlApp.DataAccess.GPIO.Models;
+using Microsoft.AspNetCore.Mvc;
 using System.Device.Gpio;
 
 namespace ChargerControlApp.DataAccess.GPIO.Services
 {
     public class GPIOService
     {
+        // 是否使用 馬達驅動器IO 同步 GPIO，預設為 true
+        public static bool UseMotorIO { get; set; } = true;
+        public static bool IsSimulationMode { get; set; } = false;
+
         // 靜態數值，模擬兩個 GPIO Input 的腳位狀態
         public static bool Pin1Value { get; set; } = false;
         public static bool Pin2Value { get; set; } = false;
+
+        public static bool Pin1ValueFromMotor { get; set; } = false;
+        public static bool Pin2ValueFromMotor { get; set; } = false;
 
         // 兩個 GPIO Input 的 GPIOInfo 實例
         public static GPIOInfo Pin1 { get; } = new GPIOInfo
@@ -37,9 +45,13 @@ namespace ChargerControlApp.DataAccess.GPIO.Services
         {
             try
             {
-                _controller = new GpioController();
-                _controller.OpenPin(Pin1.BCMNumber, PinMode.Input);
-                _controller.OpenPin(Pin2.BCMNumber, PinMode.Input);
+                if(IsSimulationMode) _controller = null;
+                else
+                {
+                    _controller = new GpioController();
+                    _controller.OpenPin(Pin1.BCMNumber, PinMode.Input);
+                    _controller.OpenPin(Pin2.BCMNumber, PinMode.Input);
+                }
             }
             catch
             {
@@ -53,10 +65,20 @@ namespace ChargerControlApp.DataAccess.GPIO.Services
         /// </summary>
         public static void ReadInputsFromHardware()
         {
-            if (_controller != null)
+            if (!IsSimulationMode) // 非模擬模式才讀取硬體
             {
-                Pin1Value = _controller.Read(Pin1.BCMNumber) == PinValue.High;
-                Pin2Value = _controller.Read(Pin2.BCMNumber) == PinValue.High;
+
+                if (UseMotorIO) // 使用 馬達驅動器IO 同步 GPIO
+                {
+                    // 由RobotController 直接寫入
+                    Pin1Value = Pin1ValueFromMotor;
+                    Pin2Value = Pin2ValueFromMotor;
+                }
+                else if (_controller != null) // 使用 GpioController 讀取 GPIO 狀態
+                {
+                    Pin1Value = _controller.Read(Pin1.BCMNumber) == PinValue.High;
+                    Pin2Value = _controller.Read(Pin2.BCMNumber) == PinValue.High;
+                }
             }
             // 同步到 GPIOInfo
             Pin1.Value = Pin1Value;

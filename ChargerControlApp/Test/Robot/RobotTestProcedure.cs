@@ -195,6 +195,7 @@ namespace ChargerControlApp.Test.Robot
             catch (OperationCanceledException)
             {
                 // 可選：處理中斷後的清理
+                _hardwareManager.Robot.AllStop();
             }
             finally
             {
@@ -209,8 +210,9 @@ namespace ChargerControlApp.Test.Robot
         {
             if (!IsRunning) return;
             IsRunning = false;
-            _hardwareManager.Robot.AllStop();
             _cts?.Cancel();
+            _hardwareManager.Robot.AllStop();
+            
         }
 
         public void TryStartTestProcedure1Background()

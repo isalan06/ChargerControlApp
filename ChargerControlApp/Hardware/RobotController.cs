@@ -1,4 +1,5 @@
-﻿using ChargerControlApp.DataAccess.Modbus.Interfaces;
+﻿using ChargerControlApp.DataAccess.GPIO.Services;
+using ChargerControlApp.DataAccess.Modbus.Interfaces;
 using ChargerControlApp.DataAccess.Motor.Interfaces;
 using ChargerControlApp.DataAccess.Motor.Models;
 using ChargerControlApp.DataAccess.Motor.Services;
@@ -15,6 +16,7 @@ namespace ChargerControlApp.Hardware
     public class RobotController : IDisposable
     {
         public const int MOTOR_COUNT = 3;
+        public const int PositionInPos_Offset = 50; // unit: step => for checking if reached position
         private byte[] MOTOR_ADDRESSES = new byte[] { 1, 2, 3 };
         public SingleMotorService[] Motors;
         private IModbusRTUService _modbusService;
@@ -139,7 +141,7 @@ namespace ChargerControlApp.Hardware
                                 }
                             }
                         }
-                        else if (command.Name == "WriteOpData")
+                        else if ((command.Name == "WriteOpData") || (command.Name == "WriteOpData_DefaultVelocityForJog"))
                         {
                             if (command.SubFrames != null)
                             {
@@ -155,6 +157,7 @@ namespace ChargerControlApp.Hardware
                         }
                         else
                         {
+
                             var writeResult = Motors[command.Id].WriteFrame(command);
                             bool write_finished = writeResult.Result;
 
@@ -174,6 +177,10 @@ namespace ChargerControlApp.Hardware
                             _routeIndex = 0;
                     }
 
+                    // Update GPIO status from motor 1 - Y axis
+                    GPIOService.Pin1ValueFromMotor = Motors[1].MotorInfo.IO_Output_High.Bits.R0_R;
+                    GPIOService.Pin2ValueFromMotor = Motors[1].MotorInfo.IO_Output_High.Bits.R1_R;
+
                     //Thread.Sleep(10); // Adjust the delay as needed
                     await Task.Delay(10); // Adjust the delay as needed
                 }
@@ -190,10 +197,26 @@ namespace ChargerControlApp.Hardware
             for(int i=0;i< MOTOR_COUNT; i++)
             {
                 this.SetJogMode(i, 2);
+                this.WriteOpData_DefaultVelocityForSpd(i);
+                this.WriteROutFunction_26to29(i);
                 this.ReadJogAndHomeSetting(i);
                 this.ReadOpData(i);
+                
             }
         }
+
+        // Check if motor in position
+        private bool InPosition(int motorId, int posIndex)
+        {
+            if (motorId < 0 || motorId >= MOTOR_COUNT)
+                return false;
+            return Math.Abs(Motors[motorId].MotorInfo.Pos_Actual - Motors[motorId].MotorInfo.OpDataArray[posIndex].Position) <= PositionInPos_Offset;
+        }
+
+        #endregion
+
+        #region Command
+
         public void Open()
         {
             IsRunning = true;
@@ -555,7 +578,35 @@ namespace ChargerControlApp.Hardware
 
             return result;
         }
-        
+
+        public bool WriteOpData_DefaultVelocityForSpd(int motorId)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                var command = MotorCommandList.CommandMap["WriteOpData_DefaultVelocityForJog"].Clone();
+                command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+            return result;
+        }
+
+        public bool WriteROutFunction_26to29(int motorId)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                var command = MotorCommandList.CommandMap["WriteROutFunction_26to29"].Clone();
+                command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+            return result;
+        }
+
 
         #endregion
 
@@ -681,6 +732,9 @@ namespace ChargerControlApp.Hardware
 
         public async Task MoveToPositionAsync(int axisId, int posDataNo, CancellationToken cancellationToken)
         {
+
+
+
             while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
             {
                 cancellationToken.ThrowIfCancellationRequested();

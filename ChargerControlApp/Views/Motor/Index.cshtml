@@ -67,9 +67,9 @@
                 <h3>Jog&Home 設定</h3>
                 <div style="margin-bottom:12px; display:flex; align-items:center; gap:16px;">
                     <div id="motorRadioGroup">
-                        <label><input type="radio" name="motorRadio" value="0" checked>馬達1</label>
-                        <label><input type="radio" name="motorRadio" value="1">馬達2</label>
-                        <label><input type="radio" name="motorRadio" value="2">馬達3</label>
+                        <label><input type="radio" name="motorRadio" value="0" checked>馬達1-旋轉軸</label>
+                        <label><input type="radio" name="motorRadio" value="1">馬達2-Y軸</label>
+                        <label><input type="radio" name="motorRadio" value="2">馬達3-Z軸</label>
                     </div>
                     <button id="jogHomeRefreshBtn" type="button">Refresh</button>
                     <button id="jogHomeSaveBtn" type="button">Save</button>
@@ -93,9 +93,9 @@
                 <h3>位置&速度 設定</h3>
                 <div style="margin-bottom:12px; display:flex; align-items:center; gap:16px;">
                     <div id="posVelMotorRadioGroup">
-                        <label><input type="radio" name="posVelMotorRadio" value="0" checked>馬達1</label>
-                        <label><input type="radio" name="posVelMotorRadio" value="1">馬達2</label>
-                        <label><input type="radio" name="posVelMotorRadio" value="2">馬達3</label>
+                        <label><input type="radio" name="posVelMotorRadio" value="0" checked>馬達1-旋轉軸</label>
+                        <label><input type="radio" name="posVelMotorRadio" value="1">馬達2-Y軸</label>
+                        <label><input type="radio" name="posVelMotorRadio" value="2">馬達3-Z軸</label>
                     </div>
                     <button id="posVelRefreshBtn" type="button">Refresh</button>
                     <button id="posVelSaveBtn" type="button">Save</button>
@@ -210,6 +210,20 @@
                             <span>SD</span>
                         </div>
                     </div>
+                    <div class="lights-row">
+                        <div class="light-item">
+                            <span class="status-light ${m.r0R ? 'on' : 'off'}"></span>
+                            <span>R0R</span>
+                        </div>
+                        <div class="light-item">
+                            <span class="status-light ${m.r1R ? 'on' : 'off'}"></span>
+                            <span>R1R</span>
+                        </div>
+                        <div class="light-item">
+                            <span class="status-light ${m.homeEnd ? 'on' : 'off'}"></span>
+                            <span>H-END</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-divider"></div>
                 <div class="card-section card-section-bottom">
@@ -271,21 +285,6 @@
                         STOP
                     </button>
                 </div>
-                <div class="radio-row">
-                    <div class="section-title">JOG</div>
-                    <label class="radio-item">
-                        <input type="radio" name="jogMode${m.id}" value="2" ${m.jogMode == 2 ? 'checked' : ''}>
-                        吋動
-                    </label>
-                    <label class="radio-item">
-                        <input type="radio" name="jogMode${m.id}" value="0" ${m.jogMode == 0 ? 'checked' : ''}>
-                        低速
-                    </label>
-                    <label class="radio-item">
-                        <input type="radio" name="jogMode${m.id}" value="1" ${m.jogMode == 1 ? 'checked' : ''}>
-                        高速
-                    </label>
-                </div>
                 <div class="jog-btn-row">
                     <button type="button"
                         class="jog-btn"
@@ -305,7 +304,7 @@
                 <div class="data-select-row">
                     <span class="data-select-title">位置資料選擇</span>
                     <select class="data-select-combo" onchange="setDataNo_M(${m.id}, this.value)">
-                        ${[...Array(256).keys()].map(n => `<option value="${n}" ${m.dataNo == n ? 'selected' : ''}>${n}</option>`).join('')}
+                        ${[...Array(20).keys()].map(n => `<option value="${n}" ${m.dataNo == n ? 'selected' : ''}>${n}</option>`).join('')}
                     </select>
                     <button type="button"
                         class="start-btn"
@@ -315,6 +314,16 @@
                         style="margin-left:12px;">
                         MOVE
                     </button>
+                </div>
+                <div class="data-select-row">
+                    <span class="data-select-title">速度選擇</span>
+                    <select class="speed-select-combo" onchange="setSpeedDataNo_M(${m.id}, this.value)">
+                        <option value="20">10</option>
+                        <option value="21">25</option>
+                        <option value="22">50</option>
+                        <option value="23">100</option>
+                        <option value="24">300</option>
+                    </select>
                 </div>
                 <div class="spd-btn-row" style="margin-top:8px; display:flex; gap:12px;">
                     <button type="button"
@@ -560,7 +569,19 @@
         };
     });
 
-        
+        // 速度資料選擇 comboBox 綁定
+    document.querySelectorAll('.speed-select-combo').forEach(combo => {
+        combo.onchange = function() {
+            const motorId = combo.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            const speedDataNo = combo.value;
+            fetch(`/Motor/SetSpeedDataNo_M?motorId=${motorId}&speedDataNo=${speedDataNo}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    // 可依需求顯示狀態或提示
+                });
+        };
+    });
+    
 
     }
 
