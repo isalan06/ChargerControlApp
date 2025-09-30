@@ -11,6 +11,7 @@ using ChargerControlApp.DataAccess.CANBus.Linux;
 using System.Runtime.InteropServices;
 using ChargerControlApp.DataAccess.Modbus.Services;
 using ChargerControlApp.DataAccess.Modbus.Interfaces;
+using ChargerControlApp.DataAccess.Slot.Services;
 
 namespace ChargerControlApp.Hardware
 {
@@ -26,6 +27,8 @@ namespace ChargerControlApp.Hardware
         //MOTOR CONTROLLER 未來給換電站
         public RobotController Robot { get; private set; }
         public ModbusRTUService modbusRTUService { get; private set; }
+
+        public SlotServices SlotServices { get; private set; }
 
 
         public HardwareManager(IServiceProvider serviceProvider)
@@ -77,6 +80,9 @@ namespace ChargerControlApp.Hardware
 
             // 取得 RobotController
             Robot = serviceProvider.GetRequiredService<RobotController>();
+
+            // 取得 SlotServices
+            SlotServices = serviceProvider.GetRequiredService<SlotServices>();
         }
     }
 }

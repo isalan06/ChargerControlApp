@@ -1,4 +1,5 @@
-﻿using TAC.Hardware;
+﻿using ChargerControlApp.DataAccess.Slot.Services;
+using TAC.Hardware;
 
 namespace ChargerControlApp.DataAccess.Slot.Models
 {
@@ -11,6 +12,13 @@ namespace ChargerControlApp.DataAccess.Slot.Models
         public bool IsEnabled { get; set; } = false; // 是否啟用
 
         public SlotChargeState ChargeState { get; set; } = SlotChargeState.Empty; // 充電狀態
+
+        public SlotStateMachine State;
+
+        public SlotInfo(SlotStateMachine state) 
+        {
+            State = state;
+        }
 
 
     }

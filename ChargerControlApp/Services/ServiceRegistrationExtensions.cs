@@ -1,4 +1,5 @@
-﻿using ChargerControlApp.Hardware;
+﻿using ChargerControlApp.DataAccess.Slot.Services;
+using ChargerControlApp.Hardware;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -24,6 +25,71 @@ namespace ChargerControlApp.Services
             // 註冊狀態機與硬體控制
             services.AddSingleton<ChargingStationStateMachine>();
             services.AddSingleton<HardwareManager>();
+
+            return services;
+        }
+
+        public static IServiceCollection RegisterSlotService(this IServiceCollection services)
+        {
+            services.AddSingleton<InitializationSlotState[]>(sp => { 
+                var arr = new InitializationSlotState[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+
+                for(int i=0;i<NPB450Controller.NPB450ControllerInstnaceMaxNumber;i++)
+                {
+                    arr[i] = new InitializationSlotState();
+                }
+
+                return arr;
+            });
+            services.AddSingleton<NotUsedSlotState[]>(sp => {
+                var arr = new NotUsedSlotState[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+                for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
+                {
+                    arr[i] = new NotUsedSlotState();
+                }
+                return arr;
+            });
+            services.AddSingleton<EmptySlotState[]>(sp => {
+                var arr = new EmptySlotState[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+                for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
+                {
+                    arr[i] = new EmptySlotState();
+                }
+                return arr;
+            });
+            services.AddSingleton<IdleSlotState[]>(sp => {
+                var arr = new IdleSlotState[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+                for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
+                {
+                    arr[i] = new IdleSlotState();
+                }
+                return arr;
+            });
+            services.AddSingleton<ChargingSlotState[]>(sp => {
+                var arr = new ChargingSlotState[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+                for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
+                {
+                    arr[i] = new ChargingSlotState();
+                }
+                return arr;
+            });
+            services.AddSingleton<FloatingSlotState[]>(sp => {
+                var arr = new FloatingSlotState[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+                for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
+                {
+                    arr[i] = new FloatingSlotState();
+                }
+                return arr;
+            });
+            services.AddSingleton<ErrorSlotState[]>(sp => {
+                var arr = new ErrorSlotState[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+                for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
+                {
+                    arr[i] = new ErrorSlotState();
+                }
+                return arr;
+            });
+
 
             return services;
         }

@@ -1,6 +1,7 @@
 ﻿using ChargerControlApp.DataAccess.GPIO.Services;
 using ChargerControlApp.DataAccess.Modbus.Models;
 using ChargerControlApp.DataAccess.Modbus.Services;
+using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
 using ChargerControlApp.Utilities;
 using Microsoft.AspNetCore.Builder;
@@ -48,7 +49,22 @@ namespace ChargerControlApp.Services
         //}
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("CanBusPollingService 啟動");
+            _logger.LogInformation("背景應用模組 啟動");
+
+            //_hardwareManager.SlotServices.State[0].TransitionTo<InitializationSlotState>();
+            for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
+            {
+                if (i < HardwareManager.NPB450ControllerInstnaceNumber)
+                {
+                    _hardwareManager.Charger[i].IsUsed = true;
+                }
+                else
+                { 
+                    //_hardwareManager.SlotServices.State[i].TransitionTo<NotUsedSlotState>();
+                    _hardwareManager.SlotServices.TransitionTo(i, state: SlotState.NotUsed);
+                }
+            }
+
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -60,7 +76,7 @@ namespace ChargerControlApp.Services
                     for (int i = 0; i < HardwareManager.NPB450ControllerInstnaceNumber; i++)
                     {
                         //_logger.LogInformation($"CanBusPollingService-DeviceID: {_hardwareManager.Charger[i].deviceCanID}-PollingOnce()");
-                        _hardwareManager.Charger[i].IsUsed = true; 
+                        //_hardwareManager.Charger[i].IsUsed = true; 
                         await Task.Run(() => _hardwareManager.Charger[i].PollingOnce());
                     }
 

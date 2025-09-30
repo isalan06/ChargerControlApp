@@ -86,9 +86,21 @@ namespace ChargerControlApp.Controllers
             var slots = _slotServices.SlotInfo;
             var result = slots.Select(s => new {
                 chargingProcessValue = s.ChargingProcessValue,
-                chargeState = s.ChargeState.ToString()
+                chargeState = s.ChargeState.ToString(),
+                machineState = s.State.GetCurrentStateName()
             }).ToArray();
             return Json(result);
+        }
+
+        [HttpPost]
+        public IActionResult SetSlotState(int index, string state)
+        {
+            if (Enum.TryParse<SlotState>(state, out var slotState))
+            {
+                _slotServices.TransitionTo(index, slotState);
+                return Json(new { success = true });
+            }
+            return Json(new { success = false });
         }
 
         public IActionResult Index()

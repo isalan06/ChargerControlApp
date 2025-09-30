@@ -64,6 +64,16 @@
                         }
                     </select>
                     <button class="btn btn-primary" onclick="setSlotChargeState(@i)">設定</button>
+                    <span class="ms-4" style="width:180px;">
+                        <span id="slot-@i-machine">@SlotServices.SlotInfo[i].State.GetCurrentStateName()</span>
+                    </span>
+                    <select id="slot-@i-state-combo" class="form-select ms-2" style="width:auto; display:inline-block;">
+                        @foreach (var state in Enum.GetValues(typeof(ChargerControlApp.DataAccess.Slot.Services.SlotState)))
+                        {
+                            <option value="@state">@state</option>
+                        }
+                    </select>
+                    <button class="btn btn-secondary ms-2" onclick="setSlotState(@i)">切換狀態</button>
                 </div>
             }
         </div>
@@ -166,6 +176,7 @@
                 data.forEach(function(slot, i) {
                     document.getElementById('slot-' + i + '-progress').textContent = slot.chargingProcessValue.toFixed(2) + ' %';
                     document.getElementById('slot-' + i + '-state').textContent = slot.chargeState;
+                    document.getElementById('slot-' + i + '-machine').textContent = slot.machineState;
                 });
             });
     }
@@ -175,6 +186,25 @@
     function setSlotChargeState(idx) {
         const selectedState = document.getElementById('slot-' + idx + '-combo').value;
         fetch('@Url.Action("SetSlotChargeState", "Units")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': '@Html.AntiForgeryToken()'.replace('<input name="__RequestVerificationToken" type="hidden" value="', '').replace('" />', '')
+            },
+            body: 'index=' + idx + '&state=' + encodeURIComponent(selectedState)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert('狀態設定失敗');
+            }
+        });
+    }
+
+	// 設定Slot State
+    function setSlotState(idx) {
+        const selectedState = document.getElementById('slot-' + idx + '-state-combo').value;
+        fetch('@Url.Action("SetSlotState", "Units")', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

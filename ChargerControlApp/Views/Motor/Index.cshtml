@@ -15,7 +15,7 @@
     <div id="semiAutoTab" class="motor-tab-content" style="display:none;">
         <div class="semi-auto-content d-flex" style="gap:24px; align-items:flex-start;">
             <!-- 左側基本操作區 -->
-            <div class="col-3" style="min-width:220px;">
+            <div class="col-3" style="min-width:420px;">
                 <div class="card mb-3">
                     <div class="card-header">
                         基本操作區
@@ -31,13 +31,73 @@
                             <button type="button" id="allStopBtn" class="btn btn-danger w-100">動作停止</button>
                         </form>
                         <form>
-                            <button type="button" id="homeProcedureBtn" class="btn btn-primary w-100 mt-2">原點復歸</button>
+                            <button type="button" id="stopProcedureBtn" class="btn btn-danger w-100 mt-2">流程停止</button>
                         </form>
+                        <div class="mt-2">
+                            <span>程序執行狀態：</span>
+                            <span id="procedureRunningStatus" style="font-weight:bold;">-</span>
+                        </div>
+                        <div class="mt-2">
+                            <span>錯誤碼：</span>
+                            <span id="errorCode" style="font-weight:bold;">-</span>
+                        </div>
+                        <div class="mt-2">
+                            <span>錯誤訊息：</span>
+                            <div id="errorMessage" style="border:1px solid #ccc; min-height:80px; padding:8px; background:#f9f9f9; white-space:pre-wrap; font-family:Consolas, monospace;">
+                                -
+                            </div>
+                            <button type="button" id="clearErrorBtn" class="btn btn-secondary btn-sm">清除</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card mt-3">
+                    <div class="card-header">原點復歸</div>
+                    <div class="card-body">
+                        <span id="homeFinishedStatus" style="font-weight:bold;">-</span>
+                        <br />
+                        <span id="homeProcedureCaseStatus" style="font-weight:bold; color:#007bff;">程序編號：-</span>
+                        <br />
+                        <button id="startHomeProcedureBtn" class="btn btn-primary mt-2">原點復歸</button>
                     </div>
                 </div>
             </div>
+            <div style="min-width:420px;">
+                <div class="card mb-3">
+                    <div class="card-header">流程狀態區</div>
+                    <div class="card-body">
+                        <div>
+                            <span>狀態訊息</span>
+                            <div id="procedureStatusArea" style="border:1px solid #ccc; min-height:80px; padding:8px; background:#f9f9f9; white-space:pre-wrap; font-family:Consolas, monospace;">
+                                -
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 旋轉動作區 (放在流程狀態區下方) -->
+                <div class="card mb-3">
+                    <div class="card-header">旋轉動作區</div>
+                    <div class="card-body">
+                        <div style="margin-bottom:12px; font-weight:bold;">參數</div>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <span>R-Target:</span>
+                            <select id="rTargetCombo" class="form-select" style="width:120px;">
+                                <option value="0">R0</option>
+                                <option value="1">R1</option>
+                                <option value="2">R2</option>
+                            </select>
+                        </div>
+                        <!-- 旋轉動作流程啟動按鈕 -->
+                        <div style="margin-top:20px;">
+                            <button type="button" id="startRotateProcedureBtn" class="btn btn-primary w-100">
+                                旋轉動作流程啟動
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 右側狀態方框 -->
-            <div style="min-width:220px;">
+            <div style="min-width:420px;">
                 <div class="card mb-3">
                     <div class="card-header">測試程序狀態</div>
                     <div class="card-body">
@@ -166,7 +226,7 @@
                         <span>伺服</span>
                         <span class="alarm-light ${m.armA ? 'on' : 'off'}"></span>
                         <span>Alarm</span>
-                        <span>錯誤碼：${m.errorCode}</span>
+                        <span title="${m.errorMessage || ''}">錯誤碼：${m.errorCode}</span>
                     </div>
                     <div class="lights-row">
                         <div class="light-item">
@@ -845,9 +905,104 @@
         fetch('/Motor/StopTestProcedure', { method: 'POST' });
     };
 
-    document.getElementById('homeProcedureBtn').onclick = function() {
-        fetch('/Motor/HomeProcedure', { method: 'POST' });
+    document.getElementById('startHomeProcedureBtn').onclick = function() {
+        // 先取得流程執行狀態
+        fetch('/Motor/GetRobotProcedureStatus')
+            .then(res => res.json())
+            .then(data => {
+                if (data.isProcedureRunning) {
+                    alert('系統已在執行流程，請勿重複啟動！');
+                    return;
+                }
+                // 未執行流程才觸發原點復歸
+                fetch('/Motor/StartHomeProcedure', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(result => {
+                        if (result.success) {
+                            alert('原點復歸程序已啟動');
+                        } else {
+                            alert('啟動失敗');
+                        }
+                    });
+            });
     };
+
+        // ChargerControlApp\Views\Motor\Index.cshtml 片段
+    document.getElementById('stopProcedureBtn').onclick = function() {
+        fetch('/Motor/StopProcedure', { method: 'POST' });
+    };
+
+    document.getElementById('clearErrorBtn').onclick = function() {
+        fetch('/Motor/ClearLastError', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // 清空畫面顯示
+                    document.getElementById('errorCode').textContent = '0';
+                    document.getElementById('errorMessage').textContent = '';
+                }
+            });
+    };
+
+    document.getElementById('startRotateProcedureBtn').onclick = function() {
+        const targetPosNo = document.getElementById('rTargetCombo').value;
+        fetch('/Motor/StartRotateProcedure', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ targetPosNo: parseInt(targetPosNo, 10) })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('旋轉動作流程已啟動');
+            } else {
+                alert('啟動失敗');
+            }
+        });
+    };
+
+    // 狀態輪詢
+    function updateRobotProcedureStatus() {
+        fetch('/Motor/GetRobotProcedureStatus')
+            .then(res => {
+                if (!res.ok) throw new Error('API error');
+                return res.json();
+            })
+            .then(data => {
+                const runningEl = document.getElementById('procedureRunningStatus');
+                runningEl.textContent = data.isProcedureRunning ? '執行中' : '已停止';
+                runningEl.style.color = data.isProcedureRunning ? '#28a745' : '#dc3545';
+
+                const homeEl = document.getElementById('homeFinishedStatus');
+                homeEl.textContent = data.isHomeFinished ? '已原點復歸完成' : '尚未完成原點復歸';
+                homeEl.style.color = data.isHomeFinished ? '#28a745' : '#dc3545';
+
+                const caseEl = document.getElementById('homeProcedureCaseStatus');
+                caseEl.textContent = `程序編號：${data.homeProcedureCase ?? '-'}`;
+
+                // 錯誤碼
+                const errorCodeEl = document.getElementById('errorCode');
+                errorCodeEl.textContent = data.errorCode ?? '-';
+
+                // 錯誤訊息
+                const errorMsgEl = document.getElementById('errorMessage');
+                errorMsgEl.textContent = data.errorMessage ?? '';
+
+                // 流程狀態訊息
+                const procedureStatusEl = document.getElementById('procedureStatusArea');
+                procedureStatusEl.textContent = data.procedureStatusMessage ?? '';
+            })
+            .catch(() => {
+                document.getElementById('procedureRunningStatus').textContent = '取得失敗';
+                document.getElementById('homeFinishedStatus').textContent = '取得失敗';
+                document.getElementById('homeProcedureCaseStatus').textContent = '程序編號：取得失敗';
+                document.getElementById('errorCode').textContent = '-';
+                document.getElementById('errorMessage').textContent = '取得失敗';
+                document.getElementById('procedureStatusArea').textContent = '取得失敗';
+            });
+    }
+    setInterval(updateRobotProcedureStatus, 1000);
+    updateRobotProcedureStatus();
 
     setInterval(updateTestProcedureStatus, 1000);
     updateTestProcedureStatus();

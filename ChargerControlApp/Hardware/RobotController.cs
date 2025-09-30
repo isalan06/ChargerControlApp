@@ -206,11 +206,35 @@ namespace ChargerControlApp.Hardware
         }
 
         // Check if motor in position
-        private bool InPosition(int motorId, int posIndex)
+        public bool InPosition(int motorId, int posIndex)
         {
             if (motorId < 0 || motorId >= MOTOR_COUNT)
                 return false;
             return Math.Abs(Motors[motorId].MotorInfo.Pos_Actual - Motors[motorId].MotorInfo.OpDataArray[posIndex].Position) <= PositionInPos_Offset;
+        }
+        public bool InPositions(int motorId, int[] posIndexArray)
+        {
+            if (motorId < 0 || motorId >= MOTOR_COUNT)
+                return false;
+            foreach(var posIndex in posIndexArray)
+            {
+                if (Math.Abs(Motors[motorId].MotorInfo.Pos_Actual - Motors[motorId].MotorInfo.OpDataArray[posIndex].Position) <= PositionInPos_Offset)
+                    return true;
+            }
+            return false;
+        }
+        public bool ZAxisBetweenSlotOrCar()
+        {
+            for (int i = 1; i < 19; i += 2)
+            {
+                if ((Motors[2].MotorInfo.Pos_Actual < Motors[2].MotorInfo.OpDataArray[i].Position + PositionInPos_Offset) &&
+                    (Motors[2].MotorInfo.Pos_Actual > Motors[2].MotorInfo.OpDataArray[i + 1].Position - PositionInPos_Offset))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         #endregion
@@ -730,19 +754,19 @@ namespace ChargerControlApp.Hardware
             return result;
         }
 
-        public async Task MoveToPositionAsync(int axisId, int posDataNo, CancellationToken cancellationToken)
+        public async Task<bool> MoveToPositionAsync(int axisId, int posDataNo, CancellationToken cancellationToken)
         {
+            bool return_value = false;
 
-
-
+            
             while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 await Task.Delay(100, cancellationToken);
             }
 
-            var result = this.SetDataNo_M(axisId, posDataNo);
-            result = this.SetStart(axisId, true);
+            var result = this.SetDataNo_M(axisId, posDataNo); // 設定要進行的位置
+            result = this.SetStart(axisId, true); // 下達開始命令
 
             while (Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
             {
@@ -750,7 +774,7 @@ namespace ChargerControlApp.Hardware
                 await Task.Delay(100, cancellationToken);
             }
 
-            result = this.SetStart(axisId, false);
+            result = this.SetStart(axisId, false); // 將開始命令取消掉
 
             while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
             {
@@ -763,6 +787,25 @@ namespace ChargerControlApp.Hardware
             //    cancellationToken.ThrowIfCancellationRequested();
             //    await Task.Delay(100, cancellationToken);
             //}
+
+            return_value = InPosition(axisId, posDataNo);
+
+            return return_value;
+        }
+
+        public async Task<bool> CheckSensors(string sensorName, bool checkStatus, CancellationToken cancellationToken)
+        {
+            bool return_value = false;
+            do
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (sensorName == "BatteryExistInFork")
+                    return_value = GPIOService.BatteryExistInFork == checkStatus;
+                else if (sensorName == "BatteryExistInSlot")
+                    return_value = GPIOService.BatteryExistInSlot == checkStatus;
+                await Task.Delay(100, cancellationToken);
+            } while (!return_value);
+            return return_value;
         }
         #endregion
     }

@@ -1,6 +1,7 @@
 ﻿using ChargerControlApp.DataAccess.GPIO.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Device.Gpio;
+using System.Reflection;
 
 namespace ChargerControlApp.DataAccess.GPIO.Services
 {
@@ -16,6 +17,20 @@ namespace ChargerControlApp.DataAccess.GPIO.Services
 
         public static bool Pin1ValueFromMotor { get; set; } = false;
         public static bool Pin2ValueFromMotor { get; set; } = false;
+
+        public static bool BatteryExistInFork { get { return Pin1Value; } }
+        public static bool BatteryExistInSlot { get { return Pin2Value; } }
+
+        /// <summary>
+        /// 透過反射取得靜態屬性值
+        /// </summary>
+        /// <param name="propertyName"></param>
+        /// <returns></returns>
+        public static object? GetValue(string propertyName)
+        {
+            var prop = typeof(GPIOService).GetProperty(propertyName, BindingFlags.Public | BindingFlags.Static);
+            return prop?.GetValue(null);
+        }
 
         // 兩個 GPIO Input 的 GPIOInfo 實例
         public static GPIOInfo Pin1 { get; } = new GPIOInfo

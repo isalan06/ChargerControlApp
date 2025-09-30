@@ -1,5 +1,6 @@
 ﻿using ChargerControlApp.DataAccess.CANBus.Interfaces;
 using ChargerControlApp.DataAccess.CANBus.Linux;
+using ChargerControlApp.DataAccess.GPIO.Services;
 using ChargerControlApp.DataAccess.Modbus.Interfaces;
 using ChargerControlApp.DataAccess.Modbus.Models;
 using ChargerControlApp.DataAccess.Modbus.Services;
@@ -22,6 +23,12 @@ public class Program
     public static void Main(string[] args)
     {
         ThreadPool.SetMinThreads(100, 100);
+
+        //var test = GPIOService.GetValue("BatteryExistInFork");
+        //if(test != null)
+        //    Console.WriteLine($"BatteryExistInFork: {test}");
+        //else
+        //    Console.WriteLine("GetValue returned null");
 
         var builder = WebApplication.CreateBuilder(args);
 
@@ -52,23 +59,25 @@ public class Program
         //});
 
         // 註冊 SlotStateMachine
+        builder.Services.RegisterSlotService();
         builder.Services.AddSingleton<SlotStateMachine[]>(sp => {
             var arr = new SlotStateMachine[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
 
             for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
             {
-                arr[i] = new SlotStateMachine(); 
-               
+                arr[i] = new SlotStateMachine(sp, i); 
             }
 
             return arr;
         });
+
         builder.Services.AddSingleton<SlotInfo[]>(sp =>
         {
+            var stateMachine = sp.GetRequiredService<SlotStateMachine[]>();
             var arr = new SlotInfo[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
             for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
             {
-                arr[i] = new SlotInfo();
+                arr[i] = new SlotInfo(stateMachine[i]);
                 arr[i].Id = i + 1; // SlotId 從 1 開始
                 arr[i].Name = $"Slot {i + 1}";
                 if (i < HardwareManager.NPB450ControllerInstnaceNumber)

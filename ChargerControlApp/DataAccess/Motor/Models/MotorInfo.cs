@@ -14,6 +14,13 @@ namespace ChargerControlApp.DataAccess.Motor.Models
         public Motor_IO_Output_Low IO_Output_Low;
         public Motor_Jog_Home_Setting Jog_Home_Setting;
         public int ErrorCode { get; set; } = 0;
+        public string ErrorMessage
+        {
+            get
+            {
+                return MotorAlarmList.GetAlarmDescription(ErrorCode);
+            }
+        }
 
         #endregion
 

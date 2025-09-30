@@ -1,10 +1,12 @@
-using ChargerControlApp.Hardware;
-using Microsoft.AspNetCore.Mvc;
-using ChargerControlApp.Models;
-using System.Collections.Generic;
 using ChargerControlApp.DataAccess.Motor.Models;
 using ChargerControlApp.DataAccess.Motor.Services;
+using ChargerControlApp.DataAccess.Robot.Services;
+using ChargerControlApp.Hardware;
+using ChargerControlApp.Models;
+using ChargerControlApp.Models.Motor;
 using ChargerControlApp.Test.Robot;
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ChargerControlApp.Controllers
@@ -13,13 +15,15 @@ namespace ChargerControlApp.Controllers
     {
         private readonly ILogger<MotorController> _logger;
         private readonly RobotController _robotController;
+        private readonly RobotService _robotService;
         private readonly RobotTestProcedure _robotTestProcedure;
 
-        public MotorController(ILogger<MotorController> logger, RobotController robotController, RobotTestProcedure robotTestProcedure)
+        public MotorController(ILogger<MotorController> logger, RobotController robotController, RobotTestProcedure robotTestProcedure, RobotService robotService)
         {
             _logger = logger;
             _robotController = robotController;
             _robotTestProcedure = robotTestProcedure;
+            _robotService = robotService;
         }
         public IActionResult Index()
         {
@@ -57,6 +61,7 @@ namespace ChargerControlApp.Controllers
                 posActual = m.MotorInfo.Pos_Actual,
                 velActual = m.MotorInfo.Vel_Actual,
                 errorCode = m.MotorInfo.ErrorCode,
+                errorMessage = m.MotorInfo.ErrorMessage,
                 sOn = m.MotorInfo.IO_Output_Low.Bits.SON_MON,
                 rdyDdOpe = m.MotorInfo.IO_Output_Low.Bits.RDY_DD_OPE,
                 stopR = m.MotorInfo.IO_Output_Low.Bits.STOP_R,
@@ -324,7 +329,7 @@ namespace ChargerControlApp.Controllers
         [HttpGet]
         public IActionResult GetTestProcedureStatus()
         {
-            return Json(new { isRunning = _robotTestProcedure.IsRunning });
+                return Json(new { isRunning = _robotTestProcedure.IsRunning });
         }
 
         [HttpPost]
@@ -361,46 +366,58 @@ namespace ChargerControlApp.Controllers
             return Json(new { success = true });
         }
 
-    }
-
-    // DTO for 單一參數更新
-    public class JogHomeParamUpdateDto
-    {
-        public int MotorId { get; set; }
-        public int Index { get; set; }
-        public string Value { get; set; }
-    }
-    public class JogHomeParamBatchUpdateDto
-    {
-        public int MotorId { get; set; }
-        public List<string> Values { get; set; }
-    }
-
-    public class PosVelUpdateDto
-    {
-        public int MotorId { get; set; }
-        public int Index { get; set; }
-        public string Type { get; set; }
-        public string Value { get; set; }
-    }
-
-    public class SavePosVelDto
-    {
-        public int MotorId { get; set; }
-        public List<OpDataInput> OpDataList { get; set; }
-        public class OpDataInput
+        [HttpPost]
+        public IActionResult StopProcedure()
         {
-            public int Index { get; set; }
-            public string Position { get; set; }
-            public string Velocity { get; set; }
+            _robotService.StopProcedure();
+            return Ok();
         }
+
+        [HttpGet]
+        public IActionResult GetRobotProcedureStatus()
+        {
+            return Json(new
+            {
+                isProcedureRunning = _robotService.IsProcedureRunning,
+                isHomeFinished = _robotService.IsHomeFinished,
+                homeProcedureCase = _robotService.HomeProcedureCase,
+                errorCode = _robotService.LastError.ErrorCode,
+                errorMessage = _robotService.LastError.ErrorMessage,
+                procedureStatusMessage = _robotService.ProcedureStatusMessage
+            });
+        }
+
+        [HttpPost]
+        public IActionResult StartHomeProcedure()
+        {
+            // 取得 RobotService 實例
+            _robotService.StartHomeProcedure();
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult ClearLastError()
+        {
+            _robotService.LastError.Clear();
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult StartRotateProcedure([FromBody] RotateProcedureRequest req)
+        {
+            _robotService.StartRotateProcedure(req.targetPosNo);
+            return Json(new { success = true });
+        }
+
     }
 
-    public class SetPositionRequest
-    {
-        public int MotorId { get; set; }
-        public int PosIndex { get; set; }
-        public int Position { get; set; }
-    }
+    
+    
+
+    
+
+    
+
+    
 }
 
