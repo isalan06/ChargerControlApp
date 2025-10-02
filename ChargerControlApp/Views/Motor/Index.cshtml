@@ -94,10 +94,73 @@
                         </div>
                     </div>
                 </div>
+                <!-- 車輛電池交換區 (新增於旋轉動作區下方) -->
+                <div class="card mb-3">
+                    <div class="card-header">車輛電池交換區</div>
+                    <div class="card-body">
+                        <div style="display:flex; gap:16px;">
+                            <button type="button" id="startTakeCarBatteryProcedureBtn" class="btn btn-warning w-100">
+                                從車輛取電池
+                            </button>
+                            <button type="button" id="startPlaceCarBatteryProcedureBtn" class="btn btn-success w-100">
+                                電池放置到車輛
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
 
             <!-- 右側狀態方框 -->
             <div style="min-width:420px;">
+                <!-- Slot電池放置流程方框（新增） -->
+                <div class="card mb-3" style="min-width:320px;">
+                    <div class="card-header">Slot電池放置流程</div>
+                    <div class="card-body">
+                        <div style="margin-bottom:12px;">
+                            <label for="slotNoInput" style="font-weight:bold;">Slot編號：</label>
+                            <select id="slotNoInput" class="form-control" style="width:100px; display:inline-block;">
+                                <option value="4">1</option>
+                                <option value="6">2</option>
+                                <option value="8">3</option>
+                                <option value="10">4</option>
+                                <option value="12">5</option>
+                                <option value="14">6</option>
+                                <option value="16">7</option>
+                                <option value="18">8</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; gap:12px;">
+                            <button type="button" id="startPlaceSlotBatteryProcedureBtn" class="btn btn-success w-100">
+                                電池放置到Slot
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Slot電池取出流程方框（新增） -->
+                <div class="card mb-3" style="min-width:320px;">
+                    <div class="card-header">Slot電池取出流程</div>
+                    <div class="card-body">
+                        <div style="margin-bottom:12px;">
+                            <label for="slotNoInputTake" style="font-weight:bold;">Slot編號：</label>
+                            <select id="slotNoInputTake" class="form-control" style="width:100px; display:inline-block;">
+                                <option value="3">1</option>
+                                <option value="5">2</option>
+                                <option value="7">3</option>
+                                <option value="9">4</option>
+                                <option value="11">5</option>
+                                <option value="13">6</option>
+                                <option value="15">7</option>
+                                <option value="17">8</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; gap:12px;">
+                            <button type="button" id="startTakeSlotBatteryProcedureBtn" class="btn btn-success w-100">
+                                從Slot取出電池
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div class="card mb-3">
                     <div class="card-header">測試程序狀態</div>
                     <div class="card-body">
@@ -958,6 +1021,60 @@
             } else {
                 alert('啟動失敗');
             }
+        });
+    };
+
+    document.getElementById('startTakeCarBatteryProcedureBtn').onclick = function() {
+        fetch('/Motor/StartTakeCarBatteryProcedure', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('從車輛取電池程序已啟動');
+                } else {
+                    alert('啟動失敗');
+                }
+            });
+    };
+
+    document.getElementById('startPlaceCarBatteryProcedureBtn').onclick = function() {
+        fetch('/Motor/StartPlaceCarBatteryProcedure', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('電池放置到車輛程序已啟動');
+                } else {
+                    alert('啟動失敗');
+                }
+            });
+    };
+
+    // 放置到Slot
+    document.getElementById('startPlaceSlotBatteryProcedureBtn').onclick = function() {
+        const slotNo = parseInt(document.getElementById('slotNoInput').value, 10);
+        fetch('/Motor/StartPlaceSlotBatteryProcedure', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slotNo })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) alert('電池放置到Slot程序已啟動');
+            else alert('啟動失敗');
+        });
+    };
+
+    // 取出Slot
+    document.getElementById('startTakeSlotBatteryProcedureBtn').onclick = function() {
+        const slotNo = parseInt(document.getElementById('slotNoInputTake').value, 10);
+        fetch('/Motor/StartTakeSlotBatteryProcedure', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slotNo })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) alert('從Slot取出電池程序已啟動');
+            else alert('啟動失敗');
         });
     };
 

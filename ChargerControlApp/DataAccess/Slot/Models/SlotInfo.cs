@@ -15,11 +15,13 @@ namespace ChargerControlApp.DataAccess.Slot.Models
 
         public SlotStateMachine State;
 
+        public bool BatteryMemory { get; set; } = false; // 電池記憶
+        public bool StateError { get; set; } = false; // 狀態錯誤
+
         public SlotInfo(SlotStateMachine state) 
         {
             State = state;
         }
-
 
     }
 }

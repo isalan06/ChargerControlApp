@@ -409,6 +409,62 @@ namespace ChargerControlApp.Controllers
             return Json(new { success = true });
         }
 
+        [HttpPost]
+        public IActionResult StartTakeCarBatteryProcedure()
+        {
+            try
+            {
+                _robotService.StartTakeCarBatteryProcedure();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, error = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult StartPlaceCarBatteryProcedure()
+        {
+            try
+            {
+                _robotService.StartPlaceCarBatteryProcedure();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, error = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult StartPlaceSlotBatteryProcedure([FromBody] SlotRequest req)
+        {
+            try
+            {
+                _robotService.StartPlaceSlotBatteryProcedure(req.slotNo);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, error = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult StartTakeSlotBatteryProcedure([FromBody] SlotRequest req)
+        {
+            try
+            {
+                _robotService.StartTakeSlotBatteryProcedure(req.slotNo);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, error = ex.Message });
+            }
+        }
+
     }
 
     

@@ -87,7 +87,8 @@ namespace ChargerControlApp.Controllers
             var result = slots.Select(s => new {
                 chargingProcessValue = s.ChargingProcessValue,
                 chargeState = s.ChargeState.ToString(),
-                machineState = s.State.GetCurrentStateName()
+                machineState = s.State.GetCurrentStateName(),
+                batteryMemory = s.BatteryMemory
             }).ToArray();
             return Json(result);
         }
@@ -101,6 +102,14 @@ namespace ChargerControlApp.Controllers
                 return Json(new { success = true });
             }
             return Json(new { success = false });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SwapBatteryMemory(int index)
+        {
+            _slotServices.SwapBatteryMemory(index);
+            return Json(new { success = true });
         }
 
         public IActionResult Index()

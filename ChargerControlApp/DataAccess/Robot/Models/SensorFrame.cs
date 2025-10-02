@@ -27,6 +27,11 @@
         /// </summary>
         public bool CheckStatus { get; set; } = false;
 
+        /// <summary>
+        /// 是否為檢查點 (若為 true，則在此步驟失敗時，在外部程序會另外做處理)
+        /// </summary>
+        public bool IfCheckPoint { get; set; } = false;
+
 
         /// <summary>
         ///  建立此物件的淺層複製
@@ -41,7 +46,8 @@
                 Description = this.Description,
                 SensorName = this.SensorName,
                 CheckStatus = this.CheckStatus,
-                ClassName = this.ClassName
+                ClassName = this.ClassName,
+                IfCheckPoint = this.IfCheckPoint
             };
         }
     }

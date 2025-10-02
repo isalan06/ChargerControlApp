@@ -81,11 +81,27 @@ namespace ChargerControlApp.Services
                 }
                 return arr;
             });
-            services.AddSingleton<ErrorSlotState[]>(sp => {
-                var arr = new ErrorSlotState[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+            services.AddSingleton<StopChargeSlotState[]>(sp => {
+                var arr = new StopChargeSlotState[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
                 for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
                 {
-                    arr[i] = new ErrorSlotState();
+                    arr[i] = new StopChargeSlotState();
+                }
+                return arr;
+            });
+            services.AddSingleton<SupplyErrorSlotState[]>(sp => {
+                var arr = new SupplyErrorSlotState[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+                for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
+                {
+                    arr[i] = new SupplyErrorSlotState();
+                }
+                return arr;
+            });
+            services.AddSingleton<StateErrorSlotState[]>(sp => {
+                var arr = new StateErrorSlotState[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
+                for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
+                {
+                    arr[i] = new StateErrorSlotState();
                 }
                 return arr;
             });

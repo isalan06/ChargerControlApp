@@ -51,18 +51,23 @@ namespace ChargerControlApp.Services
         {
             _logger.LogInformation("背景應用模組 啟動");
 
-            //_hardwareManager.SlotServices.State[0].TransitionTo<InitializationSlotState>();
+            // 初始化 Charger 狀態
             for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
             {
                 if (i < HardwareManager.NPB450ControllerInstnaceNumber)
                 {
                     _hardwareManager.Charger[i].IsUsed = true;
+                    if(_hardwareManager.SlotServices.SlotInfo[i].State.CurrentState.GetStateEnum() == SlotState.NotUsed)
+                    {
+                        _hardwareManager.SlotServices.TransitionTo(i, state: SlotState.Initialization);
+                    }
                 }
                 else
-                { 
-                    //_hardwareManager.SlotServices.State[i].TransitionTo<NotUsedSlotState>();
-                    _hardwareManager.SlotServices.TransitionTo(i, state: SlotState.NotUsed);
+                {
+                    if (_hardwareManager.SlotServices.SlotInfo[i].State.CurrentState.GetStateEnum() != SlotState.NotUsed)
+                        _hardwareManager.SlotServices.TransitionTo(i, state: SlotState.NotUsed);
                 }
+                _hardwareManager.SlotServices.TransferToSlotChargeState(i); // 同步更新充電狀態
             }
 
 
@@ -70,13 +75,9 @@ namespace ChargerControlApp.Services
             {
                 try
                 {
-                    // if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    //await Task.Run(() => _hardwareManager.Charger[0].PollingOnce());
-
                     for (int i = 0; i < HardwareManager.NPB450ControllerInstnaceNumber; i++)
                     {
-                        //_logger.LogInformation($"CanBusPollingService-DeviceID: {_hardwareManager.Charger[i].deviceCanID}-PollingOnce()");
-                        //_hardwareManager.Charger[i].IsUsed = true; 
+                        SlotStateCheck(i);
                         await Task.Run(() => _hardwareManager.Charger[i].PollingOnce());
                     }
 
@@ -121,6 +122,52 @@ namespace ChargerControlApp.Services
 
             _logger.LogInformation("CanBusPollingService 結束");
         }
+
+        /// <summary>
+        /// Slot 狀態檢查與轉換
+        /// </summary>
+        /// <param name="index"></param>
+        protected void SlotStateCheck(int index)
+        {
+            var charger = _hardwareManager.Charger[index];
+            var slotState = _hardwareManager.SlotServices.SlotInfo[index];
+            var slotService = _hardwareManager.SlotServices;
+            if (slotState.IsEnabled)
+            {
+                // 依 Charger 錯誤訊息決定 Slot 狀態
+                if ((charger.FAULT_STATUS.Data != 0) && (slotState.State.CurrentState.CurrentState != SlotState.SupplyError))
+                    slotService.TransitionTo(index, SlotState.SupplyError);
+
+                // 從Slot狀態錯誤決定 Slot 狀態
+                if (slotState.StateError && (charger.FAULT_STATUS.Data == 0) && (slotState.State.CurrentState.CurrentState != SlotState.StateError))
+                    slotService.TransitionTo(index, SlotState.StateError);
+
+                if (slotState.StateError && (charger.FAULT_STATUS.Data != 0)) return;
+
+                // 狀態轉換邏輯   
+                if (slotState.State.CurrentState.CurrentState == SlotState.Initialization)
+                {
+                    // 初始化完成，轉到 Empty 狀態(無電池) 或 Idle 狀態(有電池)
+                    if (slotState.BatteryMemory)
+                        slotService.TransitionTo(index, SlotState.Idle);
+                    else
+                        slotService.TransitionTo(index, SlotState.Empty);
+                }
+                else if (slotState.State.CurrentState.CurrentState == SlotState.Idle)
+                {
+                    // 有電池，等待充電，下達充電指令
+                    charger.StartCharging();
+                    slotService.TransitionTo(index, SlotState.Charging);
+                }
+                else if (slotState.State.CurrentState.CurrentState == SlotState.Charging)
+                {
+                    // 充電中，檢查是否浮充
+                    if (charger.CHG_STATUS.Bits.FVM)
+                        slotService.TransitionTo(index, SlotState.Floating);
+                }
+            }
+        }
+
     }
 
     public class GrpcBackgroundService : BackgroundService

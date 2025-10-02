@@ -74,6 +74,15 @@
                         }
                     </select>
                     <button class="btn btn-secondary ms-2" onclick="setSlotState(@i)">切換狀態</button>
+                    <!-- 新增：電池存在顯示 -->
+                    <span class="ms-4 d-flex align-items-center" style="width:160px;">
+                        <span id="slot-@i-battery"
+                              class="badge @(slot.BatteryMemory ? "bg-success" : "bg-secondary")"
+                              style="width:80px; display:inline-block; text-align:center;">
+                            @(slot.BatteryMemory ? "電池存在" : "無電池")
+                        </span>
+                        <button class="btn btn-warning btn-sm ms-2" onclick="swapBatteryMemory(@i)">切換</button>
+                    </span>
                 </div>
             }
         </div>
@@ -177,6 +186,17 @@
                     document.getElementById('slot-' + i + '-progress').textContent = slot.chargingProcessValue.toFixed(2) + ' %';
                     document.getElementById('slot-' + i + '-state').textContent = slot.chargeState;
                     document.getElementById('slot-' + i + '-machine').textContent = slot.machineState;
+                    // 新增：更新電池存在顯示
+                    var batterySpan = document.getElementById('slot-' + i + '-battery');
+                    if (batterySpan) {
+                        if (slot.batteryMemory) {
+                            batterySpan.className = "badge bg-success";
+                            batterySpan.textContent = "電池存在";
+                        } else {
+                            batterySpan.className = "badge bg-secondary";
+                            batterySpan.textContent = "無電池";
+                        }
+                    }
                 });
             });
     }
@@ -216,6 +236,26 @@
         .then(data => {
             if (!data.success) {
                 alert('狀態設定失敗');
+            }
+        });
+    }
+
+    // 切換Battery Memory
+    function swapBatteryMemory(idx) {
+        fetch('@Url.Action("SwapBatteryMemory", "Units")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': '@Html.AntiForgeryToken()'.replace('<input name="__RequestVerificationToken" type="hidden" value="', '').replace('" />', '')
+            },
+            body: 'index=' + idx
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert('切換失敗');
+            } else {
+                fetchSlotStatus(); // 立即刷新顯示
             }
         });
     }
