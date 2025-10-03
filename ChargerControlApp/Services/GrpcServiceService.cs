@@ -136,7 +136,7 @@ namespace ChargerControlApp.Services
             {
                 case ChargerAction.ActionReserve:
                     Console.WriteLine("Action reserve 被呼叫了！" + _chargingStationStateMachine.GetCurrentStateName());
-                    _chargingStationStateMachine.TransitionTo<ReservedState>();
+                    //_chargingStationStateMachine.TransitionTo<ReservedState>();
                     Console.WriteLine("Action reserve 被呼叫了！" + _chargingStationStateMachine.GetCurrentStateName() + " " + _chargingStationStateMachine._currentState.GetType().Name); // 這裡可以檢查狀態是否正確
                     actionCommandSuccess = true;
                     break;

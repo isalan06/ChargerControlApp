@@ -1,4 +1,5 @@
 ﻿using ChargerControlApp.DataAccess.Slot.Models;
+using ChargerControlApp.Hardware;
 using Google.Protobuf.WellKnownTypes;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -16,6 +17,25 @@ namespace ChargerControlApp.DataAccess.Slot.Services
             SlotInfo = serviceProvider.GetRequiredService<SlotInfo[]>();
             // 初始化每個 Slot 的狀態機
             SlotStatePersistence.LoadStates(SlotInfo); // 載入儲存的狀態
+        }
+
+        public bool IsAnySlotInErrorState
+        {
+            get
+            { 
+                bool result = false;
+
+                for(int i=0;i<HardwareManager.NPB450ControllerInstnaceNumber;i++)
+                {
+                    if(SlotInfo[i].State.CurrentState.GetStateEnum() == SlotState.StateError)
+                    {
+                        result = true;
+                        break;
+                    }
+                }
+
+                return result;
+            }
         }
 
         /// <summary>
@@ -120,6 +140,46 @@ namespace ChargerControlApp.DataAccess.Slot.Services
             SlotInfo[index].BatteryMemory = !SlotInfo[index].BatteryMemory;
             if (save)
                 SlotStatePersistence.SaveStates(SlotInfo); // 儲存狀態
+        }
+
+        public void ResetAlarm(int index)
+        {
+            if (index < 0 || index >= SlotInfo.Length)
+            {
+                Console.WriteLine($"SlotServices ResetAlarm index 超出範圍: {index}");
+                return;
+            }
+
+            if((SlotInfo[index].State.CurrentState.CurrentState == SlotState.StateError) ||
+                (SlotInfo[index].State.CurrentState.CurrentState == SlotState.SupplyError))
+                SlotInfo[index].State.CurrentState.HandleTransition(SlotState.Initialization); // 錯誤狀態，重置為 Idle
+        }
+        public void ResetAllAlarm()
+        {
+            for (int i = 0; i < SlotInfo.Length; i++)
+            {
+                ResetAlarm(i);
+            }
+        }
+
+        public void ResetSlotStatus(int index)
+        {
+            if (index < 0 || index >= SlotInfo.Length)
+            {
+                Console.WriteLine($"SlotServices ResetAlarm index 超出範圍: {index}");
+                return;
+            }
+
+            if (SlotInfo[index].State.CurrentState.CurrentState != SlotState.NotUsed) 
+                SlotInfo[index].State.CurrentState.HandleTransition(SlotState.Initialization); // 非 NotUsed 狀態，重置為 Initialization
+        }
+
+        public void ResetAllSlotStatus()
+        {
+            for (int i = 0; i < SlotInfo.Length; i++)
+            {
+                ResetSlotStatus(i);
+            }
         }
     }
 

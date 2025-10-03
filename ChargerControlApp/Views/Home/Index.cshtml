@@ -3,7 +3,220 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-
+    <h1 class="display-4">Battery Swapping Station</h1>
 </div>
+
+<div style="display:flex; flex-direction:row; align-items:flex-start; gap:32px;">
+    <!-- 狀態總覽區 -->
+    <div id="status-overview" style="width:320px; border:1px solid #ccc; border-radius:8px; padding:16px; background:#fafbfc;">
+        <div style="font-weight:bold; font-size:1.1em; margin-bottom:8px;">狀態總覽區</div>
+        <div>
+            <span style="font-weight:bold;">設備狀態：</span>
+            <span id="station-state" style="color:#007bff;">讀取中...</span>
+        </div>
+        <div style="margin-top:8px;">
+            <span style="font-weight:bold;">電源供應器連線數量：</span>
+            <span id="psu-count" style="color:#28a745;">讀取中...</span>
+        </div>
+        <div style="margin-top:8px;">
+            <span style="font-weight:bold;">Canbus連線狀態：</span>
+            <span id="canbus-status" style="color:#17a2b8;">讀取中...</span>
+        </div>
+        <div style="margin-top:8px;">
+            <span style="font-weight:bold;">Modbus連線狀態：</span>
+            <span id="modbus-status" style="color:#17a2b8;">讀取中...</span>
+        </div>
+        <div style="margin-top:8px;">
+            <span style="font-weight:bold;">Motor Alarm：</span>
+            <span id="motor-alarm" style="color:#dc3545;">讀取中...</span>
+        </div>
+        <div style="margin-top:8px;">
+            <span style="font-weight:bold;">電源供應器Alarm：</span>
+            <span id="psu-alarm" style="color:#dc3545;">讀取中...</span>
+        </div>
+        <div style="margin-top:8px;">
+            <span style="font-weight:bold;">Slot Alarm：</span>
+            <span id="slot-alarm" style="color:#dc3545;">讀取中...</span>
+        </div>
+        <div style="margin-top:8px;">
+            <span style="font-weight:bold;">程序 Alarm：</span>
+            <span id="procedure-alarm" style="color:#dc3545;">讀取中...</span>
+        </div>
+        <div style="margin-top:8px;">
+            <span style="font-weight:bold;">主程序編號：</span>
+            <span id="main-proc-case" style="color:#6c757d;">讀取中...</span>
+        </div>
+    </div>
+
+    <!-- 運轉操作區 -->
+    <div id="operation-panel" style="width:300px; border:1px solid #ccc; border-radius:8px; padding:16px; background:#f5f7fa;">
+        <div style="font-weight:bold; font-size:1.1em; margin-bottom:8px;">運轉操作區</div>
+        <div>
+            <button id="btn-auto-proc" class="btn btn-primary" style="width:100%;">電池交換運行</button>
+        </div>
+        <div style="margin-top:12px;">
+            <button id="btn-stop-proc" class="btn btn-danger" style="width:100%;">停止電池交換</button>
+        </div>
+        <div style="margin-top:12px;">
+            <button id="btn-reset-alarm" class="btn btn-warning" style="width:100%;">告警重置</button>
+        </div>
+        <div style="margin-top:12px;">
+            <button id="btn-system-reset" class="btn btn-secondary" style="width:100%;">系統重置</button>
+        </div>
+        <div style="margin-top:12px;">
+            <button id="btn-home-proc" class="btn btn-info" style="width:100%;">原點復歸</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+    // 運轉操作區按鈕事件
+    document.addEventListener('DOMContentLoaded', function () {
+        // 電池交換運行
+        document.getElementById('btn-auto-proc').addEventListener('click', async function () {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = '執行中...';
+            try {
+                const res = await fetch('/Home/StartAutoProcedure', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message);
+                } else {
+                    alert('觸發失敗');
+                }
+            } catch {
+                alert('連線錯誤');
+            }
+            btn.disabled = false;
+            btn.textContent = '電池交換運行';
+        });
+
+        // 停止電池交換
+        document.getElementById('btn-stop-proc').addEventListener('click', async function () {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = '執行中...';
+            try {
+                const res = await fetch('/Home/StopAutoProcedure', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message);
+                } else {
+                    alert('觸發失敗');
+                }
+            } catch {
+                alert('連線錯誤');
+            }
+            btn.disabled = false;
+            btn.textContent = '停止電池交換';
+        });
+
+        // 告警重置
+        document.getElementById('btn-reset-alarm').addEventListener('click', async function () {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = '執行中...';
+            try {
+                const res = await fetch('/Home/ResetAlarm', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message);
+                } else {
+                    alert('觸發失敗');
+                }
+            } catch {
+                alert('連線錯誤');
+            }
+            btn.disabled = false;
+            btn.textContent = '告警重置';
+        });
+
+        // 系統重置
+        document.getElementById('btn-system-reset').addEventListener('click', async function () {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = '執行中...';
+            try {
+                const res = await fetch('/Home/SystemReset', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message);
+                } else {
+                    alert('觸發失敗');
+                }
+            } catch {
+                alert('連線錯誤');
+            }
+            btn.disabled = false;
+            btn.textContent = '系統重置';
+        });
+
+        // 原點復歸
+        document.getElementById('btn-home-proc').addEventListener('click', async function () {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = '執行中...';
+            try {
+                const res = await fetch('/Home/HomeProcedure', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message);
+                } else {
+                    alert('觸發失敗');
+                }
+            } catch {
+                alert('連線錯誤');
+            }
+            btn.disabled = false;
+            btn.textContent = '原點復歸';
+        });
+    });
+
+
+    async function fetchStationState() {
+        try {
+            const res = await fetch('/Home/GetStationState');
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('station-state').textContent = data.state;
+                document.getElementById('psu-count').textContent = data.psuCount;
+                document.getElementById('canbus-status').textContent = data.canbus ? '已連線' : '未連線';
+                document.getElementById('canbus-status').style.color = data.canbus ? '#28a745' : '#dc3545';
+                document.getElementById('modbus-status').textContent = data.modbus ? '已連線' : '未連線';
+                document.getElementById('modbus-status').style.color = data.modbus ? '#28a745' : '#dc3545';
+
+                document.getElementById('motor-alarm').textContent = data.motorAlarm ? '異常' : '正常';
+                document.getElementById('motor-alarm').style.color = data.motorAlarm ? '#dc3545' : '#28a745';
+
+                document.getElementById('psu-alarm').textContent = data.psuAlarm ? '異常' : '正常';
+                document.getElementById('psu-alarm').style.color = data.psuAlarm ? '#dc3545' : '#28a745';
+
+                document.getElementById('slot-alarm').textContent = data.slotAlarm ? '異常' : '正常';
+                document.getElementById('slot-alarm').style.color = data.slotAlarm ? '#dc3545' : '#28a745';
+
+                document.getElementById('procedure-alarm').textContent = data.procedureAlarm ? '異常' : '正常';
+                document.getElementById('procedure-alarm').style.color = data.procedureAlarm ? '#dc3545' : '#28a745';
+
+                document.getElementById('main-proc-case').textContent = data.mainProcedureCase;
+            } else {
+                [
+                    'station-state', 'psu-count', 'canbus-status', 'modbus-status',
+					'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case'
+                ].forEach(id => document.getElementById(id).textContent = '取得失敗');
+
+            }
+        } catch {
+            [
+                'station-state', 'psu-count', 'canbus-status', 'modbus-status',
+				'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case'
+            ].forEach(id => document.getElementById(id).textContent = '連線錯誤');
+        }
+    }
+    fetchStationState();
+    setInterval(fetchStationState, 2000); // 每2秒自動更新
+</script>
+
 

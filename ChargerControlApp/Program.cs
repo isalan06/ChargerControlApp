@@ -41,6 +41,7 @@ public class Program
         configuration.GetSection("AppSettings").Bind(settings);
         builder.Services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
         builder.Services.AddSingleton(settings); // 讓 DI 容器可以取得 AppSettings
+        HardwareManager.NPB450ControllerInstnaceNumber = settings.PowerSupplyInstanceNumber; // 設定 NP-B450 控制器實例數量
 
 
         // ModbusRTUService
@@ -122,6 +123,9 @@ public class Program
         builder.Services.AddSingleton<ChargingStationStateMachine>();
         builder.Services.AddSingleton<IServiceProvider>(provider => provider);
 
+        // 先註冊 Singleton，讓 DI 可注入
+        builder.Services.AddSingleton<MonitoringService>();
+
 #if RELEASE
         // 監聽所有網卡 (0.0.0.0)，可自訂 port
         builder.WebHost.UseUrls("http://0.0.0.0:5000");//, "https://0.0.0.0:5001");
@@ -132,6 +136,7 @@ public class Program
         builder.Services.AddHostedService<CanBusPollingService>();
         builder.Services.AddHostedService<GrpcBackgroundService>();
         builder.Services.AddHostedService<ModbusPollingService>();
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<MonitoringService>());
 
 
         Console.WriteLine("Starting Web Application...");

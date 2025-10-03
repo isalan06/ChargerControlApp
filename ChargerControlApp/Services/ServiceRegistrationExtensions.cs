@@ -1,5 +1,6 @@
 ﻿using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
+using ChargerControlApp.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -14,12 +15,11 @@ namespace ChargerControlApp.Services
         public static IServiceCollection RegisterChargingServices(this IServiceCollection services)
         {
             // 註冊所有狀態
-            services.AddSingleton<InitializationState>();
+            services.AddSingleton<InitialState>();
             services.AddSingleton<IdleState>();
-            services.AddSingleton<ReservedState>();
-            services.AddSingleton<ReservationTimeoutState>();
-            services.AddSingleton<OccupiedState>();
-            services.AddSingleton<ChargingStateClass>();
+            services.AddSingleton<SwappingState>();
+            services.AddSingleton<ManualState>();
+            services.AddSingleton<UnspecifiedState>();
             services.AddSingleton<ErrorState>();
 
             // 註冊狀態機與硬體控制

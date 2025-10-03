@@ -79,6 +79,7 @@ namespace ChargerControlApp.Services
                     {
                         SlotStateCheck(i);
                         await Task.Run(() => _hardwareManager.Charger[i].PollingOnce());
+                        await Task.Delay(20);
                     }
 
                     // Read GPIO Inputs
@@ -87,6 +88,7 @@ namespace ChargerControlApp.Services
                     //_hardwareManager.Charger.PollingOnce();
                     //_logger.LogDebug("輪詢成功，電壓: {Voltage}", _hardwareManager.Charger.GetCachedVoltage());
 
+                    /*
                     //State monitoring
                     if (_chargingStationStateMachine._currentState is IdleState ||
                         _chargingStationStateMachine._currentState is ReservedState)
@@ -111,6 +113,7 @@ namespace ChargerControlApp.Services
                             _chargingStationStateMachine.TransitionTo<OccupiedState>();
                         }
                     }
+                    */
                 }
                 catch (Exception ex)
                 {
@@ -202,10 +205,10 @@ namespace ChargerControlApp.Services
                         // 👇 用工廠方式從原本的 DI 拿服務
                         services.AddSingleton(provider =>
                             _mainProvider.GetRequiredService<ChargingStationStateMachine>());
-                        services.AddSingleton(provider =>
-                            _mainProvider.GetRequiredService<ReservedState>());
-                        services.AddSingleton(provider =>
-                            _mainProvider.GetRequiredService<ChargingStateClass>());
+                        //services.AddSingleton(provider =>
+                        //    _mainProvider.GetRequiredService<ReservedState>());
+                        //services.AddSingleton(provider =>
+                        //    _mainProvider.GetRequiredService<ChargingStateClass>());
                         services.AddSingleton(provider =>
                             _mainProvider.GetRequiredService<SwappingStationService>());
                     });

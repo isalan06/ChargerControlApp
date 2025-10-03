@@ -17,7 +17,7 @@ namespace ChargerControlApp.Hardware
 {
     public class HardwareManager
     {
-        public const int NPB450ControllerInstnaceNumber = 1; // NP-B450 控制器實例數量
+        public static int NPB450ControllerInstnaceNumber = 1; // NP-B450 控制器實例數量
         public static IServiceProvider? Services { get; private set; }
         public NPB450Controller[] Charger { get; private set; }
         private SocketCANBusService canBusService { get; set; }
@@ -29,6 +29,15 @@ namespace ChargerControlApp.Hardware
         public ModbusRTUService modbusRTUService { get; private set; }
 
         public SlotServices SlotServices { get; private set; }
+
+        public bool CanbusConnected
+        {
+            get { return (canBusService!= null) ? canBusService.IsConnected : false; }
+        }
+        public bool ModbusConnected
+        {
+            get { return (modbusRTUService != null) ? modbusRTUService.IsConnected : false; }
+        }
 
 
         public HardwareManager(IServiceProvider serviceProvider)

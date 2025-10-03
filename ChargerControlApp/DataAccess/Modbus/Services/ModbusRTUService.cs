@@ -25,6 +25,8 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
         private ushort[] _readData = null;
         private List<byte> _buffer = new List<byte>();
 
+        public bool IsConnected { get { return _serialPort.IsOpen; } }
+
 
 
         #region Constructor

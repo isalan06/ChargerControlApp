@@ -34,6 +34,11 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
         }
 
         /// <summary>
+        /// 是否已連線
+        /// </summary>
+        public bool IsConnected => (_socket != null) ? _socket.Connected : false;
+
+        /// <summary>
         /// TODO: Async有問題，沒檢查
         /// </summary>
         /// <param name="timeoutMs"></param>

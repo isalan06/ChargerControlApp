@@ -15,5 +15,7 @@ namespace ChargerControlApp.Utilities
         public int CanBitrate { get; set; }
         public string PortName { get; set; }
         public string PortNameLinux { get; set; }
+
+        public int PowerSupplyInstanceNumber { get; set; }
     }
 }

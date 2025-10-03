@@ -44,7 +44,9 @@ namespace ChargerControlApp.Hardware
         private double Current = 0;
         public FAULT_STATUS_Union FAULT_STATUS;
         public CHG_STATUS_Union CHG_STATUS;
-        public bool IsUsed { get; set; } = false;       
+        public bool IsUsed { get; set; } = false;
+        private bool startChargingTrigger = false;
+        private bool stopChargingTrigger = false;
 
         public enum CanbusReadCommand : ushort
         {
@@ -293,6 +295,28 @@ namespace ChargerControlApp.Hardware
                 this.Current = await GetCurrent();
                 this.CHG_STATUS = await GetCHG_STATUS();
                 this.FAULT_STATUS = await GetFAULT_STATUS();
+                if (this.startChargingTrigger)
+                {
+                    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StartCharging()");
+                    this.startChargingTrigger = false;
+                    int numberOfDataBytes = 1;
+                    byte[] send = new byte[2 + numberOfDataBytes];
+                    byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
+                    sendBytes.CopyTo(send, 0);
+                    send[2] = (byte)0x01;
+                    _canBusService.SendCommand(send, deviceCanID);
+                }
+                if (this.stopChargingTrigger)
+                {
+                    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StopCharging()");
+                    this.stopChargingTrigger = false;
+                    int numberOfDataBytes = 1;
+                    byte[] send = new byte[2 + numberOfDataBytes];
+                    byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
+                    sendBytes.CopyTo(send, 0);
+                    send[2] = (byte)0x00;
+                    _canBusService.SendCommand(send, deviceCanID);
+                }
                 _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-End");
             }
             else
@@ -301,11 +325,23 @@ namespace ChargerControlApp.Hardware
                 if (this.IsUsed)
                 {
                     this.Voltage += 0.1 + 0.005 * (double)deviceID;
-                    this.Current += 0.015+ 0.001 * (double)deviceID;
+                    this.Current += 0.015 + 0.001 * (double)deviceID;
                     if (this.Voltage >= 250.0) this.Voltage = 0.0;
-                    if(this.Current >= 5.0) this.Current = 0.0;
+                    if (this.Current >= 5.0) this.Current = 0.0;
                 }
                 //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Windows虛擬]-PollingOnce()");
+
+                if (this.startChargingTrigger)
+                {
+                    this.startChargingTrigger = false;
+                    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Windows虛擬]-StartCharging()");
+                }
+
+                if(this.stopChargingTrigger)
+                {
+                    this.stopChargingTrigger = false;
+                    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Windows虛擬]-StopCharging()");
+                }
             }
         }
         public double GetCachedVoltage() { return this.Voltage; }
@@ -398,11 +434,11 @@ namespace ChargerControlApp.Hardware
                     //Console.WriteLine($"CAN Status: {status}");
 
                     // 根據狀態做動作，例如：
-                    if (this.Voltage >= 10)
-                    {
-                        if (_chargingStationStateMachine._currentState is IdleState)
-                            _chargingStationStateMachine.TransitionTo<OccupiedState>();
-                    }
+                    //if (this.Voltage >= 10)
+                    //{
+                    //    if (_chargingStationStateMachine._currentState is IdleState)
+                    //        _chargingStationStateMachine.TransitionTo<OccupiedState>();
+                    //}
                 }
                 catch (Exception ex)
                 {
@@ -420,20 +456,21 @@ namespace ChargerControlApp.Hardware
 
         public void StartCharging()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                _logger.LogInformation($"NPB450Controller{this.deviceID}-[Windows虛擬]-StartCharging()");
-                return;
-            }
+            startChargingTrigger = true;
+            //if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            //{
+            //    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Windows虛擬]-StartCharging()");
+            //    return;
+            //}
 
-            _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StartCharging()");
+            //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StartCharging()");
 
-            int numberOfDataBytes = 1;
-            byte[] send = new byte[2 + numberOfDataBytes];
-            byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
-            sendBytes.CopyTo(send, 0);
-            send[2] = (byte)0x01;
-            _canBusService.SendCommand(send, deviceCanID);
+            //int numberOfDataBytes = 1;
+            //byte[] send = new byte[2 + numberOfDataBytes];
+            //byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
+            //sendBytes.CopyTo(send, 0);
+            //send[2] = (byte)0x01;
+            //_canBusService.SendCommand(send, deviceCanID);
 
             //_chargingStationStateMachine.TransitionTo<ChargingStateClass>();//TODO 不要寫在這，疑到狀態機裡?
             //Thread.Sleep(50);
@@ -467,18 +504,19 @@ namespace ChargerControlApp.Hardware
 
         public void StopCharging()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                _logger.LogInformation($"NPB450Controller{this.deviceID}-[Windows虛擬]-StopCharging()");
-                return;
-            }
+            stopChargingTrigger = true;
+            //if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            //{
+            //    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Windows虛擬]-StopCharging()");
+            //    return;
+            //}
 
-            int numberOfDataBytes = 1;
-            byte[] send = new byte[2 + numberOfDataBytes];
-            byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
-            sendBytes.CopyTo(send, 0);
-            send[2] = (byte)0x00;
-            _canBusService.SendCommand(send, deviceCanID);
+            //int numberOfDataBytes = 1;
+            //byte[] send = new byte[2 + numberOfDataBytes];
+            //byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
+            //sendBytes.CopyTo(send, 0);
+            //send[2] = (byte)0x00;
+            //_canBusService.SendCommand(send, deviceCanID);
 
             //_chargingStationStateMachine.TransitionTo<OccupiedState>();
             //Thread.Sleep(50);

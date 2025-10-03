@@ -30,20 +30,98 @@ namespace ChargerControlApp.DataAccess.Robot.Services
         private readonly ILogger<RobotService> _logger;
 
 
+
+
         #region Information
 
+        /// <summary>
+        /// 是否已完成復歸
+        /// </summary>
         public bool IsHomeFinished { get {
                 return (_hardwareManager.Robot.Motors[0].MotorInfo.IO_Output_High.Bits.HOME_END
                     && _hardwareManager.Robot.Motors[1].MotorInfo.IO_Output_High.Bits.HOME_END
                     && _hardwareManager.Robot.Motors[2].MotorInfo.IO_Output_High.Bits.HOME_END
                     );
             } }
+
+        /// <summary>
+        /// 是否可以進行復歸
+        /// </summary>
         public bool CanHome { get {
                 return (_hardwareManager.Robot.Motors[0].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE &&
                     _hardwareManager.Robot.Motors[1].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE &&
                     _hardwareManager.Robot.Motors[2].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE
                     );
             } }
+
+        /// <summary>
+        /// 是否有任何軸發生警報 
+        /// </summary>
+        public bool IsMotorAlarm
+        {
+            get
+            {
+                return (_hardwareManager.Robot.Motors[0].MotorInfo.IO_Output_Low.Bits.ALM_A ||
+                    _hardwareManager.Robot.Motors[1].MotorInfo.IO_Output_Low.Bits.ALM_A ||
+                    _hardwareManager.Robot.Motors[2].MotorInfo.IO_Output_Low.Bits.ALM_A
+                    );
+            }
+        }
+
+        public bool IsPowerSupplyAlarm
+        {
+            get
+            {
+                bool result = false;
+
+                for (int i = 0; i < HardwareManager.NPB450ControllerInstnaceNumber; i++)
+                { 
+                    if( _hardwareManager.Charger[i].FAULT_STATUS.Data != 0)
+                    {
+                        result = true;
+                        break;
+                    }
+                }
+
+                return result;
+            }
+        }
+
+        public bool IsSlotAlarm
+        {
+            get
+            {
+                return _hardwareManager.SlotServices.IsAnySlotInErrorState;
+            }
+        }
+
+        public bool IsProcedureAlarm
+        {
+            get
+            {
+                return (this.LastError.ErrorCode != 0);
+            }
+        }
+
+        public bool IsCriticalAlarm
+        {
+            get
+            {
+                return (IsMotorAlarm || IsProcedureAlarm);
+            }
+        }
+        public bool IsAlarm
+        {
+            get
+            {
+                return (IsMotorAlarm || IsPowerSupplyAlarm || IsSlotAlarm || IsProcedureAlarm);
+            }
+        }
+
+        public bool IsAnyAlarm()
+        {
+            return (IsMotorAlarm || IsPowerSupplyAlarm || IsSlotAlarm || IsProcedureAlarm);
+        }
 
         #endregion
 
@@ -109,7 +187,11 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             _hardwareManager.Robot.AllStop();
             ProcedureStatusMessage = string.Empty;
             MainProcedureStatusMessage = string.Empty;
+        }
 
+        public void StopAutoProcedure()
+        {
+            StopProcedure();
         }
 
         /// <summary>
@@ -231,6 +313,21 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             }, token);
         }
 
+        public void StartAutoProcedure()
+        {
+            LastError.Clear();
+            MainProcedureCase = 0;
+            MainProcedureStatusMessage = string.Empty;
+            if (IsMainProcedureRunning) return;
+            IsMainProcedureRunning = true;
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
+            Task.Run(async () =>
+            {
+                await ExecuteAutoAct();
+            }, token);
+        }
+
         public async Task ResetAlarm()
         {
             _hardwareManager.Robot.AlarmReset(0, true);
@@ -244,6 +341,18 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             _hardwareManager.Robot.AlarmReset(2, false);
 
             this.LastError.Clear();
+
+            _hardwareManager.SlotServices.ResetAllAlarm();
+        }
+
+        public async Task ResetStatus()
+        { 
+            await ResetAlarm();
+
+            IsProcedureRunning = false;
+            IsMainProcedureRunning = false;
+            ProcedureStatusMessage = string.Empty;
+            MainProcedureStatusMessage = string.Empty;
         }
 
         public int GetRotatePosNo(int slotNo)
@@ -596,7 +705,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                         switch (MainProcedureCase)
                         {
                             case 0: // 檢查是否已經執行原點復歸
-                                if (this.CanHome)
+                                if (this.IsHomeFinished)
                                 {
                                     MainProcedureCase = 1;
                                 }

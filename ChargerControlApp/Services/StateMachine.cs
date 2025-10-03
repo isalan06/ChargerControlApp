@@ -1,4 +1,5 @@
-﻿using ChargerControlApp.Services;
+﻿using ChargerControlApp.Hardware;
+using ChargerControlApp.Services;
 using ChargerControlApp.Utilities;
 using Grpc.Core;
 using Microsoft.AspNetCore.Identity.Data;
@@ -12,12 +13,11 @@ namespace ChargerControlApp.Services
 {
     public enum ChargingState
     {
-        Initialization,
+        Unspecified,
+        Initial,
         Idle,
-        Reserved,
-        ReservationTimeout,
-        Occupied,
-        Charging,
+        Swapping,
+        Manual,
         Error
     }
 
@@ -47,11 +47,37 @@ namespace ChargerControlApp.Services
 
     }
 
-    public class InitializationState : State<ChargingStationStateMachine.ChargingState>
+    public class UnspecifiedState : State<ChargingState>
+    {
+        public UnspecifiedState()
+        {
+            _stateEnum = ChargingState.Unspecified;
+            _currentState = ChargingState.Unspecified;
+        }
+
+        public override void EnterState()
+        {
+            Console.WriteLine("進入 Unspecified 狀態: 初始狀態");
+        }
+        public override void HandleTransition(ChargingState nextState)
+        {
+            if (nextState == ChargingState.Initial)
+            {
+                _context.TransitionTo<InitialState>();
+            }
+            else
+            {
+                Console.WriteLine("無效的狀態轉換");
+            }
+        }
+    }
+
+    public class InitialState : State<ChargingState>
     {
         int bypassCounter = 0;
         //private readonly GrpcClientService _grpcClientService;  // 已通過構造函數注入
         private readonly AppSettings _settings;
+        private readonly HardwareManager _hardwareManager;
 
         //public InitializationState(GrpcClientService grpcClientService)
         //{
@@ -60,6 +86,11 @@ namespace ChargerControlApp.Services
         //    _settings = ConfigLoader.GetSettings();
         //    _settings = _settings ?? new AppSettings();
         //}
+        public InitialState()
+        {
+            _stateEnum = ChargingState.Initial;
+            _currentState = ChargingState.Initial;
+        }
 
         public override void EnterState()
         {
@@ -94,6 +125,10 @@ namespace ChargerControlApp.Services
                 await Task.Delay(5000); // 進行輪詢
             } while (false);//devicePostRegistrationResponse.DeviceName != _settings.ChargingStationName);
 
+            // ToDo : 自動ServoOn
+
+            // ToDo : 執行馬達原點復歸
+
             // 註冊成功後，轉換到 Idle 狀態
             _context.TransitionTo<IdleState>();
         }
@@ -103,22 +138,27 @@ namespace ChargerControlApp.Services
 
 
     // Idle 狀態
-    public class IdleState : State<ChargingStationStateMachine.ChargingState>
+    public class IdleState : State<ChargingState>
     {
+        public IdleState()
+        {
+            _stateEnum = ChargingState.Idle;
+            _currentState = ChargingState.Idle;
+        }
         public override void EnterState()
         {
-            Console.WriteLine("進入 Idle 狀態: 等待預約或車輛進入");
+            Console.WriteLine("進入 Idle 狀態: 等待車輛進入");
         }
 
         public override void HandleTransition(ChargingState nextState)
         {
             switch (nextState)
             {
-                case ChargingState.Reserved:
-                    _context.TransitionTo<ReservedState>();
+                case ChargingState.Swapping:
+                    _context.TransitionTo<SwappingState>();
                     break;
-                case ChargingState.Occupied:
-                    _context.TransitionTo<OccupiedState>();
+                case ChargingState.Manual:
+                    _context.TransitionTo<ManualState>();
                     break;
                 case ChargingState.Error:
                     _context.TransitionTo<ErrorState>();
@@ -130,27 +170,33 @@ namespace ChargerControlApp.Services
         }
     }
 
-    // Reserved 狀態
-    public class ReservedState : State<ChargingStationStateMachine.ChargingState>
+    // Swapping 狀態: 自動換電池流程
+    public class SwappingState : State<ChargingState>
     {
+        public SwappingState()
+        {
+            _stateEnum = ChargingState.Swapping;
+            _currentState = ChargingState.Swapping;
+        }
+
         public override void EnterState()
         {
-            Console.WriteLine("進入 Reserved 狀態: FMS 預約");
+            Console.WriteLine("進入 Swapping 狀態: 啟動自動流程");
+
+            // ToDo: 執行自動換電池流程
+
         }
 
         public override void HandleTransition(ChargingState nextState)
         {
             switch (nextState)
             {
-                case ChargingState.Occupied:
-                    _context.TransitionTo<OccupiedState>();
-                    break;
-                case ChargingState.ReservationTimeout:
-                    _context.TransitionTo<ReservationTimeoutState>();
-                    break;
                 case ChargingState.Idle:
                     _context.TransitionTo<IdleState>();
                     break;
+                case ChargingState.Manual:
+                    _context.TransitionTo<ManualState>();
+                    break;
                 case ChargingState.Error:
                     _context.TransitionTo<ErrorState>();
                     break;
@@ -161,12 +207,17 @@ namespace ChargerControlApp.Services
         }
     }
 
-    // ReservationTimeout 狀態
-    public class ReservationTimeoutState : State<ChargingStationStateMachine.ChargingState>
+    // Manual 狀態
+    public class ManualState : State<ChargingState>
     {
+        public ManualState()
+        {
+            _stateEnum = ChargingState.Manual;
+            _currentState = ChargingState.Manual;
+        }
         public override void EnterState()
         {
-            Console.WriteLine("進入 ReservationTimeout 狀態: 回報 FMS 預約超時");
+            Console.WriteLine("進入 Manual 狀態");
         }
 
         public override void HandleTransition(ChargingState nextState)
@@ -175,9 +226,9 @@ namespace ChargerControlApp.Services
             {
                 _context.TransitionTo<IdleState>();
             }
-            else if (nextState == ChargingState.Reserved)
+            else if (nextState == ChargingState.Error)
             {
-                _context.TransitionTo<ReservedState>();
+                _context.TransitionTo<ErrorState>();
             }
             else
             {
@@ -186,59 +237,16 @@ namespace ChargerControlApp.Services
         }
     }
 
-    // Occupied 狀態
-    public class OccupiedState : State<ChargingStationStateMachine.ChargingState>
-    {
-        public override void EnterState()
-        {
-            Console.WriteLine("進入 Occupied 狀態: 車輛偵測到");
-        }
-
-        public override void HandleTransition(ChargingState nextState)
-        {
-            switch (nextState)
-            {
-                case ChargingState.Charging:
-                    _context.TransitionTo<ChargingStateClass>();
-                    break;
-                case ChargingState.Idle:
-                    _context.TransitionTo<IdleState>();
-                    break;
-                default:
-                    Console.WriteLine("無效的狀態轉換");
-                    break;
-            }
-        }
-    }
-
-    // Charging 狀態
-    public class ChargingStateClass : State<ChargingStationStateMachine.ChargingState>
-    {
-        public override void EnterState()
-        {
-            Console.WriteLine("進入 Charging 狀態: 充電中...");
-        }
-
-        public override void HandleTransition(ChargingState nextState)
-        {
-            switch (nextState)
-            {
-                case ChargingState.Occupied:
-                    _context.TransitionTo<OccupiedState>();
-                    break;
-                case ChargingState.Error:
-                    _context.TransitionTo<ErrorState>();
-                    break;
-                default:
-                    Console.WriteLine("無效的狀態轉換");
-                    break;
-            }
-        }
-    }
 
     // Error 狀態
-    public class ErrorState : State<ChargingStationStateMachine.ChargingState>
+    public class ErrorState : State<ChargingState>
     {
+        public ErrorState()
+        {
+            _stateEnum = ChargingState.Error;
+            _currentState = ChargingState.Error;
+        }
+
         public override void EnterState()
         {
             Console.WriteLine("進入 Error 狀態: 發生錯誤");
@@ -260,17 +268,7 @@ namespace ChargerControlApp.Services
     // 狀態機類別
     public class ChargingStationStateMachine
     {
-        public State<ChargingStationStateMachine.ChargingState> _currentState;
-        public enum ChargingState
-        {
-            Initialization,
-            Idle,
-            Reserved,
-            Occupied,
-            Charging,
-            Error,
-            ReservationTimeout
-        }
+        public State<ChargingState> _currentState;
 
 
         private readonly IServiceProvider _serviceProvider;
@@ -292,7 +290,7 @@ namespace ChargerControlApp.Services
 
             try
             {
-                _currentState = _serviceProvider.GetRequiredService<InitializationState>();
+                _currentState = _serviceProvider.GetRequiredService<InitialState>();
             }
             catch (Exception ex)
             {
@@ -305,7 +303,7 @@ namespace ChargerControlApp.Services
         }
 
 
-        public void TransitionTo<T>() where T : State<ChargingStationStateMachine.ChargingState>
+        public void TransitionTo<T>() where T : State<ChargingState>
         {
             var newState = _serviceProvider.GetRequiredService<T>();
             Console.WriteLine($"狀態變更: {_currentState?.GetType().Name} -> {newState.GetType().Name}");
