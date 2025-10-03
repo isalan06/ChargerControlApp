@@ -101,12 +101,34 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         public bool GetSwapSlotInfo(out int swapIn, out int swapOut)
         {
             bool result = false;
+            swapIn = -1;
+            swapOut = -1;
 
-            // ToDo: 目前測試用，之後要改成讀取資料跟狀態判別點位
-            swapIn = 2;
-            swapOut = 3;
+            // ToDo: 目前簡易測試用，之後需要再修改
+            // swap in - 主要是要空槽位
+            // swap out - 主要是要滿槽位
+            for (int i=0;i<SlotInfo.Length;i++)
+            {
+                if (SlotInfo[i].IsEnabled)
+                {
+                    if ((SlotInfo[i].ChargeState == SlotChargeState.Empty) && (SlotInfo[i].BatteryMemory == false))
+                    {
+                        swapIn = i;
+                        for(int j=0;j<SlotInfo.Length;j++)
+                        {
+                            if (SlotInfo[j].IsEnabled)
+                            {
+                                if ((SlotInfo[j].ChargeState != SlotChargeState.Empty) && (SlotInfo[j].BatteryMemory == true))
+                                {
+                                    swapOut = j;
+                                    result = true;
+                                }
+                            }
+                        }
+                    }
 
-            result =  true;
+                }
+            }
 
             return result;
             
