@@ -20,6 +20,13 @@
                     }
 
                     if (value <= 10) _y_Output = 2; else _y_Output = 3;
+
+                    var z_input_Frame = (PosFrame)ProcedureFrames[1];
+                    z_input_Frame.PosDataNo = _z_Input;
+                    var y_output_Frame = (PosFrame)ProcedureFrames[3];
+                    y_output_Frame.PosDataNo = _y_Output;
+                    var z_output_Frame = (PosFrame)ProcedureFrames[4];
+                    z_output_Frame.PosDataNo = _z_Output;
                 }
             }
         }

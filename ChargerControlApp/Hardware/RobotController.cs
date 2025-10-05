@@ -16,7 +16,7 @@ namespace ChargerControlApp.Hardware
     public class RobotController : IDisposable
     {
         public const int MOTOR_COUNT = 3;
-        public const int PositionInPos_Offset = 50; // unit: step => for checking if reached position
+        public const int PositionInPos_Offset = 3000; // unit: step => for checking if reached position
         private byte[] MOTOR_ADDRESSES = new byte[] { 1, 2, 3 };
         public SingleMotorService[] Motors;
         private IModbusRTUService _modbusService;
@@ -225,6 +225,8 @@ namespace ChargerControlApp.Hardware
         }
         public bool ZAxisBetweenSlotOrCar()
         {
+
+
             for (int i = 1; i < 19; i += 2)
             {
                 if ((Motors[2].MotorInfo.Pos_Actual < Motors[2].MotorInfo.OpDataArray[i].Position + PositionInPos_Offset) &&
@@ -585,7 +587,7 @@ namespace ChargerControlApp.Hardware
             {
                 if (posIndex >= 0 && posIndex < Motors[motorId].MotorInfo.OpDataArray.Length)
                 {
-                    Motors[motorId].MotorInfo.OpDataArray[posIndex].Position = position;
+                    Motors[motorId].MotorInfo.OpDataArray[posIndex].Position = Motors[motorId].MotorInfo.Pos_Actual;//position;
                     var command = MotorCommandList.CommandMap["WriteOpData_Position"].Clone();
                     command.Id = (byte)motorId;
                     if (command.SubFrames != null)
@@ -787,6 +789,8 @@ namespace ChargerControlApp.Hardware
             //    cancellationToken.ThrowIfCancellationRequested();
             //    await Task.Delay(100, cancellationToken);
             //}
+
+            await Task.Delay(200, cancellationToken); // 等待一段時間讓馬達穩定
 
             return_value = InPosition(axisId, posDataNo);
 

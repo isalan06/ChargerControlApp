@@ -113,14 +113,14 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                 {
                     if ((SlotInfo[i].ChargeState == SlotChargeState.Empty) && (SlotInfo[i].BatteryMemory == false))
                     {
-                        swapIn = i;
+                        swapIn = i+1;
                         for(int j=0;j<SlotInfo.Length;j++)
                         {
                             if (SlotInfo[j].IsEnabled)
                             {
                                 if ((SlotInfo[j].ChargeState != SlotChargeState.Empty) && (SlotInfo[j].BatteryMemory == true))
                                 {
-                                    swapOut = j;
+                                    swapOut = j+1;
                                     result = true;
                                 }
                             }

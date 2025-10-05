@@ -2,9 +2,21 @@
 {
     public static class DefaultRotateProcedure
     {
+        private static int r_TargetPosDataNo = 0;
+        public static int R_TargetPosDataNo // 旋轉軸目標位置編號
+        {
+            get
+            {
+                return r_TargetPosDataNo;
+            }
+            set
+            {
+                r_TargetPosDataNo = value;
+                var posFrame = (PosFrame)ProcedureFrames[2];
+                posFrame.PosDataNo = value;
+            }
 
-        public static int R_TargetPosDataNo = 0; // 旋轉軸目標位置編號
-
+        }
         /// <summary>
         /// 預設旋轉動作流程
         /// </summary>

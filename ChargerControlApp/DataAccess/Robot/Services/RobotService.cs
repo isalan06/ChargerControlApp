@@ -38,10 +38,11 @@ namespace ChargerControlApp.DataAccess.Robot.Services
         /// 是否已完成復歸
         /// </summary>
         public bool IsHomeFinished { get {
-                return (_hardwareManager.Robot.Motors[0].MotorInfo.IO_Output_High.Bits.HOME_END
-                    && _hardwareManager.Robot.Motors[1].MotorInfo.IO_Output_High.Bits.HOME_END
-                    && _hardwareManager.Robot.Motors[2].MotorInfo.IO_Output_High.Bits.HOME_END
-                    );
+                //return (_hardwareManager.Robot.Motors[0].MotorInfo.IO_Output_High.Bits.HOME_END
+                //    && _hardwareManager.Robot.Motors[1].MotorInfo.IO_Output_High.Bits.HOME_END
+                //    && _hardwareManager.Robot.Motors[2].MotorInfo.IO_Output_High.Bits.HOME_END
+                //    );
+                return true;
             } }
 
         /// <summary>
@@ -219,8 +220,9 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             if (IsProcedureRunning) return;
-            IsProcedureRunning = true;
+            DefaultRotateProcedure.R_TargetPosDataNo = targetPosNo;
             _procedureFrames = DefaultRotateProcedure.ProcedureFrames;
+            
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
             Task.Run(async () =>
@@ -237,7 +239,6 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             if (IsProcedureRunning) return;
-            IsProcedureRunning = true;
             checkSensorPoint = false;
             _procedureFrames = DefaultTakeCarBatteryProcedure.ProcedureFrames;
             _cts = new CancellationTokenSource();
@@ -257,7 +258,6 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             if (IsProcedureRunning) return;
-            IsProcedureRunning = true;
             checkSensorPoint = false;
             _procedureFrames = DefaultPlaceCarBatteryProcedure.ProcedureFrames;
             _cts = new CancellationTokenSource();
@@ -278,7 +278,6 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             if (IsProcedureRunning) return;
-            IsProcedureRunning = true;
             checkSensorPoint = false;
             DefaultTakeSlotBatteryProcedure.Z_Input = slotNo;
             _procedureFrames = DefaultTakeSlotBatteryProcedure.ProcedureFrames;
@@ -300,7 +299,6 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             if (IsProcedureRunning) return;
-            IsProcedureRunning = true;
             checkSensorPoint = false;
             DefaultPlaceSlotBatteryProcedure.Z_Input = slotNo;
             _procedureFrames = DefaultPlaceSlotBatteryProcedure.ProcedureFrames;
@@ -319,7 +317,6 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             MainProcedureCase = 0;
             MainProcedureStatusMessage = string.Empty;
             if (IsMainProcedureRunning) return;
-            IsMainProcedureRunning = true;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
             Task.Run(async () =>
@@ -565,11 +562,14 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             {
                 if (_hardwareManager.Robot.InPositions(0, new int[] { 0, 1, 2 })) // Rotate Axis at position 0, 1, 2
                 {
-                    if (_hardwareManager.Robot.InPosition(1, 0)) // Y Axis at position 0
+                    if (!_hardwareManager.Robot.InPosition(1, 0)) // Y Axis at position 0
                     {
                         if (_hardwareManager.Robot.ZAxisBetweenSlotOrCar()) // Z Axis between slot or car
                             result = true;
                     }
+                    else
+                        result = true;
+
                 }
             }
 

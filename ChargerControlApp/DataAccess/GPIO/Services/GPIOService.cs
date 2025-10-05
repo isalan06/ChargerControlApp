@@ -18,8 +18,8 @@ namespace ChargerControlApp.DataAccess.GPIO.Services
         public static bool Pin1ValueFromMotor { get; set; } = false;
         public static bool Pin2ValueFromMotor { get; set; } = false;
 
-        public static bool BatteryExistInFork { get { return Pin1Value; } }
-        public static bool BatteryExistInSlot { get { return Pin2Value; } }
+        public static bool BatteryExistInFork { get { return Pin2Value; } }
+        public static bool BatteryExistInSlot { get { return Pin1Value; } }
 
         /// <summary>
         /// 透過反射取得靜態屬性值
