@@ -15,6 +15,9 @@ namespace ChargerControlApp.DataAccess.Motor.Services
 
         private IModbusRTUService _modbusRTUService;
 
+        public bool IsHomeFinished { get; set; } = false;
+
+
         #region enum
 
         public enum ReadCommand

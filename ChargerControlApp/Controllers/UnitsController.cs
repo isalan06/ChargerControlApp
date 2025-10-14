@@ -1,24 +1,28 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ChargerControlApp.DataAccess.GPIO.Services;
 using ChargerControlApp.DataAccess.Slot.Services;
-using TAC.Hardware; // 假設 StationState enum 在這裡
+using TAC.Hardware;
+using ChargerControlApp.Services; // 假設 StationState enum 在這裡
 
 namespace ChargerControlApp.Controllers
 {
     public class UnitsController : Controller
     {
         private readonly SlotServices _slotServices;
+        private readonly ChargingStationStateMachine _chargingStationStateMachine;
 
-        public UnitsController(SlotServices slotServices)
+        public UnitsController(SlotServices slotServices, ChargingStationStateMachine chargingStationStateMachine)
         {
             _slotServices = slotServices;
+            _chargingStationStateMachine = chargingStationStateMachine;
         }
 
         // 取得 Station 狀態
         [HttpGet]
         public IActionResult GetStationState()
         {
-            return Json(new { state = _slotServices.StationState.ToString() });
+            //return Json(new { state = _slotServices.StationState.ToString() });
+            return Json(new { state = _chargingStationStateMachine.GetCurrentStateName() });
         }
 
         // 設定 Station 狀態
@@ -26,9 +30,10 @@ namespace ChargerControlApp.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult SetStationState(string state)
         {
-            if (Enum.TryParse<StationState>(state, out var newState))
+            if (Enum.TryParse<ChargingState>(state, out var newState))
             {
-                _slotServices.StationState = newState;
+                //_slotServices.StationState = newState;
+                _chargingStationStateMachine.HandleTransition(newState);
                 return Json(new { success = true, state = newState.ToString() });
             }
             return Json(new { success = false });

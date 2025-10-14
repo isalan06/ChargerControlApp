@@ -1,6 +1,7 @@
 ﻿using ChargerControlApp.DataAccess.GPIO.Services;
 using ChargerControlApp.DataAccess.Modbus.Models;
 using ChargerControlApp.DataAccess.Modbus.Services;
+using ChargerControlApp.DataAccess.Robot.Services;
 using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
 using ChargerControlApp.Utilities;
@@ -18,6 +19,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static ChargerControlApp.Services.InitialState;
 
 namespace ChargerControlApp.Services
 {
@@ -28,6 +30,7 @@ namespace ChargerControlApp.Services
         private readonly ILogger<CanBusPollingService> _logger;
         //private readonly IServiceProvider _serviceProvider;
         private readonly ChargingStationStateMachine _chargingStationStateMachine;
+        private readonly RobotService _robotService;
 
         //public CanBusPollingService(NPB1700Controller npbController, ILogger<CanBusPollingService> logger)
         //{
@@ -41,6 +44,7 @@ namespace ChargerControlApp.Services
             _logger = serviceProvider.GetService<ILogger<CanBusPollingService>>();
             _chargingStationStateMachine = serviceProvider.GetService<ChargingStationStateMachine>();
             //_npbController = serviceProvider.GetService<NPB1700Controller>();
+            _robotService = serviceProvider.GetService<RobotService>();
         }
         //public CanBusPollingService(HardwareManager hardwareManager, ILogger<CanBusPollingService> logger)
         //{
@@ -70,6 +74,19 @@ namespace ChargerControlApp.Services
                 _hardwareManager.SlotServices.TransferToSlotChargeState(i); // 同步更新充電狀態
             }
 
+            if (HardwareManager.ServoOnAndHomeAfterStartup) // 啟動後是否啟用伺服並回原點
+            {
+                try
+                {
+                    _hardwareManager.Robot.SetAllServo(true);
+                    await Task.Delay(2000);
+                    _robotService.StartHomeProcedure();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "機械手臂伺服啟動或回原點失敗");
+                }
+            }
 
             while (!stoppingToken.IsCancellationRequested)
             {

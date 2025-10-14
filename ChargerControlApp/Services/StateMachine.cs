@@ -1,13 +1,18 @@
-﻿using ChargerControlApp.Hardware;
+﻿using ChargerControlApp.DataAccess.Robot.Services;
+using ChargerControlApp.DataAccess.Slot.Services;
+using ChargerControlApp.Hardware;
 using ChargerControlApp.Services;
 using ChargerControlApp.Utilities;
 using Grpc.Core;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Diagnostics;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using TAC.Hardware;
 using TacDynamics.Kernel.DeviceService.Protos;
+using static ChargerControlApp.Services.InitialState;
 
 namespace ChargerControlApp.Services
 {
@@ -58,6 +63,7 @@ namespace ChargerControlApp.Services
         public override void EnterState()
         {
             Console.WriteLine("進入 Unspecified 狀態: 初始狀態");
+            SlotServices.StationState = StationState.Unspecified;
         }
         public override void HandleTransition(ChargingState nextState)
         {
@@ -78,6 +84,7 @@ namespace ChargerControlApp.Services
         //private readonly GrpcClientService _grpcClientService;  // 已通過構造函數注入
         private readonly AppSettings _settings;
         private readonly HardwareManager _hardwareManager;
+        private readonly RobotService _robotService;
 
         //public InitializationState(GrpcClientService grpcClientService)
         //{
@@ -94,8 +101,8 @@ namespace ChargerControlApp.Services
 
         public override void EnterState()
         {
-            Console.WriteLine("進入 Initialization 狀態: 檢查設定，連接 WiFi，FMS 註冊");
-
+            Console.WriteLine("進入 Initialization 狀態: 檢查設定，FMS 註冊，原點復歸");
+            SlotServices.StationState = StationState.Initial;
             // 將非同步操作移到外部方法中
             InitializeAsync();
         }
@@ -104,6 +111,7 @@ namespace ChargerControlApp.Services
         {
             string responseDeviceName = "";
             await Task.Delay(5000); // 初步延遲
+            bool result = true;
 
             DevicePostRegistrationResponse devicePostRegistrationResponse;
             do
@@ -119,24 +127,68 @@ namespace ChargerControlApp.Services
                 catch (Exception ex)
                 {
                     Console.WriteLine($"註冊過程中發生錯誤: {ex.Message}");
-                    return; // 錯誤時退出
+                    //return; // 錯誤時退出
+                    break; // 先跳出迴圈，進入 Idle 狀態 => ToDo: 待上傳gRPC完成後再修改
                 }
 
                 await Task.Delay(5000); // 進行輪詢
-            } while (false);//devicePostRegistrationResponse.DeviceName != _settings.ChargingStationName);
+            } while (false);//devicePostRegistrationResponse.DeviceName != _settings.ChargingStationName); // ToDo: 
 
-            // ToDo : 自動ServoOn
+            if (HardwareManager.ServoOnAndHomeAfterStartup) // 啟動後是否啟用伺服並回原點
+            {
+                try
+                {
+                    _hardwareManager.Robot.SetAllServo(true);
+                    await Task.Delay(2000);
+                    _robotService.StartHomeProcedure();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"機械手臂伺服啟動或回原點失敗: {ex.Message}");
+                    result = false;
+                }
 
-            // ToDo : 執行馬達原點復歸
+                // 加入 timeout 機制
+                var timeout = TimeSpan.FromSeconds(180); // 設定最大等待 180 秒
+                var sw = Stopwatch.StartNew();
+                while (!_robotService.IsHomeFinished)
+                {
+                    if (sw.Elapsed > timeout)
+                    {
+                        Console.WriteLine("原點復歸逾時，跳出等待迴圈");
+                        result = false;
+                        break;
+                    }
+                    await Task.Delay(500);
+                }
+            }
 
-            // 註冊成功後，轉換到 Idle 狀態
-            _context.TransitionTo<IdleState>();
+
+
+            // 原點復歸後，轉換到 Idle 狀態; 若失敗則轉換到 Error 狀態
+            if (result)
+                HandleTransition(ChargingState.Idle);// _context.TransitionTo<IdleState>();
+            else
+                HandleTransition(ChargingState.Error); // _context.TransitionTo<ErrorState>();
         }
 
-        public override void HandleTransition(ChargingState nextState) { }
+        public override void HandleTransition(ChargingState nextState)
+        {
+            switch (nextState)
+            {
+                case ChargingState.Idle:
+                    _context.TransitionTo<IdleState>();
+                    break;
+                case ChargingState.Error:
+                    _context.TransitionTo<ErrorState>();
+                    break;
+                default:
+                    Console.WriteLine("無效的狀態轉換");
+                    break;
+            }
+        }
+
     }
-
-
     // Idle 狀態
     public class IdleState : State<ChargingState>
     {
@@ -148,6 +200,7 @@ namespace ChargerControlApp.Services
         public override void EnterState()
         {
             Console.WriteLine("進入 Idle 狀態: 等待車輛進入");
+            SlotServices.StationState = StationState.Idle;
         }
 
         public override void HandleTransition(ChargingState nextState)
@@ -162,6 +215,9 @@ namespace ChargerControlApp.Services
                     break;
                 case ChargingState.Error:
                     _context.TransitionTo<ErrorState>();
+                    break;
+                case ChargingState.Initial:
+                    _context.TransitionTo<InitialState>();
                     break;
                 default:
                     Console.WriteLine("無效的狀態轉換");
@@ -182,6 +238,7 @@ namespace ChargerControlApp.Services
         public override void EnterState()
         {
             Console.WriteLine("進入 Swapping 狀態: 啟動自動流程");
+            SlotServices.StationState = StationState.Swapping;
 
             // ToDo: 執行自動換電池流程
 
@@ -218,6 +275,7 @@ namespace ChargerControlApp.Services
         public override void EnterState()
         {
             Console.WriteLine("進入 Manual 狀態");
+            SlotServices.StationState = StationState.Manual;
         }
 
         public override void HandleTransition(ChargingState nextState)
@@ -229,6 +287,10 @@ namespace ChargerControlApp.Services
             else if (nextState == ChargingState.Error)
             {
                 _context.TransitionTo<ErrorState>();
+            }
+            else if(nextState == ChargingState.Initial)
+            {
+                _context.TransitionTo<InitialState>();
             }
             else
             {
@@ -250,6 +312,7 @@ namespace ChargerControlApp.Services
         public override void EnterState()
         {
             Console.WriteLine("進入 Error 狀態: 發生錯誤");
+            SlotServices.StationState = StationState.Error;
         }
 
         public override void HandleTransition(ChargingState nextState)
@@ -257,6 +320,10 @@ namespace ChargerControlApp.Services
             if (nextState == ChargingState.Idle)
             {
                 _context.TransitionTo<IdleState>();
+            }
+            else if(nextState == ChargingState.Initial)
+            {
+                _context.TransitionTo<InitialState>();
             }
             else
             {
@@ -311,6 +378,11 @@ namespace ChargerControlApp.Services
             _currentState = newState;
             _currentState.SetContext(this, _serviceProvider);
             _currentState.EnterState();
+        }
+
+        public void HandleTransition(ChargingState nextState)
+        {
+            _currentState.HandleTransition(nextState);
         }
 
 

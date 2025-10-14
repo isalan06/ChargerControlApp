@@ -16,7 +16,7 @@ namespace ChargerControlApp.Hardware
     public class RobotController : IDisposable
     {
         public const int MOTOR_COUNT = 3;
-        public const int PositionInPos_Offset = 3000; // unit: step => for checking if reached position
+        public static int PositionInPos_Offset = 3000; // unit: step => for checking if reached position
         private byte[] MOTOR_ADDRESSES = new byte[] { 1, 2, 3 };
         public SingleMotorService[] Motors;
         private IModbusRTUService _modbusService;
@@ -32,6 +32,7 @@ namespace ChargerControlApp.Hardware
                         Motors[2].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE;
             } }
         public int HomeProcedureCase { get; internal set; } = 0;
+        public string ErrorMessage { get; internal set; } = string.Empty;
 
         #region Constructor
 
@@ -294,6 +295,12 @@ namespace ChargerControlApp.Hardware
             return result;
         }
 
+        /// <summary>
+        /// Home
+        /// </summary>
+        /// <param name="motorId"></param>
+        /// <param name="state"></param>
+        /// <returns></returns>
         public bool Home(int motorId, bool state)
         {
             bool result = false;
@@ -311,6 +318,12 @@ namespace ChargerControlApp.Hardware
             return result;
         }
 
+        /// <summary>
+        /// Stop
+        /// </summary>
+        /// <param name="motorId"></param>
+        /// <param name="state"></param>
+        /// <returns></returns>
         public bool Stop(int motorId, bool state)
         {
             bool result = false;
@@ -759,8 +772,9 @@ namespace ChargerControlApp.Hardware
         public async Task<bool> MoveToPositionAsync(int axisId, int posDataNo, CancellationToken cancellationToken)
         {
             bool return_value = false;
+            ErrorMessage = string.Empty;
 
-            
+            ErrorMessage = $"Wait RDY_SD_OPE == false => {Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE}";
             while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -770,6 +784,7 @@ namespace ChargerControlApp.Hardware
             var result = this.SetDataNo_M(axisId, posDataNo); // 設定要進行的位置
             result = this.SetStart(axisId, true); // 下達開始命令
 
+            ErrorMessage = $"Wait RDY_SD_OPE == true => {Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE}";
             while (Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -778,6 +793,7 @@ namespace ChargerControlApp.Hardware
 
             result = this.SetStart(axisId, false); // 將開始命令取消掉
 
+            ErrorMessage = $"Wait RDY_SD_OPE == true => {Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE}";
             while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -793,6 +809,7 @@ namespace ChargerControlApp.Hardware
             await Task.Delay(200, cancellationToken); // 等待一段時間讓馬達穩定
 
             return_value = InPosition(axisId, posDataNo);
+            ErrorMessage = $"Check PosNo [{posDataNo}] value = {Motors[axisId].MotorInfo.OpDataArray[posDataNo].Position} ; Real value={Motors[axisId].MotorInfo.Pos_Actual}";
 
             return return_value;
         }

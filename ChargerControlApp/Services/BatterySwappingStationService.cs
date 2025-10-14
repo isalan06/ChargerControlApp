@@ -35,7 +35,7 @@ namespace ChargerControlApp.Services
 
             var status = new StationStatus
             {
-                State = _slotServices.StationState,//StationState.Idle,
+                State = SlotServices.StationState,//StationState.Idle,
                 HighestSoc = 98
             };
             for(int i=0;i<HardwareManager.NPB450ControllerInstnaceNumber;i++)
@@ -96,7 +96,7 @@ namespace ChargerControlApp.Services
         {
             // 這裡假設 _slotServices 是 Singleton 或可靜態取得
             // 若無法靜態取得，請改用 DI 注入 SlotServices 至 Razor Page
-            return _slotServices?.StationState.ToString() ?? "Unknown";
+            return SlotServices.StationState.ToString() ?? "Unknown";
         }
     }
 }

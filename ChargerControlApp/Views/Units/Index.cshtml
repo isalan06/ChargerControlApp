@@ -32,11 +32,11 @@
 
     <div id="slotTab" class="unit-tab-content" style="display:none;">
         <div class="d-flex align-items-center">
-            <span>Station 狀態：<strong id="stationState">@SlotServices.StationState</strong></span>
+            <span>Station 狀態：<strong id="stationState">@ChargerControlApp.DataAccess.Slot.Services.SlotServices.StationState</strong></span>
             <select id="stationStateSelect" class="form-select mx-3" style="width:auto; display:inline-block;">
                 @foreach (var state in Enum.GetNames(typeof(StationState)))
                 {
-                    var isSelected = state == SlotServices.StationState.ToString() ? "selected" : "";
+                    var isSelected = state == ChargerControlApp.DataAccess.Slot.Services.SlotServices.StationState.ToString() ? "selected" : "";
                     <option value="@state" {isSelected}>@state</option>
                 }
             </select>

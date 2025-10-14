@@ -4,6 +4,7 @@ using ChargerControlApp.DataAccess.GPIO.Services;
 using ChargerControlApp.DataAccess.Modbus.Interfaces;
 using ChargerControlApp.DataAccess.Modbus.Models;
 using ChargerControlApp.DataAccess.Modbus.Services;
+using ChargerControlApp.DataAccess.Robot.Models;
 using ChargerControlApp.DataAccess.Robot.Services;
 using ChargerControlApp.DataAccess.Slot.Models;
 using ChargerControlApp.DataAccess.Slot.Services;
@@ -42,7 +43,9 @@ public class Program
         builder.Services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
         builder.Services.AddSingleton(settings); // 讓 DI 容器可以取得 AppSettings
         HardwareManager.NPB450ControllerInstnaceNumber = settings.PowerSupplyInstanceNumber; // 設定 NP-B450 控制器實例數量
-
+        HardwareManager.ServoOnAndHomeAfterStartup = settings.ServoOnAndHomeAfterStartup; // 設定 啟動後是否啟用伺服並回原點
+        HardwareManager.SensorCheckPass = settings.SensorCheckPass; // 設定 感測器檢查是否移除
+        RobotController.PositionInPos_Offset = settings.PositionInPosOffset; // 設定 PositionInPos_Offset
 
         // ModbusRTUService
         builder.Services.AddSingleton<ModbusRTUService>(sp =>

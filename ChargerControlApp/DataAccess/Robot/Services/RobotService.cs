@@ -20,6 +20,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
 
         private List<ProcedureFrame> _procedureFrames = new List<ProcedureFrame>();
         public PosErrorFrame LastError { get; internal set; } = new PosErrorFrame();
+        private PosErrorFrame _homeError { get; set; } = new PosErrorFrame();
 
         public string ProcedureStatusMessage { get; internal set; } = string.Empty;
         public string MainProcedureStatusMessage { get; internal set; } = string.Empty;
@@ -42,7 +43,10 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                 //    && _hardwareManager.Robot.Motors[1].MotorInfo.IO_Output_High.Bits.HOME_END
                 //    && _hardwareManager.Robot.Motors[2].MotorInfo.IO_Output_High.Bits.HOME_END
                 //    );
-                return true;
+                return (_hardwareManager.Robot.Motors[0].IsHomeFinished
+                    && _hardwareManager.Robot.Motors[1].IsHomeFinished
+                    && _hardwareManager.Robot.Motors[2].IsHomeFinished
+                    );
             } }
 
         /// <summary>
@@ -76,8 +80,9 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                 bool result = false;
 
                 for (int i = 0; i < HardwareManager.NPB450ControllerInstnaceNumber; i++)
-                { 
-                    if( _hardwareManager.Charger[i].FAULT_STATUS.Data != 0)
+                {
+                    // 0xFFBF = 1111 1111 1011 1111, 忽略 Bit6 (OP_OFF)
+                    if ((_hardwareManager.Charger[i].FAULT_STATUS.Data & 0xFFBF) != 0)
                     {
                         result = true;
                         break;
@@ -205,9 +210,28 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             if (IsProcedureRunning) return;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
+            int timeoutMs = 360000; // 360秒逾時，可依需求調整
+
             Task.Run(async () =>
             {
-                await HomeProcedure();
+                using (var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(token))
+                {
+                    timeoutCts.CancelAfter(timeoutMs);
+                    try
+                    {
+                        bool result = await HomeProcedure();
+                        if (!result) LastError = _homeError.Clone();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        if (timeoutCts.IsCancellationRequested && !token.IsCancellationRequested)
+                        {
+                            // 逾時取消
+                            LastError = _homeError.Clone();
+                            StopProcedure();
+                        }
+                    }
+                }
             }, token);
         }
 
@@ -221,6 +245,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             ProcedureStatusMessage = string.Empty;
             if (IsProcedureRunning) return;
             DefaultRotateProcedure.R_TargetPosDataNo = targetPosNo;
+            DefaultRotateProcedure.Refresh();
             _procedureFrames = DefaultRotateProcedure.ProcedureFrames;
             
             _cts = new CancellationTokenSource();
@@ -240,6 +265,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             ProcedureStatusMessage = string.Empty;
             if (IsProcedureRunning) return;
             checkSensorPoint = false;
+            DefaultTakeCarBatteryProcedure.Refresh();
             _procedureFrames = DefaultTakeCarBatteryProcedure.ProcedureFrames;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
@@ -259,6 +285,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             ProcedureStatusMessage = string.Empty;
             if (IsProcedureRunning) return;
             checkSensorPoint = false;
+            DefaultPlaceCarBatteryProcedure.Refresh();
             _procedureFrames = DefaultPlaceCarBatteryProcedure.ProcedureFrames;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
@@ -280,6 +307,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             if (IsProcedureRunning) return;
             checkSensorPoint = false;
             DefaultTakeSlotBatteryProcedure.Z_Input = slotNo;
+            DefaultTakeSlotBatteryProcedure.Refresh();
             _procedureFrames = DefaultTakeSlotBatteryProcedure.ProcedureFrames;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
@@ -301,6 +329,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             if (IsProcedureRunning) return;
             checkSensorPoint = false;
             DefaultPlaceSlotBatteryProcedure.Z_Input = slotNo;
+            DefaultPlaceSlotBatteryProcedure.Refresh();
             _procedureFrames = DefaultPlaceSlotBatteryProcedure.ProcedureFrames;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
@@ -407,7 +436,12 @@ namespace ChargerControlApp.DataAccess.Robot.Services
         {
             bool result = false;
             HomeProcedureCase = 0;
+            _homeError.Clear();
             IsProcedureRunning = true;
+
+            var motor_rot_info = _hardwareManager.Robot.Motors[0].MotorInfo;
+            var motor_y_info = _hardwareManager.Robot.Motors[1].MotorInfo;
+            var motor_z_info = _hardwareManager.Robot.Motors[2].MotorInfo;
             try
             {
                 if (_hardwareManager.modbusRTUService.IsRunning)
@@ -419,6 +453,8 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                         {
                             this._procedureStopTrigger = false;
                             HomeProcedureCase = -98;
+                            _homeError.ErrorCode = 50;
+                            _homeError.ErrorMessage = "Manual stop homing!!";
                             break;
                         }
 
@@ -433,8 +469,10 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 10: // Y軸復歸, 確認RDY-HOME-OPE訊號 -> OFF 且 MOVE訊號 -> ON
-                                if ((_hardwareManager.Robot.Motors[1].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
-                                    (_hardwareManager.Robot.Motors[1].MotorInfo.IO_Output_Low.Bits.MOVE == true))
+                                _homeError.ErrorCode = 51;
+                                _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
+                                if ((motor_y_info.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
+                                    (motor_y_info.IO_Output_Low.Bits.MOVE == true))
                                 {
                                     _hardwareManager.Robot.Home(1, false);
                                     HomeProcedureCase = 11;
@@ -442,9 +480,21 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 11: // 等待 RDY-HOME-OPE訊號 -> ON 且 MOVE訊號 -> OFF
-                                if ((_hardwareManager.Robot.Motors[1].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
-                                    (_hardwareManager.Robot.Motors[1].MotorInfo.IO_Output_Low.Bits.MOVE == false))
+                                _homeError.ErrorCode = 52;
+                                _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
+                                if ((motor_y_info.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
+                                    (motor_y_info.IO_Output_Low.Bits.MOVE == false))
                                 {
+                                    HomeProcedureCase = 12; 
+                                }
+                                break;
+
+                            case 12: // 等待 HOME_END訊號 -> ON
+                                _homeError.ErrorCode = 53;
+                                _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
+                                if (motor_y_info.IO_Output_High.Bits.HOME_END)
+                                {
+                                    _hardwareManager.Robot.Motors[1].IsHomeFinished = true;
                                     HomeProcedureCase = 20; // Y軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
                                 }
                                 break;
@@ -458,8 +508,10 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 21: // Z軸復歸, 確認RDY-HOME-OPE訊號 -> OFF 且 MOVE訊號 -> ON
-                                if ((_hardwareManager.Robot.Motors[2].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
-                                    (_hardwareManager.Robot.Motors[2].MotorInfo.IO_Output_Low.Bits.MOVE == true))
+                                _homeError.ErrorCode = 54;
+                                _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
+                                if ((motor_z_info.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
+                                    (motor_z_info.IO_Output_Low.Bits.MOVE == true))
                                 {
                                     _hardwareManager.Robot.Home(2, false);
                                     HomeProcedureCase = 22;
@@ -467,9 +519,21 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 22: // 等待 RDY-HOME-OPE訊號 -> ON 且 MOVE訊號 -> OFF
-                                if ((_hardwareManager.Robot.Motors[2].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
-                                    (_hardwareManager.Robot.Motors[2].MotorInfo.IO_Output_Low.Bits.MOVE == false))
+                                _homeError.ErrorCode = 55;
+                                _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
+                                if ((motor_z_info.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
+                                    (motor_z_info.IO_Output_Low.Bits.MOVE == false))
                                 {
+                                    HomeProcedureCase = 23;
+                                }
+                                break;
+
+                            case 23:
+                                _homeError.ErrorCode = 56;
+                                _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
+                                if (motor_z_info.IO_Output_High.Bits.HOME_END == true)
+                                {
+                                    _hardwareManager.Robot.Motors[2].IsHomeFinished = true;
                                     HomeProcedureCase = 30; // Z軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
                                 }
                                 break;
@@ -483,8 +547,10 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 31: // 旋轉軸復歸, 確認RDY-HOME-OPE訊號 -> OFF 且 MOVE訊號 -> ON
-                                if ((_hardwareManager.Robot.Motors[0].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
-                                    (_hardwareManager.Robot.Motors[0].MotorInfo.IO_Output_Low.Bits.MOVE == true))
+                                _homeError.ErrorCode = 57;
+                                _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
+                                if ((motor_rot_info.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
+                                    (motor_rot_info.IO_Output_Low.Bits.MOVE == true))
                                 {
                                     _hardwareManager.Robot.Home(0, false);
                                     HomeProcedureCase = 32;
@@ -492,10 +558,33 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 32: // 等待 RDY-HOME-OPE訊號 -> ON 且 MOVE訊號 -> OFF
-                                if ((_hardwareManager.Robot.Motors[0].MotorInfo.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
-                                    (_hardwareManager.Robot.Motors[0].MotorInfo.IO_Output_Low.Bits.MOVE == false))
+                                _homeError.ErrorCode = 58;
+                                _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
+                                if ((motor_rot_info.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
+                                    (motor_rot_info.IO_Output_Low.Bits.MOVE == false))
                                 {
-                                    HomeProcedureCase = -1; // 旋轉軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
+                                    HomeProcedureCase = 33; 
+                                }
+                                break;
+
+                            case 33:
+                                _homeError.ErrorCode = 59;
+                                _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
+                                if (motor_rot_info.IO_Output_High.Bits.HOME_END == true)
+                                {
+                                    _hardwareManager.Robot.Motors[0].IsHomeFinished = true;
+                                    //result = true;
+                                    HomeProcedureCase = 40; // 旋轉軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
+                                }
+                                break;
+
+                            case 40:
+                                var _cts2 = new CancellationToken();
+                                result = await _hardwareManager.Robot.MoveToPositionAsync(2, 0, _cts2);
+                                if (!result)
+                                {
+                                    _homeError.ErrorCode = 60;
+                                    _homeError.ErrorMessage = _hardwareManager.Robot.ErrorMessage;
                                 }
                                 break;
 
@@ -518,8 +607,10 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"RobotController HomeProcedure Exception: {ex.Message}");
-                LastError.ErrorCode = 80;
-                LastError.ErrorMessage = ex.Message;
+                //LastError.ErrorCode = 80;
+                //LastError.ErrorMessage = ex.Message;
+                _homeError.ErrorCode = 50;
+                _homeError.ErrorMessage = ex.Message;
             }
             IsProcedureRunning = false;
             return result;
@@ -575,7 +666,61 @@ namespace ChargerControlApp.DataAccess.Robot.Services
 
             return result;
         }
-
+        public string CanMoveMessage(int axisId)
+        {
+            var _motor_rot_info = _hardwareManager.Robot.Motors[0].MotorInfo;
+            var _motor_y_info = _hardwareManager.Robot.Motors[1].MotorInfo;
+            var _motor_z_info = _hardwareManager.Robot.Motors[2].MotorInfo;
+            string result = string.Empty;
+            if (axisId == 0) // Rotate Axis
+            {
+                if (!_hardwareManager.Robot.InPosition(1, 0)) // Y Axis at position 0
+                {
+                    result = $"Y Axis ({_motor_y_info.Pos_Actual}) not at position 0 ({_motor_y_info.OpDataArray[0].Position}).";
+                }
+                else if (!(_motor_z_info.Pos_Actual >= _motor_z_info.OpDataArray[19].Position)) // Z Axis at upper limit
+                {
+                    result = $"Z Axis ({_motor_z_info.Pos_Actual}) is up than upper limit ({_motor_z_info.OpDataArray[19].Position}).";
+                }
+                else
+                { 
+                    result = "Theta Axis can move.";
+                }
+            }
+            else if (axisId == 1) // Y Axis
+            {
+                if (!(_hardwareManager.Robot.InPositions(0, new int[] { 0, 1, 2 }))) // Rotate Axis at position 0, 1, 2
+                {
+                    result = $"Rotate Axis not at position 0, 1, or 2.";
+                }
+                else if (!(_hardwareManager.Robot.InPositions(2, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 })))
+                {
+                    result = "Z Axis not at valid position.";
+                }
+                else
+                { 
+                    result = "Y Axis can move.";
+                }
+            }
+            else if (axisId == 2) // Z Axis
+            {
+                if (!(_hardwareManager.Robot.InPositions(0, new int[] { 0, 1, 2 }))) // Rotate Axis at position 0, 1, 2
+                {
+                    result = "Rotate Axis not at position 0, 1, or 2.";
+                }
+                else if (!_hardwareManager.Robot.InPosition(1, 0)) // Y Axis at position 0
+                {
+                    result = "Y Axis not at position 0.";
+                }
+                else if (!_hardwareManager.Robot.ZAxisBetweenSlotOrCar()) // Z Axis between slot or car
+                {
+                    result = "Z Axis not between slot or car.";
+                }
+                else
+                    result = "Z Axis can move.";
+            }
+            return result;
+        }
         public async Task<bool> ExecutePosAct()
         {
             bool result = true;
@@ -623,7 +768,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 result = false;
                                 errorFrame.AxisId = posFrame.AxisId;
                                 errorFrame.ErrorCode = 92;
-                                errorFrame.ErrorMessage = $"MoveToPositionAsync failed: AxisId={posFrame.AxisId}, PosDataNo={posFrame.PosDataNo}";
+                                errorFrame.ErrorMessage = $"MoveToPositionAsync failed: AxisId={posFrame.AxisId}, PosDataNo={posFrame.PosDataNo}, Message={_hardwareManager.Robot.ErrorMessage}";
                                 _logger.LogError(errorFrame.ErrorMessage);
                                 LastError = errorFrame.Clone();
                                 break;
@@ -635,7 +780,10 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                         // 感測器動作
                         bool sensor_result = (bool)GPIOService.GetValue(sensorFrame.SensorName) == sensorFrame.CheckStatus;
 
-                        if (!sensor_result)
+                        if (HardwareManager.SensorCheckPass) // 測試用，強制感測器檢查通過
+                        {
+                        }
+                        else if (!sensor_result)
                         {
                             errorFrame.AxisId = -1;
                             errorFrame.ErrorCode = 94;
@@ -687,6 +835,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             IsProcedureRunning = true;
 
             int swapIn = 0, swapOut = 0;
+            int[] swapOuts = null;
 
             try
             {
@@ -719,14 +868,15 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 1: // 檢查電池狀態及產生路徑點位
-                                if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOut))
+                                if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
                                 {
+                                    swapOut = _hardwareManager.SwapOut(swapOuts);
                                     MainProcedureCase = 10;
                                 }
                                 else
                                 {
                                     MainProcedureCase = -1;
-                                    LastError.ErrorCode = 11;
+                                    LastError.ErrorCode = 12;
                                     LastError.ErrorMessage = $"無法產生路徑";
                                 }
                                 break;
@@ -793,8 +943,9 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                             // 感測器檢查點失敗，代表slot已經有電池，無法放入，將註記slot狀態為狀態錯誤，並在近進行一次路徑判別
                                             _hardwareManager.SlotServices.SetBatteryMemory(swapIn - 1, true, false);
                                             _hardwareManager.SlotServices.TransitionTo(swapIn - 1, SlotState.StateError);
-                                            if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOut))
+                                            if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
                                             {
+                                                swapOut = _hardwareManager.SwapOut(swapOuts);
                                                 MainProcedureCase = 30;
                                             }
                                             else
@@ -863,8 +1014,9 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                             // 感測器檢查點失敗，代表slot已經沒電池，無法取出，將註記slot狀態為空，並在近進行一次路徑判別
                                             _hardwareManager.SlotServices.SetBatteryMemory(swapOut - 1, false, false);
                                             _hardwareManager.SlotServices.TransitionTo(swapOut - 1, SlotState.StateError);
-                                            if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOut))
+                                            if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
                                             {
+                                                swapOut = _hardwareManager.SwapOut(swapOuts);
                                                 MainProcedureCase = 50;
                                             }
                                             else

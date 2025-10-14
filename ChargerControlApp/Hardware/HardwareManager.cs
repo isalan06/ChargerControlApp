@@ -12,12 +12,16 @@ using System.Runtime.InteropServices;
 using ChargerControlApp.DataAccess.Modbus.Services;
 using ChargerControlApp.DataAccess.Modbus.Interfaces;
 using ChargerControlApp.DataAccess.Slot.Services;
+using static ChargerControlApp.Services.InitialState;
 
 namespace ChargerControlApp.Hardware
 {
     public class HardwareManager
     {
         public static int NPB450ControllerInstnaceNumber = 1; // NP-B450 控制器實例數量
+        public static bool ServoOnAndHomeAfterStartup = false; // 啟動後是否啟用伺服並回原點
+        public static bool SensorCheckPass = false; // 感測器檢查是否移除
+
         public static IServiceProvider? Services { get; private set; }
         public NPB450Controller[] Charger { get; private set; }
         private SocketCANBusService canBusService { get; set; }
@@ -92,6 +96,32 @@ namespace ChargerControlApp.Hardware
 
             // 取得 SlotServices
             SlotServices = serviceProvider.GetRequiredService<SlotServices>();
+        }
+
+        public int SwapOut(int[] swapOuts)
+        {
+            int result = 0;
+
+            double voltage_temp = 0.0;
+
+            foreach (var swap in swapOuts)
+            {
+                var index = swap - 1;
+                if (index < 0 || index >= NPB450ControllerInstnaceNumber)
+                {
+                    Console.WriteLine($"HardwareManager SwapOut index 超出範圍: {index}");
+
+                    continue;
+                }
+
+                if(Charger[index].GetCachedVoltage() > voltage_temp)
+                {
+                    voltage_temp = Charger[index].GetCachedVoltage();
+                    result = swap;
+                }
+            }
+
+            return result;
         }
     }
 }

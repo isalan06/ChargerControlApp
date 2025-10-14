@@ -162,6 +162,16 @@ namespace ChargerControlApp.Controllers
         }
 
         [HttpPost]
+        public IActionResult SetStartWithPos(int motorId, bool state, int posIndex)
+        {
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+            _robotController.SetDataNo_M(motorId, posIndex);
+            Task.Delay(300).Wait(); // 確保資料號設定完成
+            _robotController.SetStart(motorId, state);
+            return Json(new { success = true });
+        }
+        [HttpPost]
         public IActionResult SetStart(int motorId, bool state)
         {
             if (motorId < 0 || motorId >= _robotController.Motors.Length)
@@ -223,6 +233,18 @@ namespace ChargerControlApp.Controllers
             // 依照 dir（"FW" 或 "RV"）與 state（true/false）呼叫服務
             var result = _robotController.SetJogSpd(motorId, dir, state);
             return Json(new { success = result });
+        }
+
+
+        [HttpPost]
+        public IActionResult SetSpdWithSpeedDataNo(int motorId, string dir, bool state, int speedDataNo)
+        {
+            // 先設定速度資料編號
+            _robotController.SetDataNo_M(motorId, speedDataNo);
+            Task.Delay(300).Wait(); // 確保資料號設定完成
+            // 再執行 SPD 動作
+            _robotController.SetJogSpd(motorId, dir, state);
+            return Json(new { success = true });
         }
 
         [HttpGet]
@@ -383,7 +405,10 @@ namespace ChargerControlApp.Controllers
                 homeProcedureCase = _robotService.HomeProcedureCase,
                 errorCode = _robotService.LastError.ErrorCode,
                 errorMessage = _robotService.LastError.ErrorMessage,
-                procedureStatusMessage = _robotService.ProcedureStatusMessage
+                procedureStatusMessage = _robotService.ProcedureStatusMessage,
+                rotateAxesCanMoveMessage = _robotService.CanMoveMessage(0),
+                yAxesCanMoveMessage = _robotService.CanMoveMessage(1),
+                zAxesCanMoveMessage = _robotService.CanMoveMessage(2)
             });
         }
 

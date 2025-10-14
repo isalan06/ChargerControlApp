@@ -15,7 +15,7 @@ namespace ChargerControlApp.Controllers
 
         public IActionResult Index(string tab = "server")
         {
-            var stationState = _slotServices.StationState.ToString() ?? "Unknown";
+            var stationState = SlotServices.StationState.ToString() ?? "Unknown";
             var logMessages = SwappingStationService.LogMessages.Reverse().Take(100).ToList();
 
             ViewBag.StationState = stationState;

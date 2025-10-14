@@ -17,5 +17,11 @@ namespace ChargerControlApp.Utilities
         public string PortNameLinux { get; set; }
 
         public int PowerSupplyInstanceNumber { get; set; }
+
+        public int PositionInPosOffset { get; set; }
+
+        public bool SensorCheckPass { get; set; }
+
+        public bool ServoOnAndHomeAfterStartup { get; set; }
     }
 }

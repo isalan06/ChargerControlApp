@@ -11,7 +11,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
     {
         public readonly SlotInfo[] SlotInfo;
         
-        public StationState StationState { get; set; } = StationState.Idle; // 站台狀態
+        public static StationState StationState { get; set; } = StationState.Unspecified; // 站台狀態
         public SlotServices(IServiceProvider serviceProvider)
         { 
             SlotInfo = serviceProvider.GetRequiredService<SlotInfo[]>();
@@ -98,11 +98,13 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         /// <param name="swapIn"></param>
         /// <param name="swapOut"></param>
         /// <returns></returns>
-        public bool GetSwapSlotInfo(out int swapIn, out int swapOut)
+        public bool GetSwapSlotInfo(out int swapIn, out int[] swapOut)
         {
             bool result = false;
             swapIn = -1;
-            swapOut = -1;
+            List<int> batterySlots = new List<int>();
+            swapOut = null;
+            double voltage = 0.0;
 
             // ToDo: 目前簡易測試用，之後需要再修改
             // swap in - 主要是要空槽位
@@ -120,7 +122,8 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                             {
                                 if ((SlotInfo[j].ChargeState != SlotChargeState.Empty) && (SlotInfo[j].BatteryMemory == true))
                                 {
-                                    swapOut = j+1;
+                                    //swapOut = j+1;
+                                    batterySlots.Add(j + 1);
                                     result = true;
                                 }
                             }
@@ -128,6 +131,11 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     }
 
                 }
+            }
+
+            if (result)
+            { 
+                swapOut = batterySlots.ToArray();
             }
 
             return result;

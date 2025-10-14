@@ -36,7 +36,7 @@
         /// <summary>
         /// Gets or sets the timeout value in milliseconds.
         /// </summary>
-        public double Timeout_ms {get;set;} = 30000.0;
+        public double Timeout_ms {get;set;} = 120000.0;
 
         /// <summary>
         /// 建立此物件的淺層複製

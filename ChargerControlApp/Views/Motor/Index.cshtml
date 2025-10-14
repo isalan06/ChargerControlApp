@@ -108,7 +108,28 @@
                         </div>
                     </div>
                 </div>
-                
+                <!-- 馬達可移動訊息區 -->
+                <div class="card mb-3">
+                    <div class="card-header">馬達可移動訊息區 </div>
+                    <div class="card-body">
+                        <div>
+                            <span>旋轉軸</span>
+                            <div id="rotateAxesCanMoveMessage" style="border:1px solid #ccc; min-height:80px; padding:8px; background:#f9f9f9; white-space:pre-wrap; font-family:Consolas, monospace;">
+                                
+                            </div>
+                        </div>
+                        <div>
+                            <span>Y軸</span>
+                            <div id="yAxesCanMoveMessage" style="border:1px solid #ccc; min-height:80px; padding:8px; background:#f9f9f9; white-space:pre-wrap; font-family:Consolas, monospace;">
+                            </div>
+                        </div>
+                        <div>
+                            <span>Z軸</span>
+                            <div id="zAxesCanMoveMessage" style="border:1px solid #ccc; min-height:80px; padding:8px; background:#f9f9f9; white-space:pre-wrap; font-family:Consolas, monospace;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- 右側狀態方框 -->
@@ -463,7 +484,7 @@
                         onmouseleave="setSpd(${m.id}, 'RV', false)">
                         RV-SPD
                     </button>
-                        <button type="button"
+                    <button type="button"
                         class="set-pos-btn"
                         data-motor-id="${m.id}"
                         style="margin-left:8px;">
@@ -588,9 +609,11 @@
     // SPD 按鈕事件綁定
     document.querySelectorAll('.spd-btn-row .jog-btn').forEach(btn => {
         btn.onmousedown = function() {
-            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            const card = btn.closest('.motor-action-card');
+            const motorId = card.querySelector('.toggle-servo-btn').getAttribute('data-id');
             const dir = btn.textContent.includes('FW') ? 'FW' : 'RV';
-            fetch(`/Motor/SetSpd?motorId=${motorId}&dir=${dir}&state=true`, { method: 'POST' })
+            const speedDataNo = card.querySelector('.speed-select-combo').value;
+            fetch(`/Motor/SetSpdWithSpeedDataNo?motorId=${motorId}&dir=${dir}&state=true&speedDataNo=${speedDataNo}`, { method: 'POST' })
                 .then(response => response.json());
         };
         btn.onmouseup = function() {
@@ -656,7 +679,8 @@
      document.querySelectorAll('.start-btn').forEach(btn => {
         btn.onmousedown = function() {
             const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
-            fetch(`/Motor/SetStart?motorId=${motorId}&state=true`, { method: 'POST' })
+            const posIndex = parseInt(card.querySelector('.data-select-combo').value, 10);
+            fetch(`/Motor/SetStartWithPos?motorId=${motorId}&state=true&posIndex=${posIndex}`, { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     // 可依需求顯示狀態或提示
@@ -1108,6 +1132,18 @@
                 // 流程狀態訊息
                 const procedureStatusEl = document.getElementById('procedureStatusArea');
                 procedureStatusEl.textContent = data.procedureStatusMessage ?? '';
+
+                // 旋轉軸 移動允許 訊息
+                const rotateAxesCanMoveMessageEl = document.getElementById('rotateAxesCanMoveMessage');
+                rotateAxesCanMoveMessageEl.textContent = data.rotateAxesCanMoveMessage ?? '';
+
+                // Y軸 移動允許 訊息
+                const yAxesCanMoveMessageEl = document.getElementById('yAxesCanMoveMessage');
+                yAxesCanMoveMessageEl.textContent = data.yAxesCanMoveMessage ?? '';
+
+                // Z軸 移動允許 訊息
+                const zAxesCanMoveMessageEl = document.getElementById('zAxesCanMoveMessage');
+                zAxesCanMoveMessageEl.textContent = data.zAxesCanMoveMessage ?? '';
             })
             .catch(() => {
                 document.getElementById('procedureRunningStatus').textContent = '取得失敗';
@@ -1116,6 +1152,9 @@
                 document.getElementById('errorCode').textContent = '-';
                 document.getElementById('errorMessage').textContent = '取得失敗';
                 document.getElementById('procedureStatusArea').textContent = '取得失敗';
+                document.getElementById('rotateAxesCanMoveMessage').textContent = '取得失敗';
+                document.getElementById('yAxesCanMoveMessage').textContent = '取得失敗';
+                document.getElementById('zAxesCanMoveMessage').textContent = '取得失敗';
             });
     }
     setInterval(updateRobotProcedureStatus, 1000);
