@@ -1,7 +1,18 @@
 # ChargerControlApp
 Battery Swapping Station ASP.Net 8.0 MVC架構
 
+---
 # 目錄
+
+- [Hardware Description](#hardware-description)
+  - [MOXA IPC](#moxa-ipc) 
+- [檔案內容說明](#檔案內容說明)
+- [狀態說明](#狀態說明)
+- [參數說明](#參數說明)
+
+設計文件：
+- [Flow Chart](FlowChart.md)
+
 
 ---
 # <center> Hardware Description </center>
@@ -238,3 +249,36 @@ fi
 ```
 ---
 # <center> 狀態說明 </center>
+
+---
+# <center>  參數說明  </center>
+
+<h3> 參數格式及說明 </h3>
+appsettings.json
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "AppSettings": {
+    "ServerIp": "http://localhost:50051",
+    "ChargingStationName": "StationA",
+    "MaxChargingCurrent": 20,
+    "CanInterface": "can0",                         // MW NPB450 連接CAN介面接口
+    "CanBitrate": 250000,                           // MW NPB450 CANBus通訊速度
+    "PortName": "COM1",                             // BLDC Driver RS485 介面接口(Windows)
+    "PortNameLinux": "/dev/ttyM0",                  // BLDC Driver RS485 介面接口(Linux)
+    "PowerSupplyInstanceNumber": 4,                 // NPB450 實際安裝數量
+    "PositionInPosOffset": 3000,                    // 到位檢查位置範圍
+    "SensorCheckPass": false,                       // 測試用，在流程動作中不檢查在席感測器
+    "ServoOnAndHomeAfterStartup": false             // 在狀態機變成Initial時是否執行Servo On跟原點復歸
+  }
+}
+```
+
+---
