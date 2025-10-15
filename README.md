@@ -15,7 +15,7 @@ Battery Swapping Station ASP.Net 8.0 MVC架構
 
 
 ---
-# <center> Hardware Description </center>
+# Hardware Description
 ## MOXA IPC 
 
 - 型號: UC-3434A-T-LTE-WiFi
@@ -98,7 +98,7 @@ fi
 
 
 ---
-# <center> 檔案內容說明 <center>
+# 檔案內容說明
 ```bash
 📦ChargerControlApp
  ┣ 📂.config
@@ -248,10 +248,10 @@ fi
  ┗ 📜Program.cs                                     # 主程式
 ```
 ---
-# <center> 狀態說明 </center>
+# 狀態說明
 
 ---
-# <center>  參數說明  </center>
+# 參數說明
 
 <h3> 參數格式及說明 </h3>
 appsettings.json
