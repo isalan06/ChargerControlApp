@@ -676,9 +676,11 @@
         }
     });
 
-     document.querySelectorAll('.start-btn').forEach(btn => {
+    document.querySelectorAll('.start-btn').forEach(btn => {
         btn.onmousedown = function() {
-            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            // 取得 card 範圍
+            const card = btn.closest('.motor-action-card');
+            const motorId = card.querySelector('.toggle-servo-btn').getAttribute('data-id');
             const posIndex = parseInt(card.querySelector('.data-select-combo').value, 10);
             fetch(`/Motor/SetStartWithPos?motorId=${motorId}&state=true&posIndex=${posIndex}`, { method: 'POST' })
                 .then(response => response.json())
@@ -687,7 +689,8 @@
                 });
         };
         btn.onmouseup = function() {
-            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            const card = btn.closest('.motor-action-card');
+            const motorId = card.querySelector('.toggle-servo-btn').getAttribute('data-id');
             fetch(`/Motor/SetStart?motorId=${motorId}&state=false`, { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
@@ -695,7 +698,8 @@
                 });
         };
         btn.onmouseleave = function() {
-            const motorId = btn.closest('.motor-action-card').querySelector('.toggle-servo-btn').getAttribute('data-id');
+            const card = btn.closest('.motor-action-card');
+            const motorId = card.querySelector('.toggle-servo-btn').getAttribute('data-id');
             fetch(`/Motor/SetStart?motorId=${motorId}&state=false`, { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {

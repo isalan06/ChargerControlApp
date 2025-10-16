@@ -2,6 +2,7 @@
 using ChargerControlApp.DataAccess.Robot.Models;
 using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
+using ChargerControlApp.Services;
 using System.Threading.Tasks;
 
 namespace ChargerControlApp.DataAccess.Robot.Services
@@ -9,6 +10,8 @@ namespace ChargerControlApp.DataAccess.Robot.Services
     public class RobotService : IDisposable
     {
         private readonly HardwareManager _hardwareManager;
+        private readonly SlotServices _slotServices;
+        private readonly ChargingStationStateMachine _stationStateMachine;
 
         public bool IsProcedureRunning { get; internal set; }
         public bool IsMainProcedureRunning { get; internal set; }
@@ -138,6 +141,8 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             // 取得 HardwareManager 實例
             _hardwareManager = serviceProvider.GetRequiredService<HardwareManager>();
             _logger = serviceProvider.GetRequiredService<ILogger<RobotService>>();
+            _slotServices = serviceProvider.GetRequiredService<SlotServices>();
+            _stationStateMachine = serviceProvider.GetRequiredService<ChargingStationStateMachine>();
         }
 
         #endregion
@@ -210,7 +215,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             if (IsProcedureRunning) return;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
-            int timeoutMs = 360000; // 360秒逾時，可依需求調整
+            int timeoutMs = 600000; // 600秒逾時，可依需求調整
 
             Task.Run(async () =>
             {
@@ -248,6 +253,21 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             DefaultRotateProcedure.Refresh();
             _procedureFrames = DefaultRotateProcedure.ProcedureFrames;
             
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
+            Task.Run(async () =>
+            {
+                await ExecutePosAct();
+            }, token);
+        }
+
+        public void StartHomeRotateProcedure()
+        {
+            LastError.Clear();
+            ProcedureStatusMessage = string.Empty;
+            _procedureFrames = new List<ProcedureFrame>()
+            { new PosFrame{ AxisId = 0, PosDataNo = 0} };
+
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
             Task.Run(async () =>
@@ -579,13 +599,10 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 40:
-                                var _cts2 = new CancellationToken();
-                                result = await _hardwareManager.Robot.MoveToPositionAsync(2, 0, _cts2);
-                                if (!result)
-                                {
-                                    _homeError.ErrorCode = 60;
-                                    _homeError.ErrorMessage = _hardwareManager.Robot.ErrorMessage;
-                                }
+                                this.StartHomeRotateProcedure();
+                                result = true;
+                                HomeProcedureCase = -1; // 復歸完成
+
                                 break;
 
                             case -98: // Force to stop all procedure
@@ -638,6 +655,8 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                         result = true;
                     }
                 }
+                else if (_hardwareManager.Robot.Motors[1].MotorInfo.Pos_Actual < 500)
+                    result = true; // Y Axis at negative position
             }
             else if (axisId == 1) // Y Axis
             {
@@ -727,7 +746,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
 
             PosErrorFrame errorFrame = new PosErrorFrame();
 
-            if (IsProcedureRunning) return false;
+            //if (IsProcedureRunning) return false;
             IsProcedureRunning = true;
             _cts = new CancellationTokenSource();
             try
@@ -832,7 +851,8 @@ namespace ChargerControlApp.DataAccess.Robot.Services
         public async Task ExecuteAutoAct()
         {
             MainProcedureCase = 0;
-            IsProcedureRunning = true;
+            //IsProcedureRunning = true;
+            IsMainProcedureRunning = true;
 
             int swapIn = 0, swapOut = 0;
             int[] swapOuts = null;
@@ -963,6 +983,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
 
                             case 42: // 成功放入電池
                                 _hardwareManager.SlotServices.TransitionTo(swapIn - 1, SlotState.Idle); // 成功放入電池，將slot狀態改為Idle
+                                _slotServices.SetBatteryMemory(swapIn - 1, true);
                                 MainProcedureCase = 43;
                                 break;
 
@@ -1006,7 +1027,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 if (!this.IsProcedureRunning)
                                 {
                                     if (LastError.ErrorCode == 0)
-                                        MainProcedureCase = 70;
+                                        MainProcedureCase = 62;
                                     else
                                     {
                                         if (checkSensorPoint)
@@ -1030,6 +1051,13 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                             MainProcedureCase = -97;
                                     }
                                 }
+                                break;
+
+                            case 62: // 成功取出電池
+                                _slotServices.SetBatteryMemory(swapOut - 1, false);
+                                _hardwareManager.SlotServices.TransitionTo(swapOut - 1, SlotState.Initialization); // 成功取出電池，將slot狀態改為Empty
+                                
+                                MainProcedureCase = 70;
                                 break;
 
                             case 70: // 旋轉到R-0
@@ -1064,6 +1092,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
 
                             case 90: // Procedure Success
                                 // 整個程序成功結束，將station狀態更新
+                                _stationStateMachine.HandleTransition(ChargingState.Idle);
                                 MainProcedureCase = -1;
                                 break;
 
@@ -1090,7 +1119,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                 LastError.ErrorCode = 81;
                 LastError.ErrorMessage = ex.Message;
             }
-            IsProcedureRunning = false;
+            IsMainProcedureRunning = false;
         }
 
         #endregion

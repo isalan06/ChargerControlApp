@@ -167,7 +167,7 @@ namespace ChargerControlApp.Controllers
             if (motorId < 0 || motorId >= _robotController.Motors.Length)
                 return BadRequest();
             _robotController.SetDataNo_M(motorId, posIndex);
-            Task.Delay(300).Wait(); // 確保資料號設定完成
+            Task.Delay(50).Wait(); // 確保資料號設定完成
             _robotController.SetStart(motorId, state);
             return Json(new { success = true });
         }
@@ -241,7 +241,7 @@ namespace ChargerControlApp.Controllers
         {
             // 先設定速度資料編號
             _robotController.SetDataNo_M(motorId, speedDataNo);
-            Task.Delay(300).Wait(); // 確保資料號設定完成
+            Task.Delay(50).Wait(); // 確保資料號設定完成
             // 再執行 SPD 動作
             _robotController.SetJogSpd(motorId, dir, state);
             return Json(new { success = true });
