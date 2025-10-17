@@ -95,7 +95,18 @@ namespace ChargerControlApp.Services
                     for (int i = 0; i < HardwareManager.NPB450ControllerInstnaceNumber; i++)
                     {
                         SlotStateCheck(i);
-                        await Task.Run(() => _hardwareManager.Charger[i].PollingOnce());
+                        
+                        try
+                        {
+                            if (NPB450Controller.ChargerUseAsync)
+                                await _hardwareManager.Charger[i].PollingOnceAsync(); // 使用非同步版本
+                            else
+                                await Task.Run(() => _hardwareManager.Charger[i].PollingOnce()); // 使用同步版本
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, $"Charger[{i}] PollingOnce 發生例外");
+                        }
                         await Task.Delay(20);
                     }
 

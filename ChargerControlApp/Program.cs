@@ -46,8 +46,7 @@ public class Program
         HardwareManager.ServoOnAndHomeAfterStartup = settings.ServoOnAndHomeAfterStartup; // 設定 啟動後是否啟用伺服並回原點
         HardwareManager.SensorCheckPass = settings.SensorCheckPass; // 設定 感測器檢查是否移除
         RobotController.PositionInPos_Offset = settings.PositionInPosOffset; // 設定 PositionInPos_Offset
-
-        
+        NPB450Controller.ChargerUseAsync = settings.ChargerUseAsync; // 設定 充電器是否使用非同步模式
 
         // ModbusRTUService
         builder.Services.AddSingleton<ModbusRTUService>(sp =>

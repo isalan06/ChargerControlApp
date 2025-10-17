@@ -185,7 +185,7 @@ namespace ChargerControlApp.Hardware
                     GPIOService.Pin2ValueFromMotor = Motors[1].MotorInfo.IO_Output_High.Bits.R1_R;
 
                     //Thread.Sleep(10); // Adjust the delay as needed
-                    await Task.Delay(10); // Adjust the delay as needed
+                    await Task.Delay(1); // Adjust the delay as needed
                 }
             }, ct);
         }

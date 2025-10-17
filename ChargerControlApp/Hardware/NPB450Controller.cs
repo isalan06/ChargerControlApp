@@ -26,6 +26,7 @@ namespace ChargerControlApp.Hardware
     public class NPB450Controller
     {
         public static int NPB450ControllerInstnaceMaxNumber = 8; // TODO: 之後改成設定檔
+        public static bool ChargerUseAsync = false; // TODO: 之後改成設定檔
         private readonly ILogger<NPB450Controller> _logger; 
 
         private readonly ICANBusService _canBusService;
@@ -344,6 +345,72 @@ namespace ChargerControlApp.Hardware
                 }
             }
         }
+
+        /// <summary>
+        /// TODO: Async有問題，還沒檢查
+        /// </summary>
+        /// <returns></returns>
+        public async Task PollingOnceAsync()
+        {
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-Start");
+                _canBusService.ClearCANBuffer();
+                // 這裡是實際和硬體通訊的地方
+                this.Voltage = await GetVoltageAsync();// TODO: Async有問題，還沒檢查，之後要改 await GetVoltageAsync();
+                this.Current = await GetCurrentAsync();
+                this.CHG_STATUS = await GetCHG_STATUSAsync();
+                this.FAULT_STATUS = await GetFAULT_STATUSAsync();
+                if (this.startChargingTrigger)
+                {
+                    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StartCharging()");
+                    this.startChargingTrigger = false;
+                    int numberOfDataBytes = 1;
+                    byte[] send = new byte[2 + numberOfDataBytes];
+                    byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
+                    sendBytes.CopyTo(send, 0);
+                    send[2] = (byte)0x01;
+                    _canBusService.SendCommand(send, deviceCanID);
+                }
+                if (this.stopChargingTrigger)
+                {
+                    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StopCharging()");
+                    this.stopChargingTrigger = false;
+                    int numberOfDataBytes = 1;
+                    byte[] send = new byte[2 + numberOfDataBytes];
+                    byte[] sendBytes = BitConverter.GetBytes((ushort)CanbusWriteCommand.OPERATION);
+                    sendBytes.CopyTo(send, 0);
+                    send[2] = (byte)0x00;
+                    _canBusService.SendCommand(send, deviceCanID);
+                }
+                _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-End");
+            }
+            else
+            {
+                // 模擬資料
+                if (this.IsUsed)
+                {
+                    this.Voltage += 0.1 + 0.005 * (double)deviceID;
+                    this.Current += 0.015 + 0.001 * (double)deviceID;
+                    if (this.Voltage >= 250.0) this.Voltage = 0.0;
+                    if (this.Current >= 5.0) this.Current = 0.0;
+                }
+                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Windows虛擬]-PollingOnce()");
+
+                if (this.startChargingTrigger)
+                {
+                    this.startChargingTrigger = false;
+                    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Windows虛擬]-StartCharging()");
+                }
+
+                if (this.stopChargingTrigger)
+                {
+                    this.stopChargingTrigger = false;
+                    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Windows虛擬]-StopCharging()");
+                }
+            }
+        }
         public double GetCachedVoltage() { return this.Voltage; }
         public double GetCachedCurrent() { return this.Current; }
         public CHG_STATUS_Union GetCachedCHG_STATUS() { return this.CHG_STATUS; }
@@ -359,22 +426,34 @@ namespace ChargerControlApp.Hardware
             return (double)Voltage / 100;
         }
 
-        //private async Task<double> GetVoltageAsync()
-        //{
-        //    byte[] VoltageBytes = await GetStatusFromDeviceAsync(NPB1700Controller.CanbusReadCommand.READ_VOUT);
-        //    ushort Voltage = BitConverter.ToUInt16(new byte[] { VoltageBytes[2], VoltageBytes[3] }.ToArray(), 0);
-        //    return (double)Voltage / 100;
-        //}
+        private async Task<double> GetVoltageAsync()
+        {
+            byte[] VoltageBytes = await GetStatusFromDeviceAsync(NPB450Controller.CanbusReadCommand.READ_VOUT);
+            ushort Voltage = BitConverter.ToUInt16(new byte[] { VoltageBytes[2], VoltageBytes[3] }.ToArray(), 0);
+            return (double)Voltage / 100;
+        }
         private async Task<double> GetCurrent()
         {
             byte[] CurrentBytes = await GetStatusFromDevice2(NPB450Controller.CanbusReadCommand.READ_IOUT);
             ushort Current = BitConverter.ToUInt16(new byte[] { CurrentBytes[2], CurrentBytes[3] }.ToArray(), 0);
             return (double)Current / 100;
         }
-
+        private async Task<double> GetCurrentAsync()
+        {
+            byte[] CurrentBytes = await GetStatusFromDeviceAsync(NPB450Controller.CanbusReadCommand.READ_IOUT);
+            ushort Current = BitConverter.ToUInt16(new byte[] { CurrentBytes[2], CurrentBytes[3] }.ToArray(), 0);
+            return (double)Current / 100;
+        }
         private async Task<CHG_STATUS_Union> GetCHG_STATUS()
         {
             byte[] CHG_STATUS_BYTES = await GetStatusFromDevice2(NPB450Controller.CanbusReadCommand.CHG_STATUS);
+            CHG_STATUS_Union CHG_STATUS = new CHG_STATUS_Union();
+            CHG_STATUS.Data = BitConverter.ToUInt16(new byte[] { CHG_STATUS_BYTES[2], CHG_STATUS_BYTES[3] }.ToArray(), 0);
+            return CHG_STATUS;
+        }
+        private async Task<CHG_STATUS_Union> GetCHG_STATUSAsync()
+        {
+            byte[] CHG_STATUS_BYTES = await GetStatusFromDeviceAsync(NPB450Controller.CanbusReadCommand.CHG_STATUS);
             CHG_STATUS_Union CHG_STATUS = new CHG_STATUS_Union();
             CHG_STATUS.Data = BitConverter.ToUInt16(new byte[] { CHG_STATUS_BYTES[2], CHG_STATUS_BYTES[3] }.ToArray(), 0);
             return CHG_STATUS;
@@ -383,6 +462,14 @@ namespace ChargerControlApp.Hardware
         private async Task<FAULT_STATUS_Union> GetFAULT_STATUS()
         {
             byte[] FAULT_STATUS_BYTES = await GetStatusFromDevice2(NPB450Controller.CanbusReadCommand.FAULT_STATUS);
+            FAULT_STATUS_Union FAULT_STATUS = new FAULT_STATUS_Union();
+            FAULT_STATUS.Data = BitConverter.ToUInt16(new byte[] { FAULT_STATUS_BYTES[2], FAULT_STATUS_BYTES[3] }.ToArray(), 0);
+            return FAULT_STATUS;
+        }
+
+        private async Task<FAULT_STATUS_Union> GetFAULT_STATUSAsync()
+        {
+            byte[] FAULT_STATUS_BYTES = await GetStatusFromDeviceAsync(NPB450Controller.CanbusReadCommand.FAULT_STATUS);
             FAULT_STATUS_Union FAULT_STATUS = new FAULT_STATUS_Union();
             FAULT_STATUS.Data = BitConverter.ToUInt16(new byte[] { FAULT_STATUS_BYTES[2], FAULT_STATUS_BYTES[3] }.ToArray(), 0);
             return FAULT_STATUS;
@@ -630,8 +717,12 @@ namespace ChargerControlApp.Hardware
                 Data = data
             };
 
-
-            await _canBusService.SendAsync(message);
+            // Send command
+            byte[] sendBytes = BitConverter.GetBytes((ushort)command);
+            _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-GetStatusFromDevice2()-Command:{command.ToString()} Bytes:{BitConverter.ToString(sendBytes)}");
+            _canBusService.SendCommand(sendBytes, deviceCanID);
+            //await _canBusService.SendAsync(message);
+            // Wait for response
             await Task.Delay(50);
 
             var response = await _canBusService.ReceiveAsync(100);

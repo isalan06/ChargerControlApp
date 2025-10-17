@@ -215,14 +215,14 @@
                 document.getElementById('main-proc-case').textContent = data.mainProcedureCase;
             } else {
                 [
-                    'station-state', 'psu-count', 'canbus-status', 'modbus-status',
+                    'station-state', 'psu-count', 'canbus-status', 'modbus-status','modbus-interval-time', 'modbus-command-time',
 					'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case'
                 ].forEach(id => document.getElementById(id).textContent = '取得失敗');
 
             }
         } catch {
             [
-                'station-state', 'psu-count', 'canbus-status', 'modbus-status',
+                'station-state', 'psu-count', 'canbus-status', 'modbus-status','modbus-interval-time', 'modbus-command-time',
 				'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case'
             ].forEach(id => document.getElementById(id).textContent = '連線錯誤');
         }

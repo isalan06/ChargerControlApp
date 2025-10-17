@@ -48,6 +48,75 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
         {
             var start = DateTime.UtcNow;
             CanFrame frame = default;
+            IntPtr fdSet = Marshal.AllocHGlobal(128);
+            try
+            {
+                
+                int fd = (int)_socket.SafeHandle.DangerousGetHandle().ToInt64();
+                while ((DateTime.UtcNow - start).TotalMilliseconds < timeoutMs)
+                {
+                    unsafe
+                    {
+                        byte* ptr = (byte*)fdSet.ToPointer();
+                        for (int i = 0; i < 128; i++) ptr[i] = 0;
+                        ptr[fd / 8] |= (byte)(1 << (fd % 8));
+
+                        var timeout = new Timeval
+                        {
+                            tv_sec = 0,
+                            tv_usec = 10000 // 10ms
+                        };
+
+                        int result = select(fd + 1, ref fdSet, IntPtr.Zero, IntPtr.Zero, ref timeout);
+
+                        if (result > 0)
+                        {
+                            int num = LibcNativeMethods.Read(_socket.SafeHandle, ref frame, Marshal.SizeOf(typeof(CanFrame)));
+                            if (num == -1)
+                            {
+                                Console.WriteLine("CAN socket read failed");
+                                return null;
+                            }
+
+                            int len = Math.Min(frame.Length, frame.Data.Length);
+                            return new CanMessage
+                            {
+                                Id = CanId.FromRaw(frame.CanId),
+                                Data = frame.Data.Take(len).ToArray()
+                            };
+                        }
+                        else if (result < 0)
+                        {
+                            Console.WriteLine("select() failed");
+                            return null;
+                        }
+                    }
+
+                    // 輪詢等待
+                    await Task.Delay(5);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ReceiveAsync error: {ex.Message}");
+                return null;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(fdSet);
+            }
+
+            // 超時處理
+            Console.WriteLine("CAN bus receive timeout");
+            return null;
+        }
+
+
+        /*
+        public async Task<CanMessage?> ReceiveAsync(int timeoutMs)
+        {
+            var start = DateTime.UtcNow;
+            CanFrame frame = default;
 
             while ((DateTime.UtcNow - start).TotalMilliseconds < timeoutMs)
             {
@@ -96,6 +165,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
             }
             return null; // timeout
         }
+        */
 
         /// <summary>
         /// TODO: Async有問題，還沒檢查
