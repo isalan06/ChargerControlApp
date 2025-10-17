@@ -90,12 +90,14 @@ namespace ChargerControlApp.Hardware
 
         #region Task
 
-        private static CancellationTokenSource source = new CancellationTokenSource();
-        private static CancellationToken ct = source.Token;
+        private CancellationTokenSource source = new CancellationTokenSource();
+        //private static CancellationToken ct = source.Token;
         private int _routeIndex = 0;
 
         private Task DoWork()
         {
+            CancellationToken ct = source.Token;
+
             return Task.Run(async () =>
             {
                 bool ExecutedOnce = false; // Flag to ensure initialization runs only once
@@ -118,12 +120,12 @@ namespace ChargerControlApp.Hardware
 
                         if (command.Name == "ReadJogAndHomeSetting")
                         {
-                            var readResult = Motors[command.Id].ReadFrame(command);
-                            if (readResult.Result != null)
+                            var readResult = await Motors[command.Id].ReadFrame(command);
+                            if (readResult != null)
                             {
-                                if (readResult.Result.Length == 32)
+                                if (readResult.Length == 32)
                                 {
-                                    Motors[command.Id].MotorInfo.Jog_Home_Setting.Set(readResult.Result);
+                                    Motors[command.Id].MotorInfo.Jog_Home_Setting.Set(readResult);
                                 }
                             }
                         }
@@ -133,11 +135,11 @@ namespace ChargerControlApp.Hardware
                             {
                                 for (int i = 0; i < command.SubFrames.Count; i++)
                                 {
-                                    var readResult = Motors[command.Id].ReadFrame(command.SubFrames[i]);
+                                    var readResult = await Motors[command.Id].ReadFrame(command.SubFrames[i]);
 
-                                    if (readResult.Result != null)
+                                    if (readResult != null)
                                     {
-                                        Motors[command.Id].MotorInfo.OpDataArray[i].FromUShortArray(readResult.Result);
+                                        Motors[command.Id].MotorInfo.OpDataArray[i].FromUShortArray(readResult);
                                     }
                                 }
                             }
@@ -148,8 +150,8 @@ namespace ChargerControlApp.Hardware
                             {
                                 for (int i = 0; i < command.SubFrames.Count; i++)
                                 {
-                                    var writeResult = Motors[command.Id].WriteFrame(command.SubFrames[i]);
-                                    bool write_finished = writeResult.Result;
+                                    var writeResult = await Motors[command.Id].WriteFrame(command.SubFrames[i]);
+                                    bool write_finished = writeResult;
                                     if (write_finished)
                                     {
                                     }
@@ -159,8 +161,8 @@ namespace ChargerControlApp.Hardware
                         else
                         {
 
-                            var writeResult = Motors[command.Id].WriteFrame(command);
-                            bool write_finished = writeResult.Result;
+                            var writeResult = await Motors[command.Id].WriteFrame(command);
+                            bool write_finished = writeResult;
 
                             if (write_finished)
                             {
@@ -170,8 +172,8 @@ namespace ChargerControlApp.Hardware
                     }
 
                     // Route Proocess for each motor
-                    var result = Motors[_routeIndex].ExecuteRouteProcessOnce();
-                    bool finished  = result.Result;
+                    var result = await Motors[_routeIndex].ExecuteRouteProcessOnce();
+                    bool finished  = result;
                     if (finished)
                     { 
                         if(++_routeIndex >= MOTOR_COUNT)

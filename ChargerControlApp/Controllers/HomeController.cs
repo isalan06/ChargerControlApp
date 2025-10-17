@@ -1,3 +1,4 @@
+using ChargerControlApp.DataAccess.Modbus.Services;
 using ChargerControlApp.DataAccess.Robot.Services;
 using ChargerControlApp.Hardware;
 using ChargerControlApp.Models;
@@ -36,6 +37,8 @@ namespace ChargerControlApp.Controllers
                 psuCount = HardwareManager.NPB450ControllerInstnaceNumber,
                 canbus = _hardwareManager.CanbusConnected,
                 modbus = _hardwareManager.ModbusConnected,
+                modbusActFreq = ModbusRTUService.InterFrameActMilliseconds.ToString("F0"),
+                modbusReadTime = ModbusRTUService.FrameReadMilliseconds.ToString("F0"),
                 motorAlarm = _robotService.IsMotorAlarm,
                 psuAlarm = _robotService.IsPowerSupplyAlarm,
                 slotAlarm = _robotService.IsSlotAlarm,

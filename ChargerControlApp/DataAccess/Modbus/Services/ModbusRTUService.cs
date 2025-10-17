@@ -27,7 +27,12 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
 
         public bool IsConnected { get { return _serialPort.IsOpen; } }
 
+        private CancellationTokenSource source = new CancellationTokenSource();
 
+        public static double InterFrameActMilliseconds = 0.0; // Modbus RTU inter-frame Act in milliseconds
+        public static double FrameReadMilliseconds = 0.0; // Modbus RTU frame read in milliseconds
+
+        private DateTime dt_next = DateTime.Now;
 
         #region Constructor
 
@@ -106,11 +111,10 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
 
         #region Task
 
-        private static CancellationTokenSource source = new CancellationTokenSource();
-        private static CancellationToken ct = source.Token;
-
         private Task DoWork()
         {
+            
+            CancellationToken ct = source.Token;
             return Task.Run(() =>
             {
                 while (!ct.IsCancellationRequested && IsRunning)
@@ -178,8 +182,10 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
                 }
             }
 
-            #endregion
+            
         }
+
+        #endregion
 
         public async Task<ModbusRTUFrame> Act(ModbusRTUFrame coammand)
         {
@@ -201,10 +207,11 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
 
                 var _command = _frame.CreateCommand();
 
+                DateTime dt = DateTime.Now;
                 _serialPort.Write(_command, 0, _command.Length);
 
                 bool _timeout = false;
-                DateTime dt = DateTime.Now;
+                
 
                 while (!_timeout)
                 {
@@ -230,6 +237,10 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
                     //Thread.Sleep(10);
                     await Task.Delay(1);
                 }
+
+                FrameReadMilliseconds = DateTime.Now.Subtract(dt).TotalMilliseconds; // 記錄讀取時間
+                InterFrameActMilliseconds = DateTime.Now.Subtract(dt_next).TotalMilliseconds; // 記錄與上次Act的間隔時間
+                dt_next = DateTime.Now; // 更新下一次的時間點
 
             }
 

@@ -47,6 +47,8 @@ public class Program
         HardwareManager.SensorCheckPass = settings.SensorCheckPass; // 設定 感測器檢查是否移除
         RobotController.PositionInPos_Offset = settings.PositionInPosOffset; // 設定 PositionInPos_Offset
 
+        
+
         // ModbusRTUService
         builder.Services.AddSingleton<ModbusRTUService>(sp =>
         {
@@ -122,8 +124,8 @@ public class Program
         builder.Services.AddSingleton<SwappingStationService>();
 
         // 註冊其他服務
-        builder.Services.AddSingleton<HardwareManager>();
-        builder.Services.AddSingleton<ChargingStationStateMachine>();
+        //builder.Services.AddSingleton<HardwareManager>();
+        //builder.Services.AddSingleton<ChargingStationStateMachine>();
         builder.Services.AddSingleton<IServiceProvider>(provider => provider);
 
         // 先註冊 Singleton，讓 DI 可注入

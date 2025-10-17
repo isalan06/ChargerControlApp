@@ -23,14 +23,18 @@ namespace ChargerControlApp.Services
         private void CheckSystemStatus()
         {
             // 根據需要，可以加入更多的監控項目
-            if(_stateMachine._currentState.CurrentState == ChargingState.Swapping)
-            {
-                if(_robotService.IsCriticalAlarm)
+            if (_stateMachine._currentState != null)
+            {  
+                if (_stateMachine._currentState.CurrentState == ChargingState.Swapping)
                 {
-                    Console.WriteLine("❌ 換電程序中偵測到緊急警報，停止換電程序並轉為 Error 狀態");
-                    _robotService.StopAutoProcedure();
-                    _stateMachine.TransitionTo<ErrorState>();
+                    if (_robotService.IsCriticalAlarm)
+                    {
+                        Console.WriteLine("❌ 換電程序中偵測到緊急警報，停止換電程序並轉為 Error 狀態");
+                        _robotService.StopAutoProcedure();
+                        _stateMachine.TransitionTo<ErrorState>();
+                    }
                 }
+
             }
         }
 
@@ -106,6 +110,8 @@ namespace ChargerControlApp.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            //_stateMachine.HandleTransition(ChargingState.Initial);
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 CheckSystemStatus();

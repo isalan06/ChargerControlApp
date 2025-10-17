@@ -14,6 +14,10 @@ namespace ChargerControlApp.Services
     {
         public static IServiceCollection RegisterChargingServices(this IServiceCollection services)
         {
+            // 註冊狀態機與硬體控制
+            
+            services.AddSingleton<HardwareManager>();
+
             // 註冊所有狀態
             services.AddSingleton<InitialState>();
             services.AddSingleton<IdleState>();
@@ -22,9 +26,8 @@ namespace ChargerControlApp.Services
             services.AddSingleton<UnspecifiedState>();
             services.AddSingleton<ErrorState>();
 
-            // 註冊狀態機與硬體控制
             services.AddSingleton<ChargingStationStateMachine>();
-            services.AddSingleton<HardwareManager>();
+
 
             return services;
         }

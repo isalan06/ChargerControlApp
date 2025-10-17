@@ -83,8 +83,7 @@ namespace ChargerControlApp.Services
         int bypassCounter = 0;
         //private readonly GrpcClientService _grpcClientService;  // 已通過構造函數注入
         private readonly AppSettings _settings;
-        private readonly HardwareManager _hardwareManager;
-        private readonly RobotService _robotService;
+        private readonly IServiceProvider _serviceProvider;
 
         //public InitializationState(GrpcClientService grpcClientService)
         //{
@@ -93,18 +92,19 @@ namespace ChargerControlApp.Services
         //    _settings = ConfigLoader.GetSettings();
         //    _settings = _settings ?? new AppSettings();
         //}
-        public InitialState()
+        public InitialState(IServiceProvider serviceProvider)
         {
             _stateEnum = ChargingState.Initial;
             _currentState = ChargingState.Initial;
+            _serviceProvider = serviceProvider;
         }
 
-        public override void EnterState()
+        public override async void EnterState()
         {
             Console.WriteLine("進入 Initialization 狀態: 檢查設定，FMS 註冊，原點復歸");
             SlotServices.StationState = StationState.Initial;
             // 將非同步操作移到外部方法中
-            InitializeAsync();
+            await InitializeAsync();
         }
 
         private async Task InitializeAsync()  // 改為返回 Task，方便處理異常
@@ -112,6 +112,9 @@ namespace ChargerControlApp.Services
             string responseDeviceName = "";
             await Task.Delay(5000); // 初步延遲
             bool result = true;
+
+            var _hardwareManager = _serviceProvider.GetRequiredService<HardwareManager>();
+            var _robotService = _serviceProvider.GetRequiredService<RobotService>();
 
             DevicePostRegistrationResponse devicePostRegistrationResponse;
             do

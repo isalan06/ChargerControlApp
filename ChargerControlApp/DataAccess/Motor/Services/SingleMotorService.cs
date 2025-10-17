@@ -95,49 +95,48 @@ namespace ChargerControlApp.DataAccess.Motor.Services
 
             try
             {
-
                 if (_modbusRTUService.IsRunning)
                 {
                     _routeProcess[_routeIndex].DataFrame.SlaveAddress = SlaveAddress;
-                    var data = _modbusRTUService.Act(_routeProcess[_routeIndex].DataFrame);
-                    if (data.Result != null)
+                    var data = await _modbusRTUService.Act(_routeProcess[_routeIndex].DataFrame);
+                    if (data != null)
                     {
-                        if (data.Result.Data.Length >= _routeProcess[_routeIndex].DataFrame.DataNumber)
+                        if (data.Data.Length >= _routeProcess[_routeIndex].DataFrame.DataNumber)
                         {
                             if (_routeIndex == 0)
                             {
-                                MotorInfo.IO_Input_High.Data = data.Result.Data[0];
-                                MotorInfo.IO_Input_Low.Data = data.Result.Data[1];
-                                MotorInfo.IO_Output_High.Data = data.Result.Data[2];
-                                MotorInfo.IO_Output_Low.Data = data.Result.Data[3];
+                                MotorInfo.IO_Input_High.Data = data.Data[0];
+                                MotorInfo.IO_Input_Low.Data = data.Data[1];
+                                MotorInfo.IO_Output_High.Data = data.Data[2];
+                                MotorInfo.IO_Output_Low.Data = data.Data[3];
 
-                                MotorInfo.ErrorCode = (data.Result.Data[4] << 16) | data.Result.Data[5];
+                                MotorInfo.ErrorCode = (data.Data[4] << 16) | data.Data[5];
                             }
                             else if (_routeIndex == 1)
                             {
-                                MotorInfo.Pos_Target = CombineInt32(data.Result.Data[0], data.Result.Data[1]);
-                                MotorInfo.Pos_Command = CombineInt32(data.Result.Data[2], data.Result.Data[3]);
-                                MotorInfo.Pos_Actual = CombineInt32(data.Result.Data[4], data.Result.Data[5]);
-                                MotorInfo.Vel_Target = CombineInt32(data.Result.Data[6], data.Result.Data[7]);
-                                MotorInfo.Vel_Command = CombineInt32(data.Result.Data[8], data.Result.Data[9]);
-                                MotorInfo.Vel_Actual = CombineInt32(data.Result.Data[10], data.Result.Data[11]);
-                                MotorInfo.ErrorComm = (data.Result.Data[12] << 16) | data.Result.Data[13];
+                                MotorInfo.Pos_Target = CombineInt32(data.Data[0], data.Data[1]);
+                                MotorInfo.Pos_Command = CombineInt32(data.Data[2], data.Data[3]);
+                                MotorInfo.Pos_Actual = CombineInt32(data.Data[4], data.Data[5]);
+                                MotorInfo.Vel_Target = CombineInt32(data.Data[6], data.Data[7]);
+                                MotorInfo.Vel_Command = CombineInt32(data.Data[8], data.Data[9]);
+                                MotorInfo.Vel_Actual = CombineInt32(data.Data[10], data.Data[11]);
+                                MotorInfo.ErrorComm = (data.Data[12] << 16) | data.Data[13];
 
                             }
                             else if (_routeIndex == 2)
                             {
-                                MotorInfo.OpData_IdSelect = (data.Result.Data[0] << 16) | data.Result.Data[1];
-                                MotorInfo.OpData_IdOp = (data.Result.Data[2] << 16) | data.Result.Data[3];
-                                MotorInfo.OpData_Pos_Command = CombineInt32(data.Result.Data[4], data.Result.Data[5]);
-                                MotorInfo.OpData_VelR_Command = CombineInt32(data.Result.Data[6], data.Result.Data[7]);
-                                MotorInfo.OpData_Vel_Command = CombineInt32(data.Result.Data[8], data.Result.Data[9]);
-                                MotorInfo.OpData_Pos_Actual = CombineInt32(data.Result.Data[10], data.Result.Data[11]);
-                                MotorInfo.OpData_VelR_Actual = CombineInt32(data.Result.Data[12], data.Result.Data[13]);
-                                MotorInfo.OpData_Vel_Actual = CombineInt32(data.Result.Data[14], data.Result.Data[15]);
+                                MotorInfo.OpData_IdSelect = (data.Data[0] << 16) | data.Data[1];
+                                MotorInfo.OpData_IdOp = (data.Data[2] << 16) | data.Data[3];
+                                MotorInfo.OpData_Pos_Command = CombineInt32(data.Data[4], data.Data[5]);
+                                MotorInfo.OpData_VelR_Command = CombineInt32(data.Data[6], data.Data[7]);
+                                MotorInfo.OpData_Vel_Command = CombineInt32(data.Data[8], data.Data[9]);
+                                MotorInfo.OpData_Pos_Actual = CombineInt32(data.Data[10], data.Data[11]);
+                                MotorInfo.OpData_VelR_Actual = CombineInt32(data.Data[12], data.Data[13]);
+                                MotorInfo.OpData_Vel_Actual = CombineInt32(data.Data[14], data.Data[15]);
                             }
                             else if (_routeIndex == 3)
                             { 
-                                int _mode_ori = (data.Result.Data[0] << 16) | data.Result.Data[1];
+                                int _mode_ori = (data.Data[0] << 16) | data.Data[1];
 
                                 int _mode = 2;
 
@@ -169,10 +168,10 @@ namespace ChargerControlApp.DataAccess.Motor.Services
             bool result = false;
             if (_modbusRTUService.IsRunning)
             {
-                var data = _modbusRTUService.Act(frame.DataFrame);
-                if (data.Result != null)
+                var data = await _modbusRTUService.Act(frame.DataFrame);
+                if (data!= null)
                 {
-                    if (data.Result.HasResponse == true)
+                    if (data.HasResponse == true)
                     {
                         result = true;
                     }
@@ -186,12 +185,12 @@ namespace ChargerControlApp.DataAccess.Motor.Services
             ushort[] result = Array.Empty<ushort>();
             if (_modbusRTUService.IsRunning)
             {
-                var data = _modbusRTUService.Act(frame.DataFrame);
-                if (data.Result != null)
+                var data = await _modbusRTUService.Act(frame.DataFrame);
+                if (data != null)
                 {
-                    if (data.Result.HasResponse == true)
+                    if (data.HasResponse == true)
                     {
-                        result = data.Result.Data;
+                        result = data.Data;
                     }
                 }
             }

@@ -27,6 +27,14 @@
             <span id="modbus-status" style="color:#17a2b8;">讀取中...</span>
         </div>
         <div style="margin-top:8px;">
+            <span style="font-weight:bold;">Modbus讀取時間(ms)：</span>
+            <span id="modbus-command-time" style="color:#007bff;">讀取中...</span>
+        </div>
+        <div style="margin-top:8px;">
+            <span style="font-weight:bold;">Modbus間隔時間(ms)：</span>
+            <span id="modbus-interval-time" style="color:#007bff;">讀取中...</span>
+        </div>
+        <div style="margin-top:8px;">
             <span style="font-weight:bold;">Motor Alarm：</span>
             <span id="motor-alarm" style="color:#dc3545;">讀取中...</span>
         </div>
@@ -187,6 +195,10 @@
                 document.getElementById('canbus-status').style.color = data.canbus ? '#28a745' : '#dc3545';
                 document.getElementById('modbus-status').textContent = data.modbus ? '已連線' : '未連線';
                 document.getElementById('modbus-status').style.color = data.modbus ? '#28a745' : '#dc3545';
+
+                document.getElementById('modbus-interval-time').textContent = data.modbusActFreq;
+                document.getElementById('modbus-command-time').textContent = data.modbusReadTime;
+                
 
                 document.getElementById('motor-alarm').textContent = data.motorAlarm ? '異常' : '正常';
                 document.getElementById('motor-alarm').style.color = data.motorAlarm ? '#dc3545' : '#28a745';

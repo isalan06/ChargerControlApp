@@ -2,6 +2,7 @@
 using ChargerControlApp.Hardware;
 using Grpc.Core;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using TAC.Hardware;
 
 namespace ChargerControlApp.Services
@@ -11,11 +12,13 @@ namespace ChargerControlApp.Services
         private readonly ILogger<SwappingStationService> _logger;
         private readonly SlotServices _slotServices;
         private static readonly ConcurrentQueue<string> _logMessages = new();
+        private readonly HardwareManager _hardwareManager;
         public static IEnumerable<string> LogMessages => _logMessages;
         public SwappingStationService(ILogger<SwappingStationService> logger, IServiceProvider serviceProvider)
         {
             _logger = logger;
             _slotServices = serviceProvider.GetRequiredService<SlotServices>();
+            _hardwareManager = serviceProvider.GetRequiredService<HardwareManager>();
         }
 
         private void LogInformation(string message)
@@ -41,6 +44,7 @@ namespace ChargerControlApp.Services
             for(int i=0;i<HardwareManager.NPB450ControllerInstnaceNumber;i++)
             {
                 var slot=_slotServices.SlotInfo[i];
+                var npb450 = _hardwareManager.Charger[i];
                 var slotStatus = new SlotStatus
                 {
                     Name = slot.Name,
@@ -49,6 +53,11 @@ namespace ChargerControlApp.Services
                     Voltage = slot.ChargeState != SlotChargeState.Empty ? 54.2f - (54.2f - 48.2f) * (float)(slot.ChargingProcessValue / 100.0) : 0,
                     State = slot.ChargeState
                 };
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    slotStatus.Current = (float)npb450.GetCachedCurrent();
+                    slotStatus.Voltage = (float)npb450.GetCachedVoltage();
+                }
                 status.SlotStatuses.Add(slotStatus);
             }
             /*status.SlotStatuses.Add(new SlotStatus
