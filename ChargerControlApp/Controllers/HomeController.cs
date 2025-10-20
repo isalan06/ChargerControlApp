@@ -43,7 +43,8 @@ namespace ChargerControlApp.Controllers
                 psuAlarm = _robotService.IsPowerSupplyAlarm,
                 slotAlarm = _robotService.IsSlotAlarm,
                 procedureAlarm = _robotService.IsProcedureAlarm,
-                mainProcedureCase = _robotService.MainProcedureCase
+                mainProcedureCase = _robotService.MainProcedureCase,
+                isManualMode = RobotService.IsManualMode
             });
         }
 
@@ -89,6 +90,26 @@ namespace ChargerControlApp.Controllers
                 return Json(new { success = true, message = "牟祇翴確耴" });
             else
                 return Json(new { success = true,message = "礚猭秨﹍翴確耴叫絋粄ヘ玡篈琌 Idle翴確耴礚牡厨" });
+        }
+
+        [HttpPost]
+        public IActionResult SwitchManualMode()
+        { 
+            var result = _robotService.SwitchManualMode();
+            if (result)
+            {
+                if (RobotService.IsManualMode)
+                    return Json(new { success = true, message = $"ち传も笆家Α" });
+                else
+                    return Json(new { success = true, message = $"ち传笆家Α" });
+            }
+            else
+            {
+                if(RobotService.IsManualMode)
+                    return Json(new { success = false, message = $"礚猭ち传笆家Α" });
+                else
+                    return Json(new { success = false, message = $"礚猭ち传も笆家Α" });
+            }
         }
 
         public IActionResult Index()

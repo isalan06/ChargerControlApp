@@ -12,10 +12,11 @@ namespace ChargerControlApp.DataAccess.Motor.Services
 
         public byte SlaveAddress { get; set; } = 1;
 
-
         private IModbusRTUService _modbusRTUService;
 
         public bool IsHomeFinished { get; set; } = false;
+
+        private SingleMotorPersistence? _persistence = null;
 
 
         #region enum
@@ -37,6 +38,7 @@ namespace ChargerControlApp.DataAccess.Motor.Services
             _modbusRTUService = modbusRTUService;
             SlaveAddress = slaveAddress;
             MotorInfo.Id = id;
+            _persistence = new SingleMotorPersistence(id);
         }
 
         #endregion
@@ -207,6 +209,32 @@ namespace ChargerControlApp.DataAccess.Motor.Services
                 return (int)(value - 0x100000000);
             else
                 return (int)value;
+        }
+
+        public bool LoadPersistence()
+        {
+            bool result = false;
+            if (_persistence != null)
+            {
+                if(_persistence.IsFileExist)
+                {
+                    var opData = _persistence.Load();
+                    if (opData.Length > 0)
+                    {
+                        Array.Copy(opData, MotorInfo.OpDataArray, opData.Length);
+                        result = true;
+                    }
+                }
+            }
+            return result;
+        }
+
+        public void SavePersistence()
+        {
+            if (_persistence != null)
+            {
+                _persistence.Save(MotorInfo.OpDataArray);
+            }
         }
 
         #region IDisposable Support and Destructor

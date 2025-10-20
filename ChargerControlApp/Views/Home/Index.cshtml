@@ -75,6 +75,17 @@
             <button id="btn-home-proc" class="btn btn-info" style="width:100%;">原點復歸</button>
         </div>
     </div>
+    <!-- 模式操作區 -->
+    <div id="mode-operation-area" style="width:300px; border:1px solid #ccc; border-radius:8px; padding:16px; background:#f5f7fa;">
+        <div style="font-weight:bold; font-size:1.1em; margin-bottom:8px;">運轉操作區</div>
+        <div style="margin-top:12px;">
+            <span style="font-weight:bold;">目前模式：</span>
+            <span id="manual-mode-status" style="color:#007bff;">讀取中...</span>
+        </div>
+        <div>
+            <button id="btn-manual-mode-proc" class="btn btn-primary" style="width:100%;">開啟手動模式</button>
+        </div>
+    </div>
 </div>
 
 
@@ -181,6 +192,25 @@
             btn.disabled = false;
             btn.textContent = '原點復歸';
         });
+
+		// 手動模式切換
+        document.getElementById('btn-manual-mode-proc').addEventListener('click', async function () {
+        const btn = this;
+        btn.disabled = true;
+        try {
+            const res = await fetch('/Home/SwitchManualMode', { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                alert(data.message);
+                document.getElementById('manual-mode-status').textContent = data.mode;
+            } else {
+                alert('切換失敗');
+            }
+        } catch {
+            alert('連線錯誤');
+        }
+        btn.disabled = false;
+    })
     });
 
 
@@ -213,17 +243,20 @@
                 document.getElementById('procedure-alarm').style.color = data.procedureAlarm ? '#dc3545' : '#28a745';
 
                 document.getElementById('main-proc-case').textContent = data.mainProcedureCase;
+
+                document.getElementById('manual-mode-status').textContent = data.isManualMode ? '手動模式' : '自動模式';
+                document.getElementById('btn-manual-mode-proc').textContent= data.isManualMode ? '結束手動模式' : '開啟手動模式';
             } else {
                 [
                     'station-state', 'psu-count', 'canbus-status', 'modbus-status','modbus-interval-time', 'modbus-command-time',
-					'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case'
+                    'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case', 'manual-mode-status', 'btn-manual-mode-proc'
                 ].forEach(id => document.getElementById(id).textContent = '取得失敗');
 
             }
         } catch {
             [
                 'station-state', 'psu-count', 'canbus-status', 'modbus-status','modbus-interval-time', 'modbus-command-time',
-				'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case'
+                'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case', 'manual-mode-status', 'btn-manual-mode-proc'
             ].forEach(id => document.getElementById(id).textContent = '連線錯誤');
         }
     }

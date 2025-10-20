@@ -107,7 +107,7 @@ namespace ChargerControlApp.Hardware
                     //Console.WriteLine("ModbusRTUService is running...");
                     // Your periodic work here
 
-                    if (_modbusService.IsRunning && !ExecutedOnce)
+                    if (!ExecutedOnce)
                     {
                         ExecutedOnce = true;
                         InitializeOnce();
@@ -140,6 +140,7 @@ namespace ChargerControlApp.Hardware
                                     if (readResult != null)
                                     {
                                         Motors[command.Id].MotorInfo.OpDataArray[i].FromUShortArray(readResult);
+                                        this.SaveParameter(command.Id);
                                     }
                                 }
                             }
@@ -150,6 +151,11 @@ namespace ChargerControlApp.Hardware
                             {
                                 for (int i = 0; i < command.SubFrames.Count; i++)
                                 {
+                                    if(command.Name == "WriteOpData")
+                                    {
+                                        this.SaveParameter(command.Id);
+                                    }
+
                                     var writeResult = await Motors[command.Id].WriteFrame(command.SubFrames[i]);
                                     bool write_finished = writeResult;
                                     if (write_finished)
@@ -199,11 +205,26 @@ namespace ChargerControlApp.Hardware
         {
             for(int i=0;i< MOTOR_COUNT; i++)
             {
-                this.SetJogMode(i, 2);
-                this.WriteOpData_DefaultVelocityForSpd(i);
-                this.WriteROutFunction_26to29(i);
-                this.ReadJogAndHomeSetting(i);
-                this.ReadOpData(i);
+                var running = _modbusService.IsRunning;
+                if (running)
+                {
+                    this.SetJogMode(i, 2);
+                    this.WriteOpData_DefaultVelocityForSpd(i);
+                    this.WriteROutFunction_26to29(i);
+                    this.ReadJogAndHomeSetting(i);
+                }
+                if (this.ReadParameter(i))
+                {
+                    if (running)
+                        this.WriteOpData(i);
+                }
+                else
+                {
+                    if (running)
+                        this.ReadOpData(i);
+                    else
+                        this.SaveParameter(i);
+                }
                 
             }
         }
@@ -241,6 +262,29 @@ namespace ChargerControlApp.Hardware
 
             return false;
         }
+
+        public bool ReadParameter(int motorId)
+        {
+            bool result = false;
+
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                if (this.Motors[motorId].LoadPersistence())
+                {
+                    result = true;
+                }
+            }
+
+            return result;
+        }
+
+        public void SaveParameter(int motorId)
+        {
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                this.Motors[motorId].SavePersistence();
+            }
+        }   
 
         #endregion
 

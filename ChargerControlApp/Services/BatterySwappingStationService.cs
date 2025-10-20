@@ -1,4 +1,5 @@
-﻿using ChargerControlApp.DataAccess.Slot.Services;
+﻿using ChargerControlApp.DataAccess.Robot.Services;
+using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
 using Grpc.Core;
 using System.Collections.Concurrent;
@@ -13,12 +14,14 @@ namespace ChargerControlApp.Services
         private readonly SlotServices _slotServices;
         private static readonly ConcurrentQueue<string> _logMessages = new();
         private readonly HardwareManager _hardwareManager;
+        private readonly RobotService _robotService;
         public static IEnumerable<string> LogMessages => _logMessages;
         public SwappingStationService(ILogger<SwappingStationService> logger, IServiceProvider serviceProvider)
         {
             _logger = logger;
             _slotServices = serviceProvider.GetRequiredService<SlotServices>();
             _hardwareManager = serviceProvider.GetRequiredService<HardwareManager>();
+            _robotService = serviceProvider.GetRequiredService<RobotService>();
         }
 
         private void LogInformation(string message)
@@ -38,7 +41,7 @@ namespace ChargerControlApp.Services
 
             var status = new StationStatus
             {
-                State = SlotServices.StationState,//StationState.Idle,
+                State = _robotService.GetEquipmentStatus,  //SlotServices.StationState,//StationState.Idle,
                 HighestSoc = 98
             };
             for(int i=0;i<HardwareManager.NPB450ControllerInstnaceNumber;i++)
@@ -98,6 +101,22 @@ namespace ChargerControlApp.Services
         public override Task<Google.Protobuf.WellKnownTypes.Empty> PerformAction(ActionRequest request, ServerCallContext context)
         {
             LogInformation($"[gRPC] Performing action: {request.Action}");
+
+            // 根據請求的動作執行相應的操作
+            if (request.Action == ActionType.Swap) 
+            {
+                if(_robotService.RemoteSwappingTrigger())
+                {
+                    // 執行換電操作的邏輯
+                    LogInformation("Executing Swap action...");
+                }
+                else
+                {
+                    LogInformation("Swap action trigger failed.");
+                }
+                
+            }
+
             return Task.FromResult(new Google.Protobuf.WellKnownTypes.Empty());
         }
 
@@ -105,7 +124,8 @@ namespace ChargerControlApp.Services
         {
             // 這裡假設 _slotServices 是 Singleton 或可靜態取得
             // 若無法靜態取得，請改用 DI 注入 SlotServices 至 Razor Page
-            return SlotServices.StationState.ToString() ?? "Unknown";
+            //return SlotServices.StationState.ToString() ?? "Unknown";
+            return _robotService.GetEquipmentStatus.ToString() ?? "Unknown";
         }
     }
 }

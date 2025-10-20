@@ -414,7 +414,7 @@ namespace ChargerControlApp.DataAccess.Motor.Models
 
         public struct MotorOpDataDto
         { 
-            public int OpType { get; set; } = 0; 
+            public int OpType { get; set; } = 1; 
             public int Position { get; set; } = 0; // unit: step
             public int Velocity { get; set; } = 0; // unit: r/min
 

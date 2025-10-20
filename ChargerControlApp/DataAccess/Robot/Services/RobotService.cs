@@ -4,6 +4,8 @@ using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
 using ChargerControlApp.Services;
 using System.Threading.Tasks;
+using TAC.Hardware;
+using TacDynamics.Device.Protos.Charger;
 
 namespace ChargerControlApp.DataAccess.Robot.Services
 {
@@ -33,6 +35,55 @@ namespace ChargerControlApp.DataAccess.Robot.Services
 
         private readonly ILogger<RobotService> _logger;
 
+        public static bool IsManualMode { get; internal set; } = false;
+        public StationState GetEquipmentStatus
+        {
+            get
+            { 
+                StationState result = StationState.Unspecified;
+
+                if (_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Error)
+                    result = StationState.Error;
+                else if (IsManualMode)
+                    result = StationState.Manual;
+                else if (_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Manual)
+                    result = StationState.Manual;
+                else if (_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Swapping)
+                    result = StationState.Swapping;
+                else if (_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Idle)
+                    result = StationState.Idle;
+                else if (_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Initial)
+                    result = StationState.Initial;
+
+                return result;
+            }
+        }
+        public string GetStationStateString
+        {
+            get
+            {
+                return GetEquipmentStatus.ToString();
+            }
+        }
+        public bool CanTransferToManualMode
+        { 
+            get
+            {
+                return ( !IsManualMode && 
+                    ((_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Idle)
+                    || (_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Error)));
+            }
+        }
+        public bool CanCancelManualMode
+        {
+            get
+            {
+                return (IsManualMode &&
+                    ((_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Manual)
+                    || (_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Idle)
+                    || (_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Error)));
+            }
+        }
 
 
 
@@ -442,6 +493,44 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             if (slotNo > 0 && slotNo <= 8)
             {
                 result = slotNo * 2 + 1;
+            }
+
+            return result;
+        }
+
+        public bool SwitchManualMode()
+        {
+            bool result = false;
+            if (!IsManualMode)
+            {
+                if (CanTransferToManualMode)
+                {
+                    IsManualMode = true;
+                    result = true;
+                }
+            }
+            else
+            {
+                if (CanCancelManualMode)
+                {
+                    IsManualMode = false;
+                    result = true;
+                }
+            }
+            return result;
+        }
+
+        public bool RemoteSwappingTrigger()
+        { 
+            bool result = false;
+
+            if (!IsManualMode)
+            { 
+                if(_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Idle)
+                {
+                    _stationStateMachine.HandleTransition(ChargingState.Swapping);
+                    result = true;
+                }
             }
 
             return result;

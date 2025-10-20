@@ -254,9 +254,6 @@ namespace ChargerControlApp.Services
                 case ChargingState.Idle:
                     _context.TransitionTo<IdleState>();
                     break;
-                case ChargingState.Manual:
-                    _context.TransitionTo<ManualState>();
-                    break;
                 case ChargingState.Error:
                     _context.TransitionTo<ErrorState>();
                     break;
@@ -324,7 +321,11 @@ namespace ChargerControlApp.Services
             {
                 _context.TransitionTo<IdleState>();
             }
-            else if(nextState == ChargingState.Initial)
+            else if(nextState == ChargingState.Manual)
+            {
+                _context.TransitionTo<ManualState>();
+            }
+            else if (nextState == ChargingState.Initial)
             {
                 _context.TransitionTo<InitialState>();
             }
