@@ -249,6 +249,51 @@ fi
 ```
 ---
 # 狀態說明
+## SlotState狀態列舉
+為SlotService判別Slot的目前狀態
+  1. Initialization # 初始化
+  2. NotUsed # 此Slot未使用
+  3. Empty # 此Slot上無電池
+  4. Idle # 此Slot上有電池但未充電，可觸發充電命令
+  5. Charging # 此Slot上有電池且在充電中
+  6. Floating # 此Slot上有電池且在浮充狀態
+  7. StopCharge # 此Slot上有電池但下達停止充電以待取出
+  8. SupplyError # MW NPB450產生的錯誤訊號
+  9. StateError # 此Slot上的狀態跟電池記憶不同
+
+## SlotChargeState狀態列舉
+為  gRPC 讀取Slot的狀態列舉
+  1. Unspecified # 未知狀態
+  2. Empty # 此Slot上無電池
+  3. Charging # 此Slot上有電池且在充電中
+  4. Floating # 此Slot上有電池且在浮充狀態
+
+### SlotState跟SlotChargeState關係
+ ```bash
+SlotChargeState.Empty       --- SlotState.Initialization
+                             |- SlotState.Empty
+SlotChargeState.Unspecified --- SlotState.NotUsed
+                             |- SlotState.SupplyError
+                             |- SlotState.StateError
+SlotChargeState.Charging    --- SlotState.Idle
+                             |- SlotState.Charging
+                             |- SlotState.StopCharge
+SlotChargeState.Floating    --- SlotState.Floating
+
+ ```
+
+## ChargingState狀態列舉
+為整機設備的狀態，排除Slot狀態
+  1. Unspecified # 未知狀態
+  2. Initial # 初始化
+  3. Idle # 等待命令
+  4. Swapping # 執行交換電池中
+  5. Manual # 在手動模式，遠端無法下達命令
+  6. Error # 設備有錯誤發生
+
+## 手動模式
+在 RobotService中有一個參數作為手動模式的切換: IsManualMode <br>
+
 
 ---
 # 參數說明
@@ -277,6 +322,7 @@ appsettings.json
     "PositionInPosOffset": 3000,                    // 到位檢查位置範圍
     "SensorCheckPass": false,                       // 測試用，在流程動作中不檢查在席感測器
     "ServoOnAndHomeAfterStartup": false             // 在狀態機變成Initial時是否執行Servo On跟原點復歸
+    "ChargerUseAsync": true                         // SocketCANBusService 中使用 Async
   }
 }
 ```
