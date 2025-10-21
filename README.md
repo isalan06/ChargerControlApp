@@ -270,15 +270,15 @@ fi
 
 ### SlotState跟SlotChargeState關係
  ```bash
-SlotChargeState.Empty       --- SlotState.Initialization
-                             |- SlotState.Empty
-SlotChargeState.Unspecified --- SlotState.NotUsed
-                             |- SlotState.SupplyError
-                             |- SlotState.StateError
-SlotChargeState.Charging    --- SlotState.Idle
-                             |- SlotState.Charging
-                             |- SlotState.StopCharge
-SlotChargeState.Floating    --- SlotState.Floating
+SlotChargeState.Empty       --. SlotState.Initialization
+                               ┗ SlotState.Empty
+SlotChargeState.Unspecified --. SlotState.NotUsed
+                               ┣ SlotState.SupplyError
+                               ┗ SlotState.StateError
+SlotChargeState.Charging    --.  SlotState.Idle
+                               ┣ SlotState.Charging
+                               ┗ SlotState.StopCharge
+SlotChargeState.Floating    --.  SlotState.Floating
 
  ```
 
