@@ -528,6 +528,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             { 
                 if(_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Idle)
                 {
+                    this.StartAutoProcedure();
                     _stationStateMachine.HandleTransition(ChargingState.Swapping);
                     result = true;
                 }

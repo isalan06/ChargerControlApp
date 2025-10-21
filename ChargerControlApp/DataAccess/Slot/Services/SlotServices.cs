@@ -183,6 +183,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
             if((SlotInfo[index].State.CurrentState.CurrentState == SlotState.StateError) ||
                 (SlotInfo[index].State.CurrentState.CurrentState == SlotState.SupplyError))
                 SlotInfo[index].State.CurrentState.HandleTransition(SlotState.Initialization); // 錯誤狀態，重置為 Idle
+            SlotInfo[index].StateError = false;
         }
         public void ResetAllAlarm()
         {

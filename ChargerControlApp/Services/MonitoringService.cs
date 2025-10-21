@@ -1,4 +1,5 @@
 ﻿using ChargerControlApp.DataAccess.Robot.Services;
+using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
 using Microsoft.Extensions.Hosting;
 using System.Threading;
@@ -12,12 +13,14 @@ namespace ChargerControlApp.Services
         private readonly HardwareManager _hardwareManager;
         private readonly ChargingStationStateMachine _stateMachine;
         private readonly RobotService _robotService;
+        private readonly SlotServices _slotServices;
 
-        public MonitoringService(HardwareManager hardwareManager, ChargingStationStateMachine stateMachine, RobotService robotService)
+        public MonitoringService(HardwareManager hardwareManager, ChargingStationStateMachine stateMachine, RobotService robotService, SlotServices slotServices)
         {
             _hardwareManager = hardwareManager;
             _stateMachine = stateMachine;
             _robotService = robotService;
+            _slotServices = slotServices;
         }
 
         private void CheckSystemStatus()
@@ -79,6 +82,8 @@ namespace ChargerControlApp.Services
                 Console.WriteLine("✅ 警報已重置，轉為 Idle 狀態");
                 _stateMachine.TransitionTo<IdleState>();
             }
+
+            _slotServices.ResetAllAlarm();
         }
 
         public void Reset()
@@ -90,6 +95,8 @@ namespace ChargerControlApp.Services
                 Console.WriteLine("✅ 系統已重置，轉為 Idle 狀態");
                 _stateMachine.TransitionTo<IdleState>();
             }
+
+            _slotServices.ResetAllSlotStatus();
         }
 
         public bool StartHomeProcedure()
