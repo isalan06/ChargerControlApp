@@ -312,20 +312,41 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             }, token);
         }
 
-        public void StartHomeRotateProcedure()
+        public async Task<bool> StartHomeRotateMoveToR0()
         {
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             _procedureFrames = new List<ProcedureFrame>()
-            { new PosFrame{ AxisId = 0, PosDataNo = 0} };
+            { new PosFrame{ AxisId = 0, PosDataNo = 0, Name="R0", Description="Rotate axis move to R0 when homing"} };
 
-            _cts = new CancellationTokenSource();
-            var token = _cts.Token;
-            Task.Run(async () =>
-            {
-                await ExecutePosAct();
-            }, token);
+
+             var result = await ExecutePosActWhenHoming();
+
+            return result;
         }
+
+        public async Task<bool> StartHomeYMoveToY0()
+        {
+            LastError.Clear();
+            ProcedureStatusMessage = string.Empty;
+            _procedureFrames = new List<ProcedureFrame>()
+            { new PosFrame{ AxisId = 1, PosDataNo = 0, Name="Y0", Description="Y axis move to Y0 when homing"} };
+
+            var result = await ExecutePosActWhenHoming();
+
+            return result;
+        }
+
+        public async Task<bool> StartHomeZMoveToZ0()
+        {
+            LastError.Clear();
+            ProcedureStatusMessage = string.Empty;
+            _procedureFrames = new List<ProcedureFrame>()
+            { new PosFrame{ AxisId = 2, PosDataNo = 0, Name="Z0", Description="Z axis move to Z0 when homing"} };
+            var result = await ExecutePosActWhenHoming();
+            return result;
+        }
+
 
         /// <summary>
         /// Start Take Car Battery Procedure
@@ -605,8 +626,18 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 if (motor_y_info.IO_Output_High.Bits.HOME_END)
                                 {
                                     _hardwareManager.Robot.Motors[1].IsHomeFinished = true;
-                                    HomeProcedureCase = 20; // Y軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
+                                    HomeProcedureCase = 13; // Y軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
                                 }
+                                break;
+
+                            case 13: // Y軸移動到Y0
+                                var exe_result_y = await StartHomeYMoveToY0();
+                                if(exe_result_y)
+                                {
+                                    HomeProcedureCase = 20;
+                                }
+                                else
+                                    HomeProcedureCase = -97; // Procedure Error
                                 break;
 
                             case 20: // 等待三軸 RDY-HOME-OPE
@@ -638,14 +669,24 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 }
                                 break;
 
-                            case 23:
+                            case 23: // 等待 HOME_END訊號 -> ON
                                 _homeError.ErrorCode = 56;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
                                 if (motor_z_info.IO_Output_High.Bits.HOME_END == true)
                                 {
                                     _hardwareManager.Robot.Motors[2].IsHomeFinished = true;
-                                    HomeProcedureCase = 30; // Z軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
+                                    HomeProcedureCase = 24; // Z軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
                                 }
+                                break;
+
+                            case 24: // Z軸移動到Z0
+                                var exe_result_z = await StartHomeZMoveToZ0();
+                                if(exe_result_z)
+                                {
+                                    HomeProcedureCase = 30;
+                                }
+                                else
+                                    HomeProcedureCase = -97; // Procedure Error
                                 break;
 
                             case 30: // 等待三軸 RDY-HOME-OPE
@@ -677,22 +718,31 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 }
                                 break;
 
-                            case 33:
+                            case 33: // 等待 HOME_END訊號 -> ON
                                 _homeError.ErrorCode = 59;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
                                 if (motor_rot_info.IO_Output_High.Bits.HOME_END == true)
                                 {
                                     _hardwareManager.Robot.Motors[0].IsHomeFinished = true;
                                     //result = true;
-                                    HomeProcedureCase = 40; // 旋轉軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
+                                    HomeProcedureCase = 34; // 旋轉軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
                                 }
                                 break;
 
-                            case 40:
-                                this.StartHomeRotateProcedure();
-                                result = true;
-                                HomeProcedureCase = -1; // 復歸完成
+                            case 34: // 旋轉軸移動到R0
+                                var exe_result_r = await StartHomeRotateMoveToR0();
+                                if (exe_result_r)
+                                {
+                                    result = true;
+                                    HomeProcedureCase = -1; // 復歸完成
+                                }
+                                else
+                                    HomeProcedureCase = -97; // Procedure Error
 
+                                break;
+
+                            case -97: // Procedure Error
+                                _hardwareManager.Robot.AllStop();
                                 break;
 
                             case -98: // Force to stop all procedure
@@ -783,50 +833,68 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             string result = string.Empty;
             if (axisId == 0) // Rotate Axis
             {
-                if (!_hardwareManager.Robot.InPosition(1, 0)) // Y Axis at position 0
-                {
-                    result = $"Y Axis ({_motor_y_info.Pos_Actual}) not at position 0 ({_motor_y_info.OpDataArray[0].Position}).";
-                }
-                else if (!(_motor_z_info.Pos_Actual >= _motor_z_info.OpDataArray[19].Position)) // Z Axis at upper limit
-                {
-                    result = $"Z Axis ({_motor_z_info.Pos_Actual}) is up than upper limit ({_motor_z_info.OpDataArray[19].Position}).";
-                }
+                if (CanMove(0))
+                    result =  "Theta Axis can move.";
                 else
-                { 
-                    result = "Theta Axis can move.";
+                {
+                    if (!_hardwareManager.Robot.InPosition(1, 0)) // Y Axis at position 0
+                    {
+                        if(_hardwareManager.Robot.Motors[1].MotorInfo.Pos_Actual > 500)
+                            result = $"Y Axis ({_motor_y_info.Pos_Actual}) is not at negative position.";
+                        else
+                            result = $"Y Axis ({_motor_y_info.Pos_Actual}) not at position 0 ({_motor_y_info.OpDataArray[0].Position}).";
+                    }
+                    else if (!(_motor_z_info.Pos_Actual >= _motor_z_info.OpDataArray[19].Position)) // Z Axis at upper limit
+                    {
+                        result = $"Z Axis ({_motor_z_info.Pos_Actual}) is up than upper limit ({_motor_z_info.OpDataArray[19].Position}).";
+                    }
+                    else
+                    {
+                        result = "Theta Axis cannot move.";
+                    }
                 }
             }
             else if (axisId == 1) // Y Axis
             {
-                if (!(_hardwareManager.Robot.InPositions(0, new int[] { 0, 1, 2 }))) // Rotate Axis at position 0, 1, 2
-                {
-                    result = $"Rotate Axis not at position 0, 1, or 2.";
-                }
-                else if (!(_hardwareManager.Robot.InPositions(2, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 })))
-                {
-                    result = "Z Axis not at valid position.";
-                }
+                if (CanMove(1))
+                    result =  "Y Axis can move.";
                 else
-                { 
-                    result = "Y Axis can move.";
+                {
+                    if (!(_hardwareManager.Robot.InPositions(0, new int[] { 0, 1, 2 }))) // Rotate Axis at position 0, 1, 2
+                    {
+                        result = $"Rotate Axis not at position 0, 1, or 2.";
+                    }
+                    else if (!(_hardwareManager.Robot.InPositions(2, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 })))
+                    {
+                        result = "Z Axis not at valid position.";
+                    }
+                    else
+                    {
+                        result = "Y Axis cannot move.";
+                    }
                 }
             }
             else if (axisId == 2) // Z Axis
             {
-                if (!(_hardwareManager.Robot.InPositions(0, new int[] { 0, 1, 2 }))) // Rotate Axis at position 0, 1, 2
-                {
-                    result = "Rotate Axis not at position 0, 1, or 2.";
-                }
-                else if (!_hardwareManager.Robot.InPosition(1, 0)) // Y Axis at position 0
-                {
-                    result = "Y Axis not at position 0.";
-                }
-                else if (!_hardwareManager.Robot.ZAxisBetweenSlotOrCar()) // Z Axis between slot or car
-                {
-                    result = "Z Axis not between slot or car.";
-                }
-                else
+                if (CanMove(2))
                     result = "Z Axis can move.";
+                else
+                {
+                    if (!(_hardwareManager.Robot.InPositions(0, new int[] { 0, 1, 2 }))) // Rotate Axis at position 0, 1, 2
+                    {
+                        result = "Rotate Axis not at position 0, 1, or 2.";
+                    }
+                    else if (!_hardwareManager.Robot.InPosition(1, 0)) // Y Axis at position 0
+                    {
+                        result = "Y Axis not at position 0.";
+                    }
+                    else if (!_hardwareManager.Robot.ZAxisBetweenSlotOrCar()) // Z Axis between slot or car
+                    {
+                        result = "Z Axis not between slot or car.";
+                    }
+                    else
+                        result = "Z Axis cannot move.";
+                }
             }
             return result;
         }
@@ -903,6 +971,84 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 this.checkSensorPoint = true;
                             result = false;
                             break;
+                        }
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // 可選：處理中斷後的清理
+                _hardwareManager.Robot.AllStop();
+                if (_procedureStopTrigger)
+                {
+                    // 使用者主動中止
+                    errorFrame.AxisId = -1;
+                    errorFrame.ErrorCode = 93;
+                    errorFrame.ErrorMessage = "Procedure Stopped by User.";
+
+                }
+
+                _logger.LogError(errorFrame.ErrorMessage);
+                LastError = errorFrame.Clone();
+                result = false;
+            }
+            finally
+            {
+                ProcedureStatusMessage = $"ExecutePosAct Finished!";
+                IsProcedureRunning = false;
+                _cts = null;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Execute Position Action When Homing
+        /// The same as ExecutePosAct but without checking CanMove
+        /// This is used in Homing Procedure
+        /// This function only execute PosFrame in the procedure frames
+        /// </summary>
+        /// <returns></returns>
+        public async Task<bool> ExecutePosActWhenHoming()
+        {
+            bool result = true;
+
+            PosErrorFrame errorFrame = new PosErrorFrame();
+
+            //if (IsProcedureRunning) return false;
+            IsProcedureRunning = true;
+            _cts = new CancellationTokenSource();
+            try
+            {
+                foreach (var frame in _procedureFrames)
+                {
+                    if (!IsProcedureRunning) break;
+                    if (frame is PosFrame posFrame)
+                    {
+                        ProcedureStatusMessage = $"AxisId={posFrame.AxisId}, PosDataNo={posFrame.PosDataNo}, Name={posFrame.Name}, Description={posFrame.Description}";
+
+                        // 設定每次動作的 timeout
+                        using (var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token))
+                        {
+                            errorFrame.AxisId = posFrame.AxisId;
+                            errorFrame.ErrorCode = 90;
+                            errorFrame.ErrorMessage = $"PosFrame Timeout: AxisId={posFrame.AxisId}, PosDataNo={posFrame.PosDataNo}, Timeout={posFrame.Timeout_ms}ms";
+                            timeoutCts.CancelAfter(TimeSpan.FromMilliseconds(posFrame.Timeout_ms));
+                            bool act_result = await _hardwareManager.Robot.MoveToPositionAsync(
+                                posFrame.AxisId, posFrame.PosDataNo, timeoutCts.Token);
+
+                            await Task.Delay((int)posFrame.DelayTime_ms);
+                            // 可依 act_result 處理結果
+                            if (!act_result)
+                            {
+                                result = false;
+                                errorFrame.AxisId = posFrame.AxisId;
+                                errorFrame.ErrorCode = 92;
+                                errorFrame.ErrorMessage = $"MoveToPositionAsync failed: AxisId={posFrame.AxisId}, PosDataNo={posFrame.PosDataNo}, Message={_hardwareManager.Robot.ErrorMessage}";
+                                _logger.LogError(errorFrame.ErrorMessage);
+                                LastError = errorFrame.Clone();
+                                break;
+                            }
                         }
                     }
                 }

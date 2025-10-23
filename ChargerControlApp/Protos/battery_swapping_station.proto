@@ -27,7 +27,7 @@ enum ActionType {
     ACTION_TYPE_UNSPECIFIED = 0;
     SWAP = 1;
     RESET = 2;
-    // EMS = 3; // reserved for future use
+    EMS = 3; // reserved for future use
 }
 
 // ----------- Messages -----------
