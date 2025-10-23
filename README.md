@@ -8,7 +8,14 @@ Battery Swapping Station ASP.Net 8.0 MVC架構
   - [MOXA IPC](#moxa-ipc) 
 - [檔案內容說明](#檔案內容說明)
 - [狀態說明](#狀態說明)
+  - [SlotState狀態列舉](#SlotState狀態列舉)
+  - [SlotChargeState狀態列舉](#SlotChargeState狀態列舉)
+  - [ChargingState狀態列舉](#ChargingState狀態列舉)
+  - [手動模式](#手動模式)
 - [參數說明](#參數說明)
+  - [系統設定檔](#系統設定檔)
+  - [馬達點位資訊檔](#馬達點位資訊檔)
+  - [Slot資訊資訊檔](#Slot資訊資訊檔)
 
 設計文件：
 - [Flow Chart](FlowChart.md)
@@ -184,6 +191,11 @@ fi
  ┃ ┃ ┗ 📜SlotRequest.cs
  ┃ ┣ 📜ErrorViewModel.cs
  ┃ ┗ 📜JogHomeParam.cs
+ ┣ 📂Parameters                                     # 系統使用的資訊檔範例
+ ┃ ┣ 📜MotorPersistence_0.json                      # 軸#0-旋轉軸 點位資訊檔
+ ┃ ┣ 📜MotorPersistence_1.json                      # 軸#1-Y軸 點位資訊檔
+ ┃ ┣ 📜MotorPersistence_2.json                      # 軸#2-Z軸 點位資訊檔
+ ┃ ┗ 📜slot_states.json                             # Slot 狀態及電池記憶資訊檔
  ┣ 📂Properties
  ┃ ┗ 📜launchSettings.json
  ┣ 📂Protos                                         # gRPC server 使用的 proto檔
@@ -298,6 +310,7 @@ SlotChargeState.Floating    --.  SlotState.Floating
 ---
 # 參數說明
 
+## 系統設定檔
 <h3> 參數格式及說明 </h3>
 appsettings.json
 
@@ -327,4 +340,59 @@ appsettings.json
 }
 ```
 
+## 馬達點位資訊檔
+
+MotorPersistence_x.json; x=0,1,2 => 代表Axis#0(旋轉軸), Axis#1(Y軸), Axis#2(Z軸) <br>
+[MotorPersistence_0.json](./ChargerControlApp/Parameters/MotorPersistence_0.json) <br>
+[MotorPersistence_1.json](./ChargerControlApp/Parameters/MotorPersistence_1.json) <br>
+[MotorPersistence_2.json](./ChargerControlApp/Parameters/MotorPersistence_2.json) <br>
+紀錄各軸0~19個位置<br>
+格式內容:
+
+```json
+[
+  {
+    "OpType": 1,            // 位置0的運轉模式; 此專案都設為1
+    "Position": 13750,      // 位置0的馬達位置; 
+    "Velocity": 150         // 位置0的移動速度
+  },
+  {
+    "OpType": 1,            // 位置1的運轉模式; 此專案都設為1
+    "Position": -166650,    // 位置1的馬達位置;
+    "Velocity": 150         // 位置1的移動速度
+  },
+  {
+    "OpType": 1,            // 位置2的運轉模式; 此專案都設為1
+    "Position": 192850,     // 位置2的馬達位置;
+    "Velocity": 150         // 位置2的移動速度
+  },
+  ...以此類推
+]
+```
+
+## Slot資訊資訊檔
+
+[slot_states.json](./ChargerControlApp/Parameters/slot_states.json) <br>
+8個slot的狀態及電池記憶
+
+```json
+[
+  {
+    "Index": 0,               // Slot#1
+    "BatteryMemory": false,   // 電池存在記憶
+    "State": 7                // SlotState狀態
+  },
+  {
+    "Index": 1,               // Slot#2
+    "BatteryMemory": false,   // 電池存在記憶
+    "State": 7                // SlotState狀態
+  },
+  {
+    "Index": 2,               // Slot#3
+    "BatteryMemory": false,   // 電池存在記憶
+    "State": 1                // SlotState狀態
+  },
+  ...以此類推
+]
+```
 ---
