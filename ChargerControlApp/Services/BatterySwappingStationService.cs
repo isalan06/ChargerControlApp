@@ -103,9 +103,9 @@ namespace ChargerControlApp.Services
             LogInformation($"[gRPC] Performing action: {request.Action}");
 
             // 根據請求的動作執行相應的操作
-            if (request.Action == ActionType.Swap) 
+            if (request.Action == ActionType.Swap)
             {
-                if(_robotService.RemoteSwappingTrigger())
+                if (_robotService.RemoteSwappingTrigger())
                 {
                     // 執行換電操作的邏輯
                     LogInformation("Executing Swap action...");
@@ -114,10 +114,14 @@ namespace ChargerControlApp.Services
                 {
                     LogInformation("Swap action trigger failed.");
                 }
-                
+
+            }
+            else if (request.Action == ActionType.Ems)
+            {
+                _robotService.StopAutoProcedure();
             }
 
-            return Task.FromResult(new Google.Protobuf.WellKnownTypes.Empty());
+                return Task.FromResult(new Google.Protobuf.WellKnownTypes.Empty());
         }
 
         public string GetCurrentStationState()
