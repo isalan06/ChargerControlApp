@@ -205,6 +205,8 @@ namespace ChargerControlApp.Hardware
         {
             for(int i=0;i< MOTOR_COUNT; i++)
             {
+                Task.Delay(1000).Wait(); // Wait for Modbus service to be ready
+
                 var running = _modbusService.IsRunning;
                 if (running)
                 {

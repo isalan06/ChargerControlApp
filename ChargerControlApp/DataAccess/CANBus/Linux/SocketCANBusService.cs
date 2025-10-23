@@ -51,8 +51,13 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
             IntPtr fdSet = Marshal.AllocHGlobal(128);
             try
             {
-                
-                int fd = (int)_socket.SafeHandle.DangerousGetHandle().ToInt64();
+
+                int fd = (int)_socket.SafeHandle.DangerousGetHandle().ToInt32();//ToInt64();
+                if (fd < 0 || fd >= 1024)
+                {
+                    Console.WriteLine($"fd out of range: {fd}");
+                    return null;
+                }
                 while ((DateTime.UtcNow - start).TotalMilliseconds < timeoutMs)
                 {
                     unsafe
@@ -87,7 +92,8 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
                         }
                         else if (result < 0)
                         {
-                            Console.WriteLine("select() failed");
+                            int errno = Marshal.GetLastWin32Error();
+                            Console.WriteLine($"select() failed, errno={errno}");
                             return null;
                         }
                     }
