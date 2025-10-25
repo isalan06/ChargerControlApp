@@ -47,6 +47,9 @@ namespace ChargerControlApp.DataAccess.Motor.Services
 
         private int _routeIndex = 0;
 
+        /// <summary>
+        /// 路由處理程序
+        /// </summary>
         private MotorFrame[] _routeProcess = new MotorFrame[]
             {
                 new MotorFrame()

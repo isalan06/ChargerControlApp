@@ -86,17 +86,43 @@ namespace ChargerControlApp.Services
             _slotServices.ResetAllAlarm();
         }
 
+        /// <summary>
+        /// 系統重置, 轉為 Initial 狀態
+        /// </summary>
         public void Reset()
         {
             _robotService.ResetStatus();
 
             if(_stateMachine._currentState.CurrentState != ChargingState.Unspecified)
             {
+                Console.WriteLine("✅ 系統已重置，轉為 Initial 狀態");
+                _stateMachine.TransitionTo<InitialState>();
+            }
+
+            _hardwareManager.StopAllCharger();
+            _slotServices.ResetAllSlotStatus();
+        }
+
+        /// <summary>
+        /// 系統強制重置, 轉為 Idle 狀態
+        /// </summary>
+        public void ForceReset()
+        {
+            _robotService.ResetStatus();
+
+            if (_stateMachine._currentState.CurrentState != ChargingState.Unspecified)
+            {
                 Console.WriteLine("✅ 系統已重置，轉為 Idle 狀態");
                 _stateMachine.TransitionTo<IdleState>();
             }
 
+            _hardwareManager.StopAllCharger();
             _slotServices.ResetAllSlotStatus();
+        }
+
+        public void ResetProcedure()
+        {
+            _robotService.ResetStatus();
         }
 
         public bool StartHomeProcedure()

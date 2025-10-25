@@ -1,5 +1,5 @@
 ﻿using ChargerControlApp.DataAccess.Slot.Services;
-using TacDynamics.Kernel.DeviceService.Protos;
+using Nexano.FMS.DeviceController.Protos;
 
 namespace ChargerControlApp.DataAccess.Slot.Models
 {

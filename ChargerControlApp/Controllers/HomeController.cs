@@ -83,6 +83,13 @@ namespace ChargerControlApp.Controllers
         }
 
         [HttpPost]
+        public IActionResult SystemForceToIdle()
+        {
+            _monitoringService.ForceReset();
+            return Json(new { success = true, message = "強置到Idle狀態已觸發。" });
+        }
+
+        [HttpPost]
         public IActionResult HomeProcedure()
         {
             var result = _monitoringService.StartHomeProcedure();

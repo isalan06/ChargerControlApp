@@ -11,7 +11,7 @@ using System.Diagnostics;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using TAC.Hardware;
-using TacDynamics.Kernel.DeviceService.Protos;
+using Nexano.FMS.DeviceController.Protos;
 using static ChargerControlApp.Services.InitialState;
 
 namespace ChargerControlApp.Services
@@ -81,9 +81,10 @@ namespace ChargerControlApp.Services
     public class InitialState : State<ChargingState>
     {
         int bypassCounter = 0;
-        //private readonly GrpcClientService _grpcClientService;  // 已通過構造函數注入
+        private readonly GrpcClientService _grpcClientService;  // 已通過構造函數注入
         private readonly AppSettings _settings;
         private readonly IServiceProvider _serviceProvider;
+        private CancellationTokenSource _cts;
 
         //public InitializationState(GrpcClientService grpcClientService)
         //{
@@ -92,11 +93,15 @@ namespace ChargerControlApp.Services
         //    _settings = ConfigLoader.GetSettings();
         //    _settings = _settings ?? new AppSettings();
         //}
-        public InitialState(IServiceProvider serviceProvider)
+        public InitialState(IServiceProvider serviceProvider, GrpcClientService grpcClientService)
         {
             _stateEnum = ChargingState.Initial;
             _currentState = ChargingState.Initial;
             _serviceProvider = serviceProvider;
+            _grpcClientService = grpcClientService;
+            ConfigLoader.Load();
+            _settings = ConfigLoader.GetSettings();
+            _settings = _settings ?? new AppSettings();
         }
 
         public override async void EnterState()
@@ -104,10 +109,17 @@ namespace ChargerControlApp.Services
             Console.WriteLine("進入 Initialization 狀態: 檢查設定，FMS 註冊，原點復歸");
             SlotServices.StationState = StationState.Initial;
             // 將非同步操作移到外部方法中
-            await InitializeAsync();
+            _cts = new CancellationTokenSource();
+            await InitializeAsync(_cts.Token);
         }
 
-        private async Task InitializeAsync()  // 改為返回 Task，方便處理異常
+        public override void ExitState()
+        {
+            Console.WriteLine("離開 Initial 狀態，強制結束 InitializeAsync");
+            _cts?.Cancel();
+        }
+
+        private async Task InitializeAsync(CancellationToken token)  // 改為返回 Task，方便處理異常
         {
             string responseDeviceName = "";
             await Task.Delay(5000); // 初步延遲
@@ -119,13 +131,13 @@ namespace ChargerControlApp.Services
             DevicePostRegistrationResponse devicePostRegistrationResponse;
             do
             {
-                bypassCounter++;
-                if (bypassCounter > 3)
-                    break;
+                //bypassCounter++;
+                //if (bypassCounter > 3)
+                //    break;
                 try
                 {
-                    //devicePostRegistrationResponse = await _grpcClientService.RegisterDeviceAsync();
-                    //Console.WriteLine($"收到註冊響應: {devicePostRegistrationResponse.DeviceName}");
+                    devicePostRegistrationResponse = await _grpcClientService.RegisterDeviceAsync();
+                    Console.WriteLine($"收到註冊響應: {devicePostRegistrationResponse.DeviceName}");
                 }
                 catch (Exception ex)
                 {
@@ -134,8 +146,14 @@ namespace ChargerControlApp.Services
                     break; // 先跳出迴圈，進入 Idle 狀態 => ToDo: 待上傳gRPC完成後再修改
                 }
 
+                if (token.IsCancellationRequested)
+                {
+                    Console.WriteLine("InitializeAsync 被強制取消");
+                    return;
+                }
+
                 await Task.Delay(5000); // 進行輪詢
-            } while (false);//devicePostRegistrationResponse.DeviceName != _settings.ChargingStationName); // ToDo: 
+            } while ((devicePostRegistrationResponse.DeviceName != _settings.DeviceName) && !RobotService.IsManualMode); // ToDo: 
 
             if (HardwareManager.ServoOnAndHomeAfterStartup) // 啟動後是否啟用伺服並回原點
             {
@@ -156,6 +174,12 @@ namespace ChargerControlApp.Services
                 var sw = Stopwatch.StartNew();
                 while (!_robotService.IsHomeFinished)
                 {
+                    if (token.IsCancellationRequested)
+                    {
+                        _robotService.StopProcedure();
+                        Console.WriteLine("InitializeAsync 被強制取消 (Home)");
+                        return;
+                    }
                     if (sw.Elapsed > timeout)
                     {
                         Console.WriteLine("原點復歸逾時，跳出等待迴圈");

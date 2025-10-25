@@ -1,4 +1,5 @@
-﻿using ChargerControlApp.Services;
+﻿using ChargerControlApp.Hardware;
+using ChargerControlApp.Services;
 
 namespace ChargerControlApp.DataAccess.Slot.Services
 {

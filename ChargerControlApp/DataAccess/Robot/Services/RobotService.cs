@@ -5,7 +5,7 @@ using ChargerControlApp.Hardware;
 using ChargerControlApp.Services;
 using System.Threading.Tasks;
 using TAC.Hardware;
-using TacDynamics.Device.Protos.Charger;
+using Nexano.FMS.DeviceController.Protos;
 
 namespace ChargerControlApp.DataAccess.Robot.Services
 {
@@ -71,7 +71,8 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             {
                 return ( !IsManualMode && 
                     ((_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Idle)
-                    || (_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Error)));
+                    || (_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Error))
+                    || (_stationStateMachine._currentState.GetCurrentStete() == ChargingState.Initial));
             }
         }
         public bool CanCancelManualMode
@@ -317,7 +318,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             _procedureFrames = new List<ProcedureFrame>()
-            { new PosFrame{ AxisId = 0, PosDataNo = 0, Name="R0", Description="Rotate axis move to R0 when homing"} };
+            { new PosFrame{ AxisId = 0, PosDataNo = 0, Name="R0", Description="Rotate axis move to R0 when homing", DelayTime_ms=200} };
 
 
              var result = await ExecutePosActWhenHoming();
@@ -330,7 +331,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             _procedureFrames = new List<ProcedureFrame>()
-            { new PosFrame{ AxisId = 1, PosDataNo = 0, Name="Y0", Description="Y axis move to Y0 when homing"} };
+            { new PosFrame{ AxisId = 1, PosDataNo = 0, Name="Y0", Description="Y axis move to Y0 when homing", DelayTime_ms=200 } };
 
             var result = await ExecutePosActWhenHoming();
 
@@ -342,7 +343,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             _procedureFrames = new List<ProcedureFrame>()
-            { new PosFrame{ AxisId = 2, PosDataNo = 0, Name="Z0", Description="Z axis move to Z0 when homing"} };
+            { new PosFrame{ AxisId = 2, PosDataNo = 0, Name="Z0", Description="Z axis move to Z0 when homing", DelayTime_ms=200} };
             var result = await ExecutePosActWhenHoming();
             return result;
         }
@@ -627,6 +628,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 {
                                     _hardwareManager.Robot.Motors[1].IsHomeFinished = true;
                                     HomeProcedureCase = 13; // Y軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
+                                    Task.Delay(500).Wait(); // 等待500ms，確保位置穩定
                                 }
                                 break;
 
@@ -676,6 +678,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 {
                                     _hardwareManager.Robot.Motors[2].IsHomeFinished = true;
                                     HomeProcedureCase = 24; // Z軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
+                                    Task.Delay(500).Wait(); // 等待500ms，確保位置穩定
                                 }
                                 break;
 
@@ -726,6 +729,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                     _hardwareManager.Robot.Motors[0].IsHomeFinished = true;
                                     //result = true;
                                     HomeProcedureCase = 34; // 旋轉軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
+                                    Task.Delay(500).Wait(); // 等待500ms，確保位置穩定
                                 }
                                 break;
 

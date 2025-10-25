@@ -18,7 +18,7 @@ using RJCP.IO.Ports;
 using Smart.Modbus;
 using System.Collections;
 using System.Data;
-using TacDynamics.Kernel.DeviceService.Protos;
+using Nexano.FMS.DeviceController.Protos;
 public class Program
 {
     public static void Main(string[] args)
@@ -119,6 +119,7 @@ public class Program
         ConfigLoader.Load();
         AppSettings appSettings = ConfigLoader.GetSettings();
         builder.Services.AddSingleton(GrpcChannel.ForAddress(appSettings.ServerIp));
+        builder.Services.AddSingleton<GrpcClientService>();
         builder.Services.RegisterChargingServices(); // 共用服務註冊
         builder.Services.AddSingleton<SwappingStationService>();
 

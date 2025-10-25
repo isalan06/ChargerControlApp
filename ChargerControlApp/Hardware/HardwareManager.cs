@@ -123,5 +123,13 @@ namespace ChargerControlApp.Hardware
 
             return result;
         }
+
+        public void StopAllCharger()
+        {
+            for (int i = 0; i < NPB450ControllerInstnaceNumber; i++)
+            {
+                Charger[i].StopCharging();
+            }
+        }
     }
 }

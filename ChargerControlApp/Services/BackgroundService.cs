@@ -64,6 +64,7 @@ namespace ChargerControlApp.Services
                     if(_hardwareManager.SlotServices.SlotInfo[i].State.CurrentState.GetStateEnum() == SlotState.NotUsed)
                     {
                         _hardwareManager.SlotServices.TransitionTo(i, state: SlotState.Initialization);
+                        _hardwareManager.Charger[i].StopCharging(); // 停止充電
                     }
                 }
                 else

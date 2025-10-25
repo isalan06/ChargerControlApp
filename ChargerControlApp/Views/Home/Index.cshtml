@@ -69,7 +69,10 @@
             <button id="btn-reset-alarm" class="btn btn-warning" style="width:100%;">告警重置</button>
         </div>
         <div style="margin-top:12px;">
-            <button id="btn-system-reset" class="btn btn-secondary" style="width:100%;">系統重置</button>
+            <button id="btn-system-reset" class="btn btn-secondary" style="width:100%;">系統初始化</button>
+        </div>
+        <div style="margin-top:12px;">
+            <button id="btn-force-reset" class="btn btn-danger" style="width:100%;">系統強置到Idle狀態</button>
         </div>
         <div style="margin-top:12px;">
             <button id="btn-home-proc" class="btn btn-info" style="width:100%;">原點復歸</button>
@@ -172,6 +175,26 @@
             btn.disabled = false;
             btn.textContent = '系統重置';
         });
+
+		// 系統強置到Idle狀態
+        document.getElementById('btn-force-reset').addEventListener('click', async function () {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = '執行中...';
+            try {
+                const res = await fetch('/Home/SystemForceToIdle', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message);
+                } else {
+                    alert('觸發失敗');
+                }
+            } catch {
+                alert('連線錯誤');
+            }
+            btn.disabled = false;
+            btn.textContent = '系統強置到Idle狀態';
+		});
 
         // 原點復歸
         document.getElementById('btn-home-proc').addEventListener('click', async function () {
