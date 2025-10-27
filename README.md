@@ -6,7 +6,9 @@ Battery Swapping Station ASP.Net 8.0 MVC架構
 
 - [Hardware Description](#hardware-description)
   - [MOXA IPC](#moxa-ipc) 
-- [檔案內容說明](#檔案內容說明)
+- [軟體環境](#軟體環境)
+  - [檔案內容說明](#檔案內容說明)
+  - [套件](#套件)
 - [狀態說明](#狀態說明)
   - [SlotState狀態列舉](#SlotState狀態列舉)
   - [SlotChargeState狀態列舉](#SlotChargeState狀態列舉)
@@ -104,8 +106,11 @@ fi
   - 執行 ./ChargerControlApp
 
 
+
 ---
-# 檔案內容說明
+# 軟體環境
+
+## 檔案內容說明
 ```bash
 📦ChargerControlApp
  ┣ 📂.config
@@ -259,6 +264,10 @@ fi
  ┣ 📜ChargerControlApp.csproj
  ┗ 📜Program.cs                                     # 主程式
 ```
+
+## 套件
+NuGet上所使用的套件
+
 ---
 # 狀態說明
 ## SlotState狀態列舉
