@@ -14,12 +14,14 @@ Battery Swapping Station ASP.Net 8.0 MVC架構
   - [SlotChargeState狀態列舉](#SlotChargeState狀態列舉)
   - [ChargingState狀態列舉](#ChargingState狀態列舉)
   - [手動模式](#手動模式)
+  - [上位系統連線狀態](#上位系統連線狀態)
 - [參數說明](#參數說明)
   - [系統設定檔](#系統設定檔)
   - [馬達點位資訊檔](#馬達點位資訊檔)
   - [Slot資訊資訊檔](#Slot資訊資訊檔)
 
 設計文件：
+- [Design](Design.md)
 - [Flow Chart](FlowChart.md)
 
 
@@ -105,7 +107,7 @@ fi
   - SSH 登入後，執行 cd program/testapp2/publish
   - 執行 ./ChargerControlApp
 
-
+- 設定開機執行
 
 ---
 # 軟體環境
@@ -267,6 +269,11 @@ fi
 
 ## 套件
 NuGet上所使用的套件
+- Grpc.AspNetCore             V2.71.0
+- Grpc.Net.Client             V2.71.0
+- Grpc.Tools                  V2.72.0
+- Smart.Modbus                V1.0.1
+- SocketCANSharp              V0.13.0
 
 ---
 # 狀態說明
@@ -315,6 +322,8 @@ SlotChargeState.Floating    --.  SlotState.Floating
 ## 手動模式
 在 RobotService中有一個參數作為手動模式的切換: IsManualMode <br>
 
+## 上位系統連線狀態
+在 GrpcClientService中有一個參數作為與上位系統(gPRC Server)連線的紀錄: IsOnline <br>
 
 ---
 # 參數說明
