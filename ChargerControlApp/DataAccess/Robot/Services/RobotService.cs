@@ -184,6 +184,21 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             return (IsMotorAlarm || IsPowerSupplyAlarm || IsSlotAlarm || IsProcedureAlarm);
         }
 
+        public bool GetSwapIndex(out int swapIn, out int swapOut)
+        {
+            swapIn = 0;
+            swapOut = 0;
+            bool result = false;
+            int[] swapOuts = null;
+            if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
+            {
+                swapOut = _hardwareManager.SwapOut(swapOuts);
+                result = true;
+            }
+
+            return result;
+        }
+
         #endregion
 
         #region constructor
@@ -264,6 +279,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
         {
             LastError.Clear();
             HomeProcedureCase = 0;
+            MainProcedureStatusMessage = string.Empty;
             if (IsProcedureRunning) return;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
@@ -593,6 +609,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                         switch (HomeProcedureCase)
                         {
                             case 0: // 等待三軸 RDY-HOME-OPE
+                                MainProcedureStatusMessage = $"[Home Case 0] Waiting RDY-HOME-OPE of 3 Axes";
                                 if (CanHome)
                                 {
                                     _hardwareManager.Robot.Home(1, true);
@@ -601,6 +618,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 10: // Y軸復歸, 確認RDY-HOME-OPE訊號 -> OFF 且 MOVE訊號 -> ON
+                                MainProcedureStatusMessage = $"[Home Case 10] Homing Y Axis: Waiting RDY-HOME-OPE OFF and MOVE ON";
                                 _homeError.ErrorCode = 51;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
                                 if ((motor_y_info.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
@@ -612,6 +630,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 11: // 等待 RDY-HOME-OPE訊號 -> ON 且 MOVE訊號 -> OFF
+                                MainProcedureStatusMessage = $"[Home Case 11] Homing Y Axis: Waiting RDY-HOME-OPE ON and MOVE OFF";
                                 _homeError.ErrorCode = 52;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
                                 if ((motor_y_info.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
@@ -622,6 +641,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 12: // 等待 HOME_END訊號 -> ON
+                                MainProcedureStatusMessage = $"[Home Case 12] Homing Y Axis: Waiting HOME_END ON";
                                 _homeError.ErrorCode = 53;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
                                 if (motor_y_info.IO_Output_High.Bits.HOME_END)
@@ -633,6 +653,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 13: // Y軸移動到Y0
+                                MainProcedureStatusMessage = $"[Home Case 13] Moving Y Axis to Y0 Position";
                                 var exe_result_y = await StartHomeYMoveToY0();
                                 if(exe_result_y)
                                 {
@@ -643,6 +664,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 20: // 等待三軸 RDY-HOME-OPE
+                                MainProcedureStatusMessage = $"[Home Case 20] Waiting RDY-HOME-OPE of 3 Axes";
                                 if (CanHome)
                                 {
                                     _hardwareManager.Robot.Home(2, true);
@@ -651,6 +673,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 21: // Z軸復歸, 確認RDY-HOME-OPE訊號 -> OFF 且 MOVE訊號 -> ON
+                                MainProcedureStatusMessage = $"[Home Case 21] Homing Z Axis: Waiting RDY-HOME-OPE OFF and MOVE ON";
                                 _homeError.ErrorCode = 54;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
                                 if ((motor_z_info.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
@@ -662,6 +685,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 22: // 等待 RDY-HOME-OPE訊號 -> ON 且 MOVE訊號 -> OFF
+                                MainProcedureStatusMessage = $"[Home Case 22] Homing Z Axis: Waiting RDY-HOME-OPE ON and MOVE OFF";
                                 _homeError.ErrorCode = 55;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
                                 if ((motor_z_info.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
@@ -672,6 +696,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 23: // 等待 HOME_END訊號 -> ON
+                                MainProcedureStatusMessage = $"[Home Case 23] Homing Z Axis: Waiting HOME_END ON";
                                 _homeError.ErrorCode = 56;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
                                 if (motor_z_info.IO_Output_High.Bits.HOME_END == true)
@@ -683,6 +708,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 24: // Z軸移動到Z0
+                                MainProcedureStatusMessage = $"[Home Case 24] Moving Z Axis to Z0 Position";
                                 var exe_result_z = await StartHomeZMoveToZ0();
                                 if(exe_result_z)
                                 {
@@ -693,6 +719,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 30: // 等待三軸 RDY-HOME-OPE
+                                MainProcedureStatusMessage = $"[Home Case 30] Waiting RDY-HOME-OPE of 3 Axes";
                                 if (CanHome)
                                 {
                                     _hardwareManager.Robot.Home(0, true);
@@ -701,6 +728,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 31: // 旋轉軸復歸, 確認RDY-HOME-OPE訊號 -> OFF 且 MOVE訊號 -> ON
+                                MainProcedureStatusMessage = $"[Home Case 31] Homing Rotate Axis: Waiting RDY-HOME-OPE OFF and MOVE ON";
                                 _homeError.ErrorCode = 57;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
                                 if ((motor_rot_info.IO_Output_Low.Bits.RDY_HOME_OPE == false) &&
@@ -712,6 +740,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 32: // 等待 RDY-HOME-OPE訊號 -> ON 且 MOVE訊號 -> OFF
+                                MainProcedureStatusMessage = $"[Home Case 32] Homing Rotate Axis: Waiting RDY-HOME-OPE ON and MOVE OFF";
                                 _homeError.ErrorCode = 58;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
                                 if ((motor_rot_info.IO_Output_Low.Bits.RDY_HOME_OPE == true) &&
@@ -722,6 +751,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 33: // 等待 HOME_END訊號 -> ON
+                                MainProcedureStatusMessage = $"[Home Case 33] Homing Rotate Axis: Waiting HOME_END ON";
                                 _homeError.ErrorCode = 59;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
                                 if (motor_rot_info.IO_Output_High.Bits.HOME_END == true)
@@ -734,6 +764,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 34: // 旋轉軸移動到R0
+                                MainProcedureStatusMessage = $"[Home Case 34] Moving Rotate Axis to R0 Position";
                                 var exe_result_r = await StartHomeRotateMoveToR0();
                                 if (exe_result_r)
                                 {
@@ -746,14 +777,17 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case -97: // Procedure Error
+                                MainProcedureStatusMessage = $"[Home Case -97] Homing Procedure Error Occurred";
                                 _hardwareManager.Robot.AllStop();
                                 break;
 
                             case -98: // Force to stop all procedure
+                                MainProcedureStatusMessage = $"[Home Case -98] Homing Procedure Manually Stopped";
                                 break;
 
                             case -99: // Unknow Error
                             default:
+                                MainProcedureStatusMessage = $"[Home Case -99] Homing Procedure Unknown Error Occurred";
                                 _hardwareManager.Robot.AllStop();
                                 break;
                         }
@@ -1114,6 +1148,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                         switch (MainProcedureCase)
                         {
                             case 0: // 檢查是否已經執行原點復歸
+                                MainProcedureStatusMessage = $"[Auto Case 0] Checking if Homing is Finished";
                                 if (this.IsHomeFinished)
                                 {
                                     MainProcedureCase = 1;
@@ -1128,6 +1163,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 1: // 檢查電池狀態及產生路徑點位
+                                MainProcedureStatusMessage = $"[Auto Case 1] Generating Swap Slot Info";
                                 if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
                                 {
                                     swapOut = _hardwareManager.SwapOut(swapOuts);
@@ -1142,11 +1178,13 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 10: // 旋轉到R-0
+                                MainProcedureStatusMessage = $"[Auto Case 10] Rotating to R-0 Position";
                                 StartRotateProcedure(0);
                                 MainProcedureCase = 11;
                                 break;
 
                             case 11: // 檢查 Procedure 結束後是否有錯誤
+                                MainProcedureStatusMessage = $"[Auto Case 11] Checking Rotate Procedure Result";
                                 if (!this.IsProcedureRunning)
                                 {
                                     if (LastError.ErrorCode == 0)
@@ -1157,11 +1195,13 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 20: // 從車上取出電池
+                                MainProcedureStatusMessage = $"[Auto Case 20] Taking Battery from Car";
                                 StartTakeCarBatteryProcedure();
                                 MainProcedureCase = 21;
                                 break;
 
                             case 21: // 檢查 Procedure 結束後是否有錯誤
+                                MainProcedureStatusMessage = $"[Auto Case 21] Checking Take Car Battery Procedure Result";
                                 if (!this.IsProcedureRunning)
                                 {
                                     if (LastError.ErrorCode == 0)
@@ -1172,11 +1212,13 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 30: // 旋轉到Slot放置面
+                                MainProcedureStatusMessage = $"[Auto Case 30] Rotating to Slot Placement Position for Slot {swapIn}";
                                 StartRotateProcedure(this.GetRotatePosNo(swapIn));
                                 MainProcedureCase = 31;
                                 break;
 
                             case 31: // 檢查 Procedure 結束後是否有錯誤
+                                MainProcedureStatusMessage = $"[Auto Case 31] Checking Rotate Procedure Result";
                                 if (!this.IsProcedureRunning)
                                 {
                                     if (LastError.ErrorCode == 0)
@@ -1187,11 +1229,13 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 40: // 放置電池到slot中
+                                MainProcedureStatusMessage = $"[Auto Case 40] Placing Battery into Slot {swapIn}";
                                 StartPlaceSlotBatteryProcedure(this.GetPlacePosNo(swapIn));
                                 MainProcedureCase = 41;
                                 break;
 
                             case 41: // 檢查 Procedure 結束後是否有錯誤
+                                MainProcedureStatusMessage = $"[Auto Case 41] Checking Place Slot Battery Procedure Result";
                                 if (!this.IsProcedureRunning)
                                 {
                                     if (LastError.ErrorCode == 0)
@@ -1222,13 +1266,15 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 42: // 成功放入電池
+                                MainProcedureStatusMessage = $"[Auto Case 42] Successfully Placed Battery into Slot {swapIn}";
                                 _hardwareManager.SlotServices.TransitionTo(swapIn - 1, SlotState.Idle); // 成功放入電池，將slot狀態改為Idle
                                 _slotServices.SetBatteryMemory(swapIn - 1, true);
                                 MainProcedureCase = 43;
                                 break;
 
                             case 43: // 檢查是否在同一側
-                                if(this.IsSameSide(swapIn, swapOut))
+                                MainProcedureStatusMessage = $"[Auto Case 43] Checking if Swap In and Swap Out are on the Same Side";
+                                if (this.IsSameSide(swapIn, swapOut))
                                 {
                                     MainProcedureCase = 52; // 同側直接進行取電池
                                 }
@@ -1239,10 +1285,12 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 50: // 旋轉到R-?
+                                MainProcedureStatusMessage = $"[Auto Case 50] Rotating to Slot Removal Position for Slot {swapOut}";
                                 StartRotateProcedure(this.GetRotatePosNo(swapOut));
                                 break;
 
                             case 51: // 檢查 Procedure 結束後是否有錯誤
+                                MainProcedureStatusMessage = $"[Auto Case 51] Checking Rotate Procedure Result";
                                 if (!this.IsProcedureRunning)
                                 {
                                     if (LastError.ErrorCode == 0)
@@ -1253,17 +1301,20 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 52: // 取出電池前先停止充電
+                                MainProcedureStatusMessage = $"[Auto Case 52] Stopping Charging before Taking Battery from Slot {swapOut}";
                                 _hardwareManager.SlotServices.TransitionTo(swapOut - 1, SlotState.StopCharge); // 取出電池前將slot狀態改為StopCharge
                                 _hardwareManager.Charger[swapOut-1].StopCharging(); // 取出電池前先停止充電
                                 MainProcedureCase = 60;
                                 break;
 
                             case 60: // 從slot取出電池
+                                MainProcedureStatusMessage = $"[Auto Case 60] Taking Battery from Slot {swapOut}";
                                 StartTakeSlotBatteryProcedure(this.GetTakePosNo(swapOut));
                                 MainProcedureCase = 61;
                                 break;
 
                             case 61: // 檢查 Procedure 結束後是否有錯誤
+                                MainProcedureStatusMessage = $"[Auto Case 61] Checking Take Slot Battery Procedure Result";
                                 if (!this.IsProcedureRunning)
                                 {
                                     if (LastError.ErrorCode == 0)
@@ -1294,6 +1345,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 62: // 成功取出電池
+                                MainProcedureStatusMessage = $"[Auto Case 62] Successfully Took Battery from Slot {swapOut}";
                                 _slotServices.SetBatteryMemory(swapOut - 1, false);
                                 _hardwareManager.SlotServices.TransitionTo(swapOut - 1, SlotState.Initialization); // 成功取出電池，將slot狀態改為Empty
                                 
@@ -1301,11 +1353,13 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 70: // 旋轉到R-0
+                                MainProcedureStatusMessage = $"[Auto Case 70] Rotating to R-0 Position";
                                 StartRotateProcedure(0);
                                 MainProcedureCase = 71;
                                 break;
 
                             case 71: // 檢查 Procedure 結束後是否有錯誤
+                                MainProcedureStatusMessage = $"[Auto Case 71] Checking Rotate Procedure Result";
                                 if (!this.IsProcedureRunning)
                                 {
                                     if (LastError.ErrorCode == 0)
@@ -1316,11 +1370,13 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 80: // 將電池放回車上
+                                MainProcedureStatusMessage = $"[Auto Case 80] Placing Battery back to Car";
                                 StartPlaceCarBatteryProcedure();
                                 MainProcedureCase = 81;
                                 break;
 
                             case 81: // 檢查 Procedure 結束後是否有錯誤
+                                MainProcedureStatusMessage = $"[Auto Case 81] Checking Place Car Battery Procedure Result";
                                 if (!this.IsProcedureRunning)
                                 {
                                     if (LastError.ErrorCode == 0)
@@ -1331,19 +1387,23 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 90: // Procedure Success
+                                MainProcedureStatusMessage = $"[Auto Case 90] Auto Procedure Completed Successfully";
                                 // 整個程序成功結束，將station狀態更新
                                 _stationStateMachine.HandleTransition(ChargingState.Idle);
                                 MainProcedureCase = -1;
                                 break;
 
                             case -97: // Procedure Error
+                                MainProcedureStatusMessage = $"[Auto Case -97] Auto Procedure Error Occurred";
                                 break;
 
                             case -98: // Force to stop all procedure
+                                MainProcedureStatusMessage = $"[Auto Case -98] Auto Procedure Manually Stopped";
                                 break;
 
                             case -99: // Unknow Error
                             default:
+                                MainProcedureStatusMessage = $"[Auto Case -99] Auto Procedure Unknown Error Occurred";
                                 _hardwareManager.Robot.AllStop();
                                 break;
                         }

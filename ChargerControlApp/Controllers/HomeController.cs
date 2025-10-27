@@ -16,8 +16,9 @@ namespace ChargerControlApp.Controllers
         private readonly HardwareManager _hardwareManager;
         private readonly RobotService _robotService;
         private readonly MonitoringService _monitoringService;
+        private readonly GrpcClientService _grpcClientService;
 
-        public HomeController(ILogger<HomeController> logger, RobotController robotController, ChargingStationStateMachine stateMachine, HardwareManager hardwareManager, RobotService robotService, MonitoringService monitoringService)
+        public HomeController(ILogger<HomeController> logger, RobotController robotController, ChargingStationStateMachine stateMachine, HardwareManager hardwareManager, RobotService robotService, MonitoringService monitoringService, GrpcClientService grpcClientService)
         {
             _logger = logger;
             _robotController = robotController;
@@ -25,6 +26,7 @@ namespace ChargerControlApp.Controllers
             _hardwareManager = hardwareManager;
             _robotService = robotService;
             _monitoringService = monitoringService;
+            _grpcClientService = grpcClientService;
         }
 
 
@@ -44,7 +46,11 @@ namespace ChargerControlApp.Controllers
                 slotAlarm = _robotService.IsSlotAlarm,
                 procedureAlarm = _robotService.IsProcedureAlarm,
                 mainProcedureCase = _robotService.MainProcedureCase,
-                isManualMode = RobotService.IsManualMode
+                isManualMode = RobotService.IsManualMode,
+                isOnline = GrpcClientService.IsOnline,
+                errorMessage = _robotService.LastError.ErrorMessage,
+                mainProcedureStatusMessage = _robotService.MainProcedureStatusMessage,
+                procedureStatusMessage = _robotService.ProcedureStatusMessage,
             });
         }
 
@@ -118,6 +124,46 @@ namespace ChargerControlApp.Controllers
                     return Json(new { success = false, message = $"無法切換至手動模式。" });
             }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> GetGrpcOnlineStatus(string op)
+        {
+            bool isOnline = GrpcClientService.IsOnline;
+            string message = "";
+
+            if (op == "connect")
+            {
+                if (isOnline)
+                {
+                    message = "已連線，不需要在執行連線動作";
+                }
+                else
+                {
+                    bool result = await _grpcClientService.ManualOnline();
+                    message = result ? "連線成功" : "連線失敗";
+                }
+            }
+            else if (op == "disconnect")
+            {
+                if (!isOnline)
+                {
+                    message = "已離線，不需要在執行離線動作";
+                }
+                else
+                {
+                    // 假設有 ManualOffline 方法，請依實際服務調整
+                    bool result = await _grpcClientService.ManualOffline();
+                    message = result ? "離線成功" : "離線失敗";
+                }
+            }
+            else
+            {
+                message = isOnline ? "已連線" : "未連線";
+            }
+
+            return Json(new { isOnline, message });
+        }
+
 
         public IActionResult Index()
         {

@@ -41,6 +41,7 @@
                 }
             </select>
             <button id="setStationStateBtn" class="btn btn-primary">Set</button>
+            <span id="swappingInfo" class="ms-3 text-info"></span> <!-- 新增顯示區域 -->
         </div>
 
         <div class="mt-4">
@@ -201,6 +202,27 @@
             });
     }
     setInterval(fetchSlotStatus, 2000);
+
+    function fetchSwappingInfo() {
+        fetch('/Units/GetSwappingInfo')
+            .then(response => response.json())
+            .then(data => {
+                let infoSpan = document.getElementById('swappingInfo');
+                if (data.canGeneratePath) {
+                    infoSpan.textContent = `Swapping Slots 資訊：路徑可產生，In Slot：${data.swapIn}，Out Slot：${data.swapOut}`;
+                    infoSpan.classList.remove('text-danger');
+                    infoSpan.classList.add('text-info');
+                } else {
+                    infoSpan.textContent = 'Swapping Slots 資訊：無法產生交換路徑';
+                    infoSpan.classList.remove('text-info');
+                    infoSpan.classList.add('text-danger');
+                }
+            });
+    }
+    // 每2秒更新一次
+    setInterval(fetchSwappingInfo, 2000);
+    // 頁面載入時立即取得一次
+    fetchSwappingInfo();
 
     // 設定Slot ChargeState
     function setSlotChargeState(idx) {

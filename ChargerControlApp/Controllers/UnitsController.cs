@@ -2,7 +2,8 @@
 using ChargerControlApp.DataAccess.GPIO.Services;
 using ChargerControlApp.DataAccess.Slot.Services;
 using TAC.Hardware;
-using ChargerControlApp.Services; // 假設 StationState enum 在這裡
+using ChargerControlApp.Services;
+using ChargerControlApp.DataAccess.Robot.Services; // 假設 StationState enum 在這裡
 
 namespace ChargerControlApp.Controllers
 {
@@ -10,11 +11,13 @@ namespace ChargerControlApp.Controllers
     {
         private readonly SlotServices _slotServices;
         private readonly ChargingStationStateMachine _chargingStationStateMachine;
+        private readonly RobotService _robotService;
 
-        public UnitsController(SlotServices slotServices, ChargingStationStateMachine chargingStationStateMachine)
+        public UnitsController(SlotServices slotServices, ChargingStationStateMachine chargingStationStateMachine, RobotService robotService)
         {
             _slotServices = slotServices;
             _chargingStationStateMachine = chargingStationStateMachine;
+            _robotService = robotService;
         }
 
         // 取得 Station 狀態
@@ -96,6 +99,20 @@ namespace ChargerControlApp.Controllers
                 batteryMemory = s.BatteryMemory
             }).ToArray();
             return Json(result);
+        }
+
+        [HttpGet]
+        public IActionResult GetSwappingInfo()
+        {
+            int swapIn, swapOut;
+            bool canGeneratePath = _robotService.GetSwapIndex(out swapIn, out swapOut);
+
+            return Json(new
+            {
+                canGeneratePath,
+                swapIn,
+                swapOut
+            });
         }
 
         [HttpPost]
