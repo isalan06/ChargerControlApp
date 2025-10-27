@@ -51,6 +51,8 @@ namespace ChargerControlApp.Services
         //    _hardwareManager = hardwareManager;
         //    _logger = logger;
         //}
+
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("背景應用模組 啟動");

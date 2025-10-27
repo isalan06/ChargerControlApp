@@ -31,5 +31,12 @@ namespace ChargerControlApp.Controllers
             var logMessages = SwappingStationService.LogMessages.Reverse().Take(100).ToList();
             return Json(logMessages);
         }
+
+        [HttpGet]
+        public IActionResult GetClientLogs()
+        {
+            var logMessages = GrpcClientService.LogMessages.Reverse().Take(100).ToList();
+            return Json(logMessages);
+        }
     }
 }

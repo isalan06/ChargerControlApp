@@ -54,6 +54,26 @@
             <span style="font-weight:bold;">主程序編號：</span>
             <span id="main-proc-case" style="color:#6c757d;">讀取中...</span>
         </div>
+        <div style="margin-top:16px; border-top:1px solid #eee; padding-top:12px;">
+            <div class="mt-2">
+                <span>錯誤訊息：</span>
+                <div id="errorMessage" class="rich-text-box">
+                    -
+                </div>
+            </div>
+            <div class="mt-2">
+                <span>主程序動作訊息：</span>
+                <div id="mainProcedureStatusMessage" class="rich-text-box">
+                    -
+                </div>
+            </div>
+            <div class="mt-2">
+                <span>子程序動作訊息：</span>
+                <div id="procedureStatusMessage" class="rich-text-box">
+                    -
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 運轉操作區 -->
@@ -80,13 +100,26 @@
     </div>
     <!-- 模式操作區 -->
     <div id="mode-operation-area" style="width:300px; border:1px solid #ccc; border-radius:8px; padding:16px; background:#f5f7fa;">
-        <div style="font-weight:bold; font-size:1.1em; margin-bottom:8px;">運轉操作區</div>
+        <div style="font-weight:bold; font-size:1.1em; margin-bottom:8px;">模式操作區</div>
         <div style="margin-top:12px;">
             <span style="font-weight:bold;">目前模式：</span>
             <span id="manual-mode-status" style="color:#007bff;">讀取中...</span>
         </div>
         <div>
             <button id="btn-manual-mode-proc" class="btn btn-primary" style="width:100%;">開啟手動模式</button>
+        </div>
+        <hr style="margin:16px 0;" />
+        <div>
+            <span style="font-weight:bold;">上位系統連線狀態：</span>
+            <span id="grpc-online-status" style="color:#007bff;">讀取中...</span>
+        </div>
+        <div style="margin-top:12px; display:flex; gap:8px;">
+            <button id="btn-grpc-connect" class="btn btn-success" style="flex:1;">連線</button>
+            <button id="btn-grpc-disconnect" class="btn btn-danger" style="flex:1;">離線</button>
+        </div>
+        <div id="grpc-loading" style="display:none; margin-top:12px; text-align:center;">
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span>gRPC Server連線中，請稍候...</span>
         </div>
     </div>
 </div>
@@ -173,7 +206,7 @@
                 alert('連線錯誤');
             }
             btn.disabled = false;
-            btn.textContent = '系統重置';
+            btn.textContent = '系統初始化';
         });
 
 		// 系統強置到Idle狀態
@@ -233,7 +266,44 @@
             alert('連線錯誤');
         }
         btn.disabled = false;
-    })
+        });
+
+        // 連線按鈕事件
+        document.getElementById('btn-grpc-connect').addEventListener('click', async function () {
+            const loading = document.getElementById('grpc-loading');
+            loading.style.display = 'block';
+            try {
+                const res = await fetch('/Home/GetGrpcOnlineStatus?op=connect', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message);
+                } else {
+                    alert('連線失敗');
+                }
+            } catch {
+                alert('連線失敗');
+            }
+            loading.style.display = 'none';
+        });
+
+        // 離線按鈕事件
+        document.getElementById('btn-grpc-disconnect').addEventListener('click', async function () {
+            const loading = document.getElementById('grpc-loading');
+            loading.style.display = 'block';
+            try {
+                const res = await fetch('/Home/GetGrpcOnlineStatus?op=disconnect', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message);
+                } else {
+                    alert('離線失敗');
+                }
+            } catch {
+                alert('離線失敗');
+            }
+            loading.style.display = 'none';
+        });
+
     });
 
 
@@ -269,17 +339,27 @@
 
                 document.getElementById('manual-mode-status').textContent = data.isManualMode ? '手動模式' : '自動模式';
                 document.getElementById('btn-manual-mode-proc').textContent= data.isManualMode ? '結束手動模式' : '開啟手動模式';
+
+                document.getElementById('grpc-online-status').textContent = data.isOnline ? '已連線' : '未連線';
+                document.getElementById('grpc-online-status').style.color = data.isOnline ? '#28a745' : '#dc3545';
+
+                document.getElementById('errorMessage').textContent = data.errorMessage ?? '-';
+                document.getElementById('mainProcedureStatusMessage').textContent = data.mainProcedureStatusMessage ?? '-';
+                document.getElementById('procedureStatusMessage').textContent = data.procedureStatusMessage ?? '-';
+
             } else {
                 [
                     'station-state', 'psu-count', 'canbus-status', 'modbus-status','modbus-interval-time', 'modbus-command-time',
-                    'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case', 'manual-mode-status', 'btn-manual-mode-proc'
+                    'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case', 'manual-mode-status', 'btn-manual-mode-proc',
+					'grpc-online-status', 'errorMessage', 'mainProcedureStatusMessage', 'procedureStatusMessage'
                 ].forEach(id => document.getElementById(id).textContent = '取得失敗');
 
             }
         } catch {
             [
                 'station-state', 'psu-count', 'canbus-status', 'modbus-status','modbus-interval-time', 'modbus-command-time',
-                'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case', 'manual-mode-status', 'btn-manual-mode-proc'
+                'motor-alarm', 'psu-alarm', 'slot-alarm', 'procedure-alarm', 'main-proc-case', 'manual-mode-status', 'btn-manual-mode-proc',
+                'grpc-online-status', 'errorMessage', 'mainProcedureStatusMessage', 'procedureStatusMessage'
             ].forEach(id => document.getElementById(id).textContent = '連線錯誤');
         }
     }

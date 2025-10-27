@@ -485,3 +485,15 @@ body {
     justify-content: flex-start;
     margin-top: 8px;
 }
+
+.rich-text-box {
+    border: 1px solid #ccc;
+    min-height: 80px;
+    padding: 8px;
+    background: #f9f9f9;
+    white-space: pre-wrap;
+    font-family: Consolas, monospace;
+    overflow-y: auto;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
