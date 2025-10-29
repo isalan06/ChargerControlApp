@@ -169,12 +169,13 @@ namespace ChargerControlApp.Services
             if (slotState.IsEnabled)
             {
                 // 依 Charger 錯誤訊息決定 Slot 狀態
-                if ((charger.FAULT_STATUS.Data != 0) && (slotState.State.CurrentState.CurrentState != SlotState.SupplyError))
-                    slotService.TransitionTo(index, SlotState.SupplyError);
+                /*if ((charger.FAULT_STATUS.Data != 0) && (slotState.State.CurrentState.CurrentState != SlotState.SupplyError))
+                    slotService.TransitionTo(index, SlotState.SupplyError);*/
 
                 // 從Slot狀態錯誤決定 Slot 狀態
-                if (slotState.StateError && (charger.FAULT_STATUS.Data == 0) && (slotState.State.CurrentState.CurrentState != SlotState.StateError))
-                    slotService.TransitionTo(index, SlotState.StateError);
+                //if (slotState.StateError && (charger.FAULT_STATUS.Data == 0) && (slotState.State.CurrentState.CurrentState != SlotState.StateError))
+                if (slotState.StateError && (slotState.State.CurrentState.CurrentState != SlotState.StateError))
+                        slotService.TransitionTo(index, SlotState.StateError);
 
                 if (slotState.StateError && (charger.FAULT_STATUS.Data != 0)) return;
 
