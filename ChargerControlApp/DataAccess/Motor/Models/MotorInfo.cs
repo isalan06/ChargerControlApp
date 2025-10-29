@@ -47,6 +47,10 @@ namespace ChargerControlApp.DataAccess.Motor.Models
         public int OpData_VelR_Actual { get; set; } = 0;  // unit: r/min
         public int OpData_Vel_Actual { get; set; } = 0;  // unit: step/sec
 
+        public double OpData_Trq_Monitor { get; set; } = 0;  // unit: 0.1 %
+
+        public double OpData_Load_Monitor { get; set; } = 0; // unit: 0.1 %
+
         public int CurrentDataNo { get; set; } = 0;
 
         public MotorOpDataDto[] OpDataArray { get; set; } = new MotorOpDataDto[20];

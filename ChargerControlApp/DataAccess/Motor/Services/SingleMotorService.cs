@@ -79,7 +79,7 @@ namespace ChargerControlApp.DataAccess.Motor.Services
                     {
                         FunctionCode = 0x03,
                         StartAddress = 194,
-                        DataNumber = 16
+                        DataNumber = 24
                     }
                 },
                 new MotorFrame()
@@ -138,6 +138,8 @@ namespace ChargerControlApp.DataAccess.Motor.Services
                                 MotorInfo.OpData_Pos_Actual = CombineInt32(data.Data[10], data.Data[11]);
                                 MotorInfo.OpData_VelR_Actual = CombineInt32(data.Data[12], data.Data[13]);
                                 MotorInfo.OpData_Vel_Actual = CombineInt32(data.Data[14], data.Data[15]);
+                                MotorInfo.OpData_Trq_Monitor = Convert.ToDouble(CombineInt32(data.Data[20], data.Data[21])) / 10.0;
+                                MotorInfo.OpData_Load_Monitor = Convert.ToDouble(CombineInt32(data.Data[22], data.Data[23])) / 10.0;
                             }
                             else if (_routeIndex == 3)
                             { 

@@ -85,7 +85,9 @@ namespace ChargerControlApp.Controllers
                 opData_Vel_Actual = m.MotorInfo.OpData_Vel_Actual,
                 r0R = m.MotorInfo.IO_Output_High.Bits.R0_R,
                 r1R = m.MotorInfo.IO_Output_High.Bits.R1_R,
-                homeEnd = m.MotorInfo.IO_Output_High.Bits.HOME_END
+                homeEnd = m.MotorInfo.IO_Output_High.Bits.HOME_END,
+                trqMonitor = m.MotorInfo.OpData_Trq_Monitor,
+                loadMonitor = m.MotorInfo.OpData_Load_Monitor
             }).ToList();
             return Json(result);
         }
