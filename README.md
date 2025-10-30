@@ -102,12 +102,15 @@ fi
 
   ```
   - 啟用: sudo systemctl enable setup-serial-can.service
+
+
 - 執行程式碼
   - 目前尚未設定到自動開啟
   - SSH 登入後，執行 cd program/testapp2/publish
   - 執行 ./ChargerControlApp
 
 - 設定開機執行
+  - 測試中
 
 ---
 # 軟體環境
