@@ -149,6 +149,9 @@ sudo systemctl restart charger-control-app.service
   - 解法2. 把同一個CANBUS Port的 READ() 獨立一個Task.....SEND流程的TASK內部計算Timeout....如果Timeout就進行下一個 SEND....只要有回應 READ就會讀到值....讓SEND的流程去分析
   - 解法3. 非同步程序Debug後測試
 
+- 問題: Slot狀態機與 CANBUS綁在一起
+  - 解法: 獨立一個Task給Slot狀態機，或是上述問題處理完
+
 ### Motor Error 串接到 Error 狀態機
 
 - 問題: 目前 Motor Alarm是獨立狀態會在運行中改成Error State，平時狀態不會
@@ -162,4 +165,8 @@ sudo systemctl restart charger-control-app.service
 
 ### Home Page 問題
 - 問題: 有些按鈕按下去沒反應
+  - 先查找原因
+
+### 狀態機
+- 問題: 跟其他模組有相互阻礙的問題
   - 先查找原因
