@@ -1,4 +1,5 @@
-﻿using ChargerControlApp.DataAccess.CANBus.Interfaces;
+﻿using ChargerControlApp.Controllers;
+using ChargerControlApp.DataAccess.CANBus.Interfaces;
 using ChargerControlApp.DataAccess.CANBus.Linux;
 using ChargerControlApp.DataAccess.GPIO.Services;
 using ChargerControlApp.DataAccess.Modbus.Interfaces;
@@ -14,11 +15,12 @@ using ChargerControlApp.Test.Robot;
 using ChargerControlApp.Utilities;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
+using Nexano.FMS.DeviceController.Protos;
 using RJCP.IO.Ports;
 using Smart.Modbus;
 using System.Collections;
 using System.Data;
-using Nexano.FMS.DeviceController.Protos;
+
 public class Program
 {
     public static void Main(string[] args)
@@ -122,6 +124,14 @@ public class Program
         builder.Services.AddSingleton<GrpcClientService>();
         builder.Services.RegisterChargingServices(); // 共用服務註冊
         builder.Services.AddSingleton<SwappingStationService>();
+
+        
+        // 註冊 ChargersController
+        builder.Services.AddSingleton<ChargersReader>(sp => 
+        {
+            var canBusService = sp.GetRequiredService<ICANBusService>();
+            return new ChargersReader(canBusService);
+        });
 
         // 註冊其他服務
         //builder.Services.AddSingleton<HardwareManager>();

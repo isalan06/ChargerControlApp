@@ -34,6 +34,7 @@ namespace ChargerControlApp.Hardware
 
         public SlotServices SlotServices { get; private set; }
 
+
         public bool CanbusConnected
         {
             get { return (canBusService!= null) ? canBusService.IsConnected : false; }

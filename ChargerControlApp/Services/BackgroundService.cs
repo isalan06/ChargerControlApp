@@ -31,6 +31,7 @@ namespace ChargerControlApp.Services
         //private readonly IServiceProvider _serviceProvider;
         private readonly ChargingStationStateMachine _chargingStationStateMachine;
         private readonly RobotService _robotService;
+        private readonly ChargersReader _chargersController;
 
         //public CanBusPollingService(NPB1700Controller npbController, ILogger<CanBusPollingService> logger)
         //{
@@ -45,6 +46,7 @@ namespace ChargerControlApp.Services
             _chargingStationStateMachine = serviceProvider.GetService<ChargingStationStateMachine>();
             //_npbController = serviceProvider.GetService<NPB1700Controller>();
             _robotService = serviceProvider.GetService<RobotService>();
+            _chargersController = serviceProvider.GetService<ChargersReader>();
         }
         //public CanBusPollingService(HardwareManager hardwareManager, ILogger<CanBusPollingService> logger)
         //{
@@ -56,6 +58,7 @@ namespace ChargerControlApp.Services
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("背景應用模組 啟動");
+            _chargersController.Open();
 
             // 初始化 Charger 狀態
             for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
@@ -104,7 +107,8 @@ namespace ChargerControlApp.Services
                             if (NPB450Controller.ChargerUseAsync)
                                 await _hardwareManager.Charger[i].PollingOnceAsync(); // 使用非同步版本
                             else
-                                await Task.Run(() => _hardwareManager.Charger[i].PollingOnce()); // 使用同步版本
+                                //await Task.Run(() => _hardwareManager.Charger[i].PollingOnce()); // 使用同步版本
+                                await Task.Run(() => _hardwareManager.Charger[i].PollingOnceSync()); // 使用同步版本-改用 PollingOnceSync
                         }
                         catch (Exception ex)
                         {
@@ -154,6 +158,7 @@ namespace ChargerControlApp.Services
                 await Task.Delay(1000, stoppingToken);
             }
 
+            _chargersController?.Close();
             _logger.LogInformation("CanBusPollingService 結束");
         }
 
@@ -288,6 +293,7 @@ namespace ChargerControlApp.Services
         {
             _logger.LogInformation("ModbusPollingService 啟動");
             _hardwareManager.Robot.Open();
+
             string[] portnamelist = System.IO.Ports.SerialPort.GetPortNames();
 
             string portName = _hardwareManager.modbusRTUService.PortName;
