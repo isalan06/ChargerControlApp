@@ -22,6 +22,10 @@
 
   <ItemGroup>
     <Content Remove="Views\Motor\JogHome.cshtml" />
+    <Content Remove="wwwroot\images\Test1\Test1_S1.drawio.svg" />
+    <Content Remove="wwwroot\images\Test1\Test1_S2.drawio.svg" />
+    <Content Remove="wwwroot\images\Test1\Test1_S3.drawio.svg" />
+    <Content Remove="wwwroot\images\Test1\Test1_S4.drawio.svg" />
   </ItemGroup>
 
   <ItemGroup>
@@ -66,6 +70,13 @@
 
   <ItemGroup>
     <Folder Include="DataAccess\Robot\Templates\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\images\Test1\Test1_S1.drawio.svg" />
+    <None Include="wwwroot\images\Test1\Test1_S2.drawio.svg" />
+    <None Include="wwwroot\images\Test1\Test1_S3.drawio.svg" />
+    <None Include="wwwroot\images\Test1\Test1_S4.drawio.svg" />
   </ItemGroup>
 
 </Project>

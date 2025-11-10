@@ -1,0 +1,175 @@
+﻿@{
+    ViewData["Title"] = "Test";
+}
+
+<h2>測試流程</h2>
+
+<ul class="nav nav-tabs" id="grpcTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="test1-tab" data-bs-toggle="tab" data-bs-target="#test1" type="button" role="tab">Test1</button>
+    </li>
+</ul>
+<div class="tab-content mt-3" id="grpcTabContent">
+    <div class="tab-pane fade show active" id="test1" role="tabpanel">
+        <h4>Test1 - 往復電池取放流程 Slot#1~Slot#4; 三個電池存放</h4>
+        <form method="post" asp-controller="Test" asp-action="Test1Action">
+            <div class="row">
+                <!-- 電池槽選擇 -->
+                <div class="col-md-6">
+                    <div class="border rounded p-3 mb-3 h-100">
+                        <h5 class="mb-3">電池槽初始選擇</h5>
+                        <div class="row align-items-center mb-3">
+                            <div class="col-3 text-center">
+                                <img src="/images/Test1/Test1_S1.drawio.svg" class="img-fluid mb-2" alt="模式1" />
+                                <div>
+                                    <input type="radio" id="option1" name="testExecuteIndex" value="0" checked />
+                                    <label for="option1">模式1</label>
+                                </div>
+                            </div>
+                            <div class="col-3 text-center">
+                                <img src="/images/Test1/Test1_S2.drawio.svg" class="img-fluid mb-2" alt="模式2" />
+                                <div>
+                                    <input type="radio" id="option2" name="testExecuteIndex" value="1" />
+                                    <label for="option2">模式2</label>
+                                </div>
+                            </div>
+                            <div class="col-3 text-center">
+                                <img src="/images/Test1/Test1_S3.drawio.svg" class="img-fluid mb-2" alt="模式3" />
+                                <div>
+                                    <input type="radio" id="option3" name="testExecuteIndex" value="2" />
+                                    <label for="option3">模式3</label>
+                                </div>
+                            </div>
+                            <div class="col-3 text-center">
+                                <img src="/images/Test1/Test1_S4.drawio.svg" class="img-fluid mb-2" alt="模式4" />
+                                <div>
+                                    <input type="radio" id="option4" name="testExecuteIndex" value="3" />
+                                    <label for="option4">模式4</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 操作區 -->
+                <div class="col-md-6">
+                    <div class="border rounded p-3 mb-3 h-100 bg-light">
+                        <h5 class="mb-3">操作區</h5>
+                        <div class="mb-3 row align-items-center">
+                            <label for="testCycleNumber" class="col-auto col-form-label">執行次數：</label>
+                            <div class="col-auto">
+                                <input type="number" id="testCycleNumber" name="testCycleNumber" value="5" min="1" class="form-control" style="width:100px;" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <button type="submit" name="action" value="start" class="btn btn-success me-2">啟動 Test1 流程</button>
+                            <button type="submit" name="action" value="stop" class="btn btn-danger">停止流程</button>
+                        </div>
+                        <!-- 主程序編號與錯誤訊息區 -->
+                        <div style="margin-top:8px;">
+                            <span style="font-weight:bold;">設備狀態：</span>
+                            <span id="station-state" style="color:#007bff;">讀取中...</span>
+                        </div>
+                        <div style="margin-top:8px;">
+                            <span style="font-weight:bold;">主程序編號：</span>
+                            <span id="main-proc-case" style="color:#6c757d;">讀取中...</span>
+                        </div>
+                        <div style="margin-top:16px; border-top:1px solid #eee; padding-top:12px;">
+                            <div class="mt-2">
+                                <span>錯誤訊息：</span>
+                                <div id="errorMessage" class="rich-text-box">
+                                    -
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- 資訊區 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="border rounded p-3 bg-white">
+                    <h5 class="mb-3">資訊區</h5>
+                    <div style="margin-bottom:8px;">
+                        <span style="font-weight:bold;">測試模式顯示狀態：</span>
+                        <span id="test-mode-status" style="color:#007bff;">讀取中...</span>
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <span style="font-weight:bold;">目前執行次數：</span>
+                        <span id="test-cycle-count" style="color:#007bff;">讀取中...</span>
+                    </div>
+                    <!-- 可繼續放入其他資訊 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                // 取得選擇的模式
+                const testExecuteIndex = form.querySelector('input[name="testExecuteIndex"]:checked').value;
+                // 取得執行次數
+                const testCycleNumber = form.querySelector('input[name="testCycleNumber"]').value;
+                // 判斷按下哪個按鈕
+                const action = document.activeElement.value;
+
+                let url = '';
+                let data = {};
+
+                if (action === 'start') {
+                    url = '/Test/StartTest1';
+                    data = { testExecuteIndex, testCycleNumber };
+                } else if (action === 'stop') {
+                    url = '/Test/StopTest1';
+                } else {
+                    return;
+                }
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    alert(result.message);
+                    // 可在此更新資訊區內容
+                })
+                .catch(error => {
+                    alert('操作失敗: ' + error);
+                });
+            });
+
+            // 定期查詢主程序狀態
+            function fetchTestStatus() {
+                fetch('/Test/GetTestStatus')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('station-state').textContent = data.state ?? '無資料';
+                        document.getElementById('main-proc-case').textContent = data.mainProcedureCase ?? '無資料';
+                        document.getElementById('errorMessage').textContent = data.errorMessage ?? '-';
+                        document.getElementById('test-mode-status').textContent = data.isTestMode ? '啟用' : '未啟用';
+                        document.getElementById('test-cycle-count').textContent = data.testCycleCount ?? '無資料';
+                    })
+                    .catch(() => {
+                        document.getElementById('station-state').textContent = '取得失敗';
+                        document.getElementById('main-proc-case').textContent = '取得失敗';
+                        document.getElementById('errorMessage').textContent = '取得失敗';
+                        document.getElementById('test-mode-status').textContent = '取得失敗';
+                        document.getElementById('test-cycle-count').textContent = '取得失敗';
+                    });
+            }
+
+            fetchTestStatus();
+            setInterval(fetchTestStatus, 2000); // 每2秒自動更新
+        });
+    </script>
+}

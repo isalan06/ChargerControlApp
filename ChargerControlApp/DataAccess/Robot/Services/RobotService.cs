@@ -256,7 +256,12 @@ namespace ChargerControlApp.DataAccess.Robot.Services
         /// </summary>
         public void StopProcedure()
         {
-            if (!IsProcedureRunning) return;
+
+            if (!IsProcedureRunning)
+            {
+                if (IsTestMode) IsTestMode = false;
+                return;
+            }
             IsProcedureRunning = false;
             IsMainProcedureRunning = false;
             this._procedureStopTrigger = true;
@@ -265,6 +270,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             _hardwareManager.Robot.AllStop();
             ProcedureStatusMessage = string.Empty;
             MainProcedureStatusMessage = string.Empty;
+            IsTestMode = false; // 結束測試模式
         }
 
         public void StopAutoProcedure()
@@ -277,10 +283,12 @@ namespace ChargerControlApp.DataAccess.Robot.Services
         /// </summary>
         public void StartHomeProcedure()
         {
+            if (IsProcedureRunning) return;
+
             LastError.Clear();
             HomeProcedureCase = 0;
             MainProcedureStatusMessage = string.Empty;
-            if (IsProcedureRunning) return;
+           
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
             int timeoutMs = 600000; // 600秒逾時，可依需求調整
@@ -451,10 +459,35 @@ namespace ChargerControlApp.DataAccess.Robot.Services
 
         public void StartAutoProcedure()
         {
+            if (IsMainProcedureRunning) return;
+
             LastError.Clear();
             MainProcedureCase = 0;
             MainProcedureStatusMessage = string.Empty;
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
+            Task.Run(async () =>
+            {
+                await ExecuteAutoAct();
+            }, token);
+        }
+
+        public void StartTestAutoProcedure(int testProcedureIndex, int testExecuteIndex, int testCycleNember)
+        {
             if (IsMainProcedureRunning) return;
+
+            LastError.Clear();
+            MainProcedureCase = 0;
+            MainProcedureStatusMessage = string.Empty;
+
+            IsTestMode = true;
+            TestProcedureIndex = testProcedureIndex;
+            TestExecuteIndex = testExecuteIndex;
+            TestCycleNumber = testCycleNember;
+            TestCycleCount = 0;
+
+            SetSlotInfoForTest(testProcedureIndex, testExecuteIndex);
+
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
             Task.Run(async () =>
@@ -1163,17 +1196,34 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
 
                             case 1: // 檢查電池狀態及產生路徑點位
-                                MainProcedureStatusMessage = $"[Auto Case 1] Generating Swap Slot Info";
-                                if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
+                                if (IsTestMode) // 測試模式下使用測試程序的路徑
                                 {
-                                    swapOut = _hardwareManager.SwapOut(swapOuts);
-                                    MainProcedureCase = 10;
+                                    MainProcedureStatusMessage = $"[Auto Case 1] Generating Swap Slot Info for Test Procedure";
+                                    if(CheckSwapSlotInfoForTest(TestProcedureIndex, TestExecuteIndex, out swapIn, out swapOut))
+                                    {
+                                        MainProcedureCase = 10;
+                                    }
+                                    else
+                                    {
+                                        MainProcedureCase = -1;
+                                        LastError.ErrorCode = 12;
+                                        LastError.ErrorMessage = $"無法產生路徑";
+                                    }
                                 }
-                                else
+                                else // 正常模式下使用實際的路徑產生
                                 {
-                                    MainProcedureCase = -1;
-                                    LastError.ErrorCode = 12;
-                                    LastError.ErrorMessage = $"無法產生路徑";
+                                    MainProcedureStatusMessage = $"[Auto Case 1] Generating Swap Slot Info";
+                                    if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
+                                    {
+                                        swapOut = _hardwareManager.SwapOut(swapOuts);
+                                        MainProcedureCase = 10;
+                                    }
+                                    else
+                                    {
+                                        MainProcedureCase = -1;
+                                        LastError.ErrorCode = 12;
+                                        LastError.ErrorMessage = $"無法產生路徑";
+                                    }
                                 }
                                 break;
 
@@ -1240,9 +1290,14 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 {
                                     if (LastError.ErrorCode == 0)
                                         MainProcedureCase = 42;
-                                    else
+                                    else if(IsTestMode) // 測試模式下不進行感測器檢查點判斷
                                     {
-                                        if(checkSensorPoint)
+                                        // 測試模式下直接結束
+                                        MainProcedureCase = -97;
+                                    }
+                                    else // 正常模式下進行感測器檢查點判斷
+                                    {
+                                        if (checkSensorPoint)
                                         {
                                             // 感測器檢查點失敗，代表slot已經有電池，無法放入，將註記slot狀態為狀態錯誤，並在近進行一次路徑判別
                                             _hardwareManager.SlotServices.SetBatteryMemory(swapIn - 1, true, false);
@@ -1319,6 +1374,11 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 {
                                     if (LastError.ErrorCode == 0)
                                         MainProcedureCase = 62;
+                                    else if(IsTestMode) // 測試模式下不進行感測器檢查點判斷
+                                    {
+                                        // 測試模式下直接結束
+                                        MainProcedureCase = -97;
+                                    }
                                     else
                                     {
                                         if (checkSensorPoint)
@@ -1388,9 +1448,26 @@ namespace ChargerControlApp.DataAccess.Robot.Services
 
                             case 90: // Procedure Success
                                 MainProcedureStatusMessage = $"[Auto Case 90] Auto Procedure Completed Successfully";
-                                // 整個程序成功結束，將station狀態更新
-                                _stationStateMachine.HandleTransition(ChargingState.Idle);
-                                MainProcedureCase = -1;
+                                if (IsTestMode) // 測試模式下檢查是否完成所有測試循環
+                                {
+                                    if (CheckFinishAllTestCycles())
+                                    {
+                                        _stationStateMachine.HandleTransition(ChargingState.Idle);
+                                        IsTestMode = false; // 結束測試模式
+                                        MainProcedureCase = -1;
+                                    }
+                                    else
+                                    {
+                                        MainProcedureCase = 1; // 繼續下一次測試程序
+                                    }
+                                }
+                                else
+                                {
+
+                                    // 整個程序成功結束，將station狀態更新
+                                    _stationStateMachine.HandleTransition(ChargingState.Idle);
+                                    MainProcedureCase = -1;
+                                }
                                 break;
 
                             case -97: // Procedure Error
@@ -1420,6 +1497,122 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                 LastError.ErrorMessage = ex.Message;
             }
             IsMainProcedureRunning = false;
+        }
+
+        #endregion
+
+        #region Test Function for Auto Procedure
+
+        public bool IsTestMode { get; internal set; } = false; // Enable test mode for auto procedure
+        public int TestProcedureIndex { get; set; } = 1; // 1: Test#1 
+        public string TestProcedureName
+        {
+            get
+            {
+                switch (TestProcedureIndex)
+                {
+                    case 1:
+                        return "Default Test#1 Procedure";
+                    default:
+                        return "Unknown Test Procedure";
+                }
+            }
+        }
+
+        public int TestStartIndex { get; set; } = 0; // Start index for test mode: Different TestProcedureIndex may have different meaning
+
+        public int TestExecuteIndex { get; internal set; } = 0; // Execute index for test mode: Different TestProcedureIndex may have different meaning
+        public int TestCycleNumber { get; set; } = 5; // Number of cycles to run in test mode
+        public int TestCycleCount { get; internal set; } = 0; // Current cycle count
+
+        /// <summary>
+        /// Check Swap Slot Info for Test Mode
+        /// </summary>
+        /// <param name="testProcedureIndex"></param>
+        /// <param name="testExecuteIndex"></param>
+        /// <param name="swapIn"></param>
+        /// <param name="swapOut"></param>
+        /// <returns></returns>
+        public bool CheckSwapSlotInfoForTest(int testProcedureIndex, int testExecuteIndex, out int swapIn, out int swapOut)
+        {
+            swapIn = 1;
+            swapOut = 2;
+
+            if (IsTestMode)
+            {
+                if (TestProcedureIndex == 1)
+                {
+                    DefaultTest1Procedure.Refresh();
+                    int length =  DefaultTest1Procedure.ProcedureFrames.Count;
+
+                    // Set swapIn and swapOut based on testExecuteIndex
+                    if (testExecuteIndex < length)
+                    {
+                        var frame = DefaultTest1Procedure.ProcedureFrames[testExecuteIndex]; // Get the frame based on index
+                        if (frame is TestSlotFrame testFrame) // Check if it's a TestSlotFrame
+                        {
+                            swapIn = testFrame.SlotSwapInNo;
+                            swapOut = testFrame.SlotSwapOutNo;
+
+                            return true;
+                        }
+                    }
+                }
+
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Check Finish All Test Cycles
+        /// </summary>
+        /// <returns></returns>
+        public bool CheckFinishAllTestCycles()
+        {
+            bool result = false;
+            if (IsTestMode)
+            {
+                if (TestProcedureIndex == 1)
+                {
+                    DefaultTest1Procedure.Refresh();
+                    int length = DefaultTest1Procedure.ProcedureFrames.Count;
+                    TestExecuteIndex++;
+                    if (TestExecuteIndex >= length)
+                    {
+                        TestExecuteIndex = 0;
+                        TestCycleCount++;
+                    }
+
+                    if (TestCycleCount >= TestCycleNumber)
+                        result = true;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Set Slot Info for Test Mode
+        /// </summary>
+        /// <param name="testProcedureIndex"></param>
+        /// <param name="testExecuteIndex"></param>
+        public void SetSlotInfoForTest(int testProcedureIndex, int testExecuteIndex)
+        {
+            if (testProcedureIndex == 1)
+            {
+                DefaultTest1Procedure.Refresh();
+                int length = DefaultTest1Procedure.ProcedureFrames.Count;
+
+                for (int i=0;i< length; i++)
+                {
+                    bool empty = (testExecuteIndex == i);
+
+                    if (empty)
+                        _hardwareManager.SlotServices.SetBatteryMemory(i, false);
+                    else
+                        _hardwareManager.SlotServices.SetBatteryMemory(i, true);
+                    _hardwareManager.SlotServices.TransitionTo(i, SlotState.Initialization);
+                }
+            }
         }
 
         #endregion
