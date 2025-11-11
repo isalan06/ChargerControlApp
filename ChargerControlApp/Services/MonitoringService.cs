@@ -38,6 +38,22 @@ namespace ChargerControlApp.Services
                     }
                 }
 
+                // 檢查機械手臂各軸是否有錯誤並更新最後錯誤資訊
+                if (_robotService.LastError.ErrorCode == 0) // 沒有錯誤訊息時才更新
+                { 
+                    for(int i=0;i<_hardwareManager.Robot.Motors.Length;i++)
+                    {
+                        if (_hardwareManager.Robot.Motors[i].MotorInfo.ErrorCode != 0) // 假設 ErrorCode 不為 0 表示有錯誤
+                        {
+                            _robotService.LastError.AxisId = i;
+                            _robotService.LastError.ErrorCode = _hardwareManager.Robot.Motors[i].MotorInfo.ErrorCode;
+                            _robotService.LastError.ErrorMessage = _hardwareManager.Robot.Motors[i].MotorInfo.ErrorMessage;
+
+                            break;
+                        }
+                    }
+                }
+
             }
         }
 

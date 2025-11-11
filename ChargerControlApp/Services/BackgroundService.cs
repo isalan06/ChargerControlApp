@@ -80,19 +80,19 @@ namespace ChargerControlApp.Services
                 _hardwareManager.SlotServices.TransferToSlotChargeState(i); // 同步更新充電狀態
             }
 
-            if (HardwareManager.ServoOnAndHomeAfterStartup) // 啟動後是否啟用伺服並回原點
-            {
-                try
-                {
-                    _hardwareManager.Robot.SetAllServo(true);
-                    await Task.Delay(2000);
-                    _robotService.StartHomeProcedure();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "機械手臂伺服啟動或回原點失敗");
-                }
-            }
+            //if (HardwareManager.ServoOnAndHomeAfterStartup) // 啟動後是否啟用伺服並回原點
+            //{
+            //    try
+            //    {
+            //        _hardwareManager.Robot.SetAllServo(true);
+            //        await Task.Delay(2000);
+            //        _robotService.StartHomeProcedure();
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        _logger.LogError(ex, "機械手臂伺服啟動或回原點失敗");
+            //    }
+            //}
 
             while (!stoppingToken.IsCancellationRequested)
             {
