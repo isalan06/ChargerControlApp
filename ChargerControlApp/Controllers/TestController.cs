@@ -47,6 +47,7 @@ public class TestController : Controller
             state = _stateMachine.GetCurrentStateName(),
             isTestMode = _robotService.IsTestMode,
             testCycleCount = _robotService.TestCycleCount,
+            testCycleNumber = _robotService.TestCycleNumber
         });
     }
 }

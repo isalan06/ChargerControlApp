@@ -85,24 +85,27 @@ namespace ChargerControlApp.Hardware
                 {
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                     {
-                        if ((ChargerCommandData != ChargerResponseData) || (ChargerIndex != ChargerResponseIndex))
-                        {
+                        //if ((ChargerCommandData != ChargerResponseData) || (ChargerIndex != ChargerResponseIndex))
+                        //{
                             try
                             {
                                 ReceivedCANBusMessage = _canBusService.ReceiveMessage();
+                                Console.WriteLine($"Received CAN bus message for Charger Index: {ChargerIndex}, Command Data: {ChargerCommandData}");
                                 if (ReceivedCANBusMessage != null)
                                 {
                                     ChargerResponseIndex = ChargerIndex;
                                     ChargerResponseData = ChargerCommandData;
-                                }
+                                    ChargerIndex = -1;
+                                    ChargerCommandData = -1;
+                            }
                             }
                             catch (Exception ex)
                             {
                                 Console.WriteLine($"Error receiving CAN bus message: {ex.Message}");
                             }
-                        }
+                        //}
 
-                        await Task.Delay(10); // Adjust the delay as needed
+                        //await Task.Delay(10); // Adjust the delay as needed
                     }
                 }
             }, ct);

@@ -73,10 +73,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="wwwroot\images\Test1\Test1_S1.drawio.svg" />
-    <None Include="wwwroot\images\Test1\Test1_S2.drawio.svg" />
-    <None Include="wwwroot\images\Test1\Test1_S3.drawio.svg" />
-    <None Include="wwwroot\images\Test1\Test1_S4.drawio.svg" />
+    <Content Include="wwwroot\images\Test1\Test1_S1.drawio.svg" />
+    <Content Include="wwwroot\images\Test1\Test1_S2.drawio.svg" />
+    <Content Include="wwwroot\images\Test1\Test1_S3.drawio.svg" />
+    <Content Include="wwwroot\images\Test1\Test1_S4.drawio.svg" />
   </ItemGroup>
 
 </Project>

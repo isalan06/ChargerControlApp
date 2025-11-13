@@ -157,7 +157,11 @@
                         document.getElementById('main-proc-case').textContent = data.mainProcedureCase ?? '無資料';
                         document.getElementById('errorMessage').textContent = data.errorMessage ?? '-';
                         document.getElementById('test-mode-status').textContent = data.isTestMode ? '啟用' : '未啟用';
-                        document.getElementById('test-cycle-count').textContent = data.testCycleCount ?? '無資料';
+                        //document.getElementById('test-cycle-count').textContent = data.testCycleCount ?? '無資料';
+                        document.getElementById('test-cycle-count').textContent =
+                            (data.testCycleCount !== undefined && data.testCycleNumber !== undefined)
+                                ? `${data.testCycleCount} / ${data.testCycleNumber}`
+                                : '無資料';
                     })
                     .catch(() => {
                         document.getElementById('station-state').textContent = '取得失敗';
