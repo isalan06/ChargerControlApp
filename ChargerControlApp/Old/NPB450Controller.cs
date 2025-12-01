@@ -24,7 +24,7 @@ using System.Diagnostics;
 
 namespace ChargerControlApp.Hardware
 {
-    public class NPB450Controller
+    public class NPB450Controller_old
     {
         public static int NPB450ControllerInstnaceMaxNumber = 8; // TODO: 之後改成設定檔
         public static bool ChargerUseAsync = false; // TODO: 之後改成設定檔
