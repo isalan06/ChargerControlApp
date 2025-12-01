@@ -187,9 +187,17 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
 
         #endregion
 
-        public async Task<ModbusRTUFrame> Act(ModbusRTUFrame coammand)
+        public async Task<ModbusRTUFrame> Act(ModbusRTUFrame command)
         {
             ModbusRTUFrame _frame = null;
+
+            if (command.EmptyCommand)
+            { 
+                _frame = new ModbusRTUFrame(command);
+                _frame.DataNumber = 0;
+                _frame.HasResponse = true;
+                return _frame;
+            }
 
             if (_serialPort.IsOpen)
             {
@@ -200,7 +208,7 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
                 _readResult = false;
                 _readData = null;
 
-                _frame = new ModbusRTUFrame(coammand);
+                _frame = new ModbusRTUFrame(command);
                 _frame.HasResponse = false;
                 _frame.HasException = false;
 
@@ -235,7 +243,7 @@ namespace ChargerControlApp.DataAccess.Modbus.Services
                     }
 
                     //Thread.Sleep(10);
-                    await Task.Delay(1);
+                    await Task.Delay(10);
                 }
 
                 FrameReadMilliseconds = DateTime.Now.Subtract(dt).TotalMilliseconds; // 記錄讀取時間

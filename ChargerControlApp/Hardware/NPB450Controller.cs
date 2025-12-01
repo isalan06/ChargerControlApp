@@ -527,8 +527,8 @@ namespace ChargerControlApp.Hardware
         private async Task<double> GetVoltage_Sync()
         {
             isReadError = false;
-            ChargersReader.ChargerIndex = (int)this.deviceID;
-            ChargersReader.ChargerCommandData = 0; // 讀取電壓
+            ChargersReader_test.ChargerIndex = (int)this.deviceID;
+            ChargersReader_test.ChargerCommandData = 0; // 讀取電壓
 
             await GetStatusFromDevice_OnlySend(NPB450Controller.CanbusReadCommand.READ_VOUT); // 只送不接收
             Stopwatch _stopwatch = new Stopwatch();
@@ -536,10 +536,10 @@ namespace ChargerControlApp.Hardware
             while (true)
             {
                 //if (CheckChargerReaderResponse()) // 有收到回應
-                if(((ChargersReader.ChargerResponseIndex == (int)this.deviceID)
-                && (ChargersReader.ChargerResponseData == 0)))
+                if(((ChargersReader_test.ChargerResponseIndex == (int)this.deviceID)
+                && (ChargersReader_test.ChargerResponseData == 0)))
                 {
-                    byte[]? VoltageBytes = ChargersReader.ReceivedCANBusMessage; // 取得收到的資料
+                    byte[]? VoltageBytes = ChargersReader_test.ReceivedCANBusMessage; // 取得收到的資料
                     if (VoltageBytes == null)
                     {
                         isReadError = true;
@@ -577,8 +577,8 @@ namespace ChargerControlApp.Hardware
         private async Task<double> GetCurrent_Sync()
         {
             isReadError = false;
-            ChargersReader.ChargerIndex = (int)this.deviceID;
-            ChargersReader.ChargerCommandData = 1; // 讀取電流
+            ChargersReader_test.ChargerIndex = (int)this.deviceID;
+            ChargersReader_test.ChargerCommandData = 1; // 讀取電流
 
             await GetStatusFromDevice_OnlySend(NPB450Controller.CanbusReadCommand.READ_IOUT); // 只送不接收
 
@@ -587,10 +587,10 @@ namespace ChargerControlApp.Hardware
             while (true)
             {
                 //if (CheckChargerReaderResponse()) // 有收到回應
-                if (((ChargersReader.ChargerResponseIndex == (int)this.deviceID)
-                && (ChargersReader.ChargerResponseData == 1)))
+                if (((ChargersReader_test.ChargerResponseIndex == (int)this.deviceID)
+                && (ChargersReader_test.ChargerResponseData == 1)))
                 {
-                    byte[]? CurrentBytes = ChargersReader.ReceivedCANBusMessage; // 取得收到的資料
+                    byte[]? CurrentBytes = ChargersReader_test.ReceivedCANBusMessage; // 取得收到的資料
                     if (CurrentBytes == null)
                     {
                         isReadError = true;
@@ -628,8 +628,8 @@ namespace ChargerControlApp.Hardware
         private async Task<CHG_STATUS_Union> GetCHG_STATUS_Sync()
         {
             isReadError = false;
-            ChargersReader.ChargerIndex = (int)this.deviceID;
-            ChargersReader.ChargerCommandData = 2; // 讀取CHG_STATUS
+            ChargersReader_test.ChargerIndex = (int)this.deviceID;
+            ChargersReader_test.ChargerCommandData = 2; // 讀取CHG_STATUS
             await GetStatusFromDevice_OnlySend(NPB450Controller.CanbusReadCommand.CHG_STATUS); // 只送不接收
 
             Stopwatch _stopwatch = new Stopwatch();
@@ -637,10 +637,10 @@ namespace ChargerControlApp.Hardware
             while (true)
             {
                 //if (CheckChargerReaderResponse()) // 有收到回應
-                if (((ChargersReader.ChargerResponseIndex == (int)this.deviceID)
-                && (ChargersReader.ChargerResponseData == 2)))
+                if (((ChargersReader_test.ChargerResponseIndex == (int)this.deviceID)
+                && (ChargersReader_test.ChargerResponseData == 2)))
                 {
-                    byte[]? CHG_STATUS_BYTES = ChargersReader.ReceivedCANBusMessage; // 取得收到的資料
+                    byte[]? CHG_STATUS_BYTES = ChargersReader_test.ReceivedCANBusMessage; // 取得收到的資料
                     if (CHG_STATUS_BYTES == null)
                     {
                         isReadError = true;
@@ -680,18 +680,18 @@ namespace ChargerControlApp.Hardware
         private async Task<FAULT_STATUS_Union> GetFAULT_STATUS_Sync()
         {
             isReadError = false;
-            ChargersReader.ChargerIndex = (int)this.deviceID;
-            ChargersReader.ChargerCommandData = 3; // 讀取FAULT_STATUS
+            ChargersReader_test.ChargerIndex = (int)this.deviceID;
+            ChargersReader_test.ChargerCommandData = 3; // 讀取FAULT_STATUS
             await GetStatusFromDevice_OnlySend(NPB450Controller.CanbusReadCommand.FAULT_STATUS); // 只送不接收
             Stopwatch _stopwatch = new Stopwatch();
             _stopwatch.Restart(); // 重啟計時器
             while (true)
             {
                 //if (CheckChargerReaderResponse()) // 有收到回應
-                if (((ChargersReader.ChargerResponseIndex == (int)this.deviceID)
-                && (ChargersReader.ChargerResponseData == 3)))
+                if (((ChargersReader_test.ChargerResponseIndex == (int)this.deviceID)
+                && (ChargersReader_test.ChargerResponseData == 3)))
                 {
-                    byte[]? FAULT_STATUS_BYTES = ChargersReader.ReceivedCANBusMessage; // 取得收到的資料
+                    byte[]? FAULT_STATUS_BYTES = ChargersReader_test.ReceivedCANBusMessage; // 取得收到的資料
                     if (FAULT_STATUS_BYTES == null)
                     {
                         isReadError = true;
@@ -799,7 +799,7 @@ namespace ChargerControlApp.Hardware
                 return;
             }
 
-            ICANBusService canBus = new SocketCANBusService();
+            ICANBusService canBus = new SocketCANBusService_test();
 
             int numberOfDataBytes = 1;
             byte[] data = new byte[2 + numberOfDataBytes];
@@ -813,7 +813,7 @@ namespace ChargerControlApp.Hardware
                 Data = data
             };
 
-            await _canBusService.SendAsync(canMessage);
+            //await _canBusService.SendAsync(canMessage);
         }
 
         public void StopCharging()
@@ -906,18 +906,19 @@ namespace ChargerControlApp.Hardware
             // Wait for response
             await Task.Delay(50);
 
-            var response = await _canBusService.ReceiveAsync(100);
-            if (response != null)
-            {
-                Console.WriteLine($"Recv: ID={response.Id}, Data={BitConverter.ToString(response.Data)}");
-                Console.WriteLine($"{command} = {Convert.ToHexString(response.Data)}");
-                return response.Data;
-            }
-            else
-            {
-                Console.WriteLine("Timeout.");
-                return Array.Empty<byte>();
-            }
+            //var response =  await _canBusService.ReceiveAsync(100);
+            //if (response != null)
+            //{
+            //    Console.WriteLine($"Recv: ID={response.Id}, Data={BitConverter.ToString(response.Data)}");
+            //    Console.WriteLine($"{command} = {Convert.ToHexString(response.Data)}");
+            //    return response.Data;
+            //}
+            //else
+            //{
+            //    Console.WriteLine("Timeout.");
+            //    return Array.Empty<byte>();
+            //}
+            return Array.Empty<byte>();
         }
 
 
@@ -936,6 +937,7 @@ namespace ChargerControlApp.Hardware
             //await Task.Delay(50);
 
             var response = _canBusService.ReceiveMessage();
+            
             return response;
         }
 
@@ -965,8 +967,8 @@ namespace ChargerControlApp.Hardware
 
         private bool CheckChargerReaderResponse()
         { 
-            return ((ChargersReader.ChargerResponseIndex == ChargersReader.ChargerIndex) 
-                && (ChargersReader.ChargerResponseData == ChargersReader.ChargerCommandData));
+            return ((ChargersReader_test.ChargerResponseIndex == ChargersReader_test.ChargerIndex) 
+                && (ChargersReader_test.ChargerResponseData == ChargersReader_test.ChargerCommandData));
         }
 
 

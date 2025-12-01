@@ -24,7 +24,7 @@ namespace ChargerControlApp.Hardware
 
         public static IServiceProvider? Services { get; private set; }
         public NPB450Controller[] Charger { get; private set; }
-        private SocketCANBusService canBusService { get; set; }
+        private SocketCANBusService_test canBusService { get; set; }
         //private SocketCanBusServiceNoAsync canBusService2 { get; set; }
         //public UartService UartService { get; private set; }
         //LED CONTROLLER
@@ -59,12 +59,12 @@ namespace ChargerControlApp.Hardware
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 //canBusService = new DataAccess.CANBus.Linux.SocketCANBusService();
-                canBusService = Services.GetService<SocketCANBusService>();
+                canBusService = Services.GetService<SocketCANBusService_test>();
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // throw new PlatformNotSupportedException("Unsupported OS platform");
-                canBusService = Services.GetService<SocketCANBusService>();
+                canBusService = Services.GetService<SocketCANBusService_test>();
             }
             else
             {

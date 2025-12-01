@@ -17,7 +17,10 @@ namespace ChargerControlApp.DataAccess.Modbus.Models
         public bool IsRead { get; internal set; } = false;
         public bool IsWrite { get; internal set; } = false;
 
+        public bool EmptyCommand { get; set; } = false;
 
+        public bool FinalCommand { get; set; } = false;
+        
         public ModbusRTUFrame()
         {
             SlaveAddress = 1;
@@ -25,9 +28,9 @@ namespace ChargerControlApp.DataAccess.Modbus.Models
             StartAddress = 0;
             DataNumber = 1;
         }
-        public ModbusRTUFrame(byte slaveAddress, byte functionCode, ushort startAddress, ushort dataNumber, ushort[] data)
+        public ModbusRTUFrame(byte slaveAddress, byte functionCode, ushort startAddress, ushort dataNumber, ushort[] data, bool finalCommand = false, bool emptyCommand = false)
         {
-            Set(slaveAddress, functionCode, startAddress, dataNumber, data);
+            Set(slaveAddress, functionCode, startAddress, dataNumber, data, finalCommand:finalCommand, emptyCommand:emptyCommand);
         }
 
         public ModbusRTUFrame(ModbusRTUFrame frame)
@@ -132,7 +135,7 @@ namespace ChargerControlApp.DataAccess.Modbus.Models
             return result;
         }
 
-        public void Set(byte slaveAddress, byte functionCode, ushort startAddress, ushort dataNumber, ushort[] data, bool hasResponse=false, bool hasException=false)
+        public void Set(byte slaveAddress, byte functionCode, ushort startAddress, ushort dataNumber, ushort[] data, bool hasResponse=false, bool hasException=false, bool finalCommand=false, bool emptyCommand=false)
         {
             SlaveAddress = slaveAddress;
             FunctionCode = functionCode;
@@ -140,6 +143,8 @@ namespace ChargerControlApp.DataAccess.Modbus.Models
             DataNumber = dataNumber;
             HasResponse = hasResponse;
             HasException = hasException;
+            FinalCommand = finalCommand;
+            EmptyCommand = emptyCommand;
             if (data != null)
             {
                 Data = new ushort[data.Length];
@@ -166,7 +171,7 @@ namespace ChargerControlApp.DataAccess.Modbus.Models
 
         public void Clone(ModbusRTUFrame frame)
         {
-            Set(frame.SlaveAddress, frame.FunctionCode, frame.StartAddress, frame.DataNumber, frame.Data, frame.HasResponse, frame.HasException);
+            Set(frame.SlaveAddress, frame.FunctionCode, frame.StartAddress, frame.DataNumber, frame.Data, frame.HasResponse, frame.HasException, frame.FinalCommand, frame.EmptyCommand);
         }
 
         public ModbusRTUFrame Clone()

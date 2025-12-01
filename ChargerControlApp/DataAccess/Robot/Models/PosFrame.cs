@@ -31,7 +31,7 @@
         /// Gets or sets the delay time in milliseconds.
         /// When the robot reaches this position, it will wait for the specified time before proceeding to the next action.
         /// </summary>
-        public double DelayTime_ms { get; set; } = 50.0;
+        public double DelayTime_ms { get; set; } = 10.0;
 
         /// <summary>
         /// Gets or sets the timeout value in milliseconds.

@@ -9,6 +9,7 @@ namespace ChargerControlApp.DataAccess.Motor.Services
     public class SingleMotorService : IDisposable, ISingleMotorService
     {
         public MotorInfo MotorInfo { get; set; } = new MotorInfo();
+        private MotorInfo _motorInfoBuffer { get; set; } = new MotorInfo();
 
         public byte SlaveAddress { get; set; } = 1;
 
@@ -79,19 +80,20 @@ namespace ChargerControlApp.DataAccess.Motor.Services
                     {
                         FunctionCode = 0x03,
                         StartAddress = 194,
-                        DataNumber = 24
-                    }
-                },
-                new MotorFrame()
-                {
-                    Id = 0, Name = "Read Jog Setting",
-                    DataFrame = new ModbusRTUFrame()
-                    {
-                        FunctionCode = 0x03,
-                        StartAddress = 34848,
-                        DataNumber = 4
+                        DataNumber = 24,
+                        FinalCommand = true
                     }
                 }
+                //new MotorFrame() // 暫時不讀
+                //{
+                //    Id = 0, Name = "Read Jog Setting",
+                //    DataFrame = new ModbusRTUFrame()
+                //    {
+                //        FunctionCode = 0x03,
+                //        StartAddress = 34848,
+                //        DataNumber = 4
+                //    }
+                //}
             };
 
         public async Task<bool> ExecuteRouteProcessOnce()
@@ -110,48 +112,53 @@ namespace ChargerControlApp.DataAccess.Motor.Services
                         {
                             if (_routeIndex == 0)
                             {
-                                MotorInfo.IO_Input_High.Data = data.Data[0];
-                                MotorInfo.IO_Input_Low.Data = data.Data[1];
-                                MotorInfo.IO_Output_High.Data = data.Data[2];
-                                MotorInfo.IO_Output_Low.Data = data.Data[3];
+                                _motorInfoBuffer.IO_Input_High.Data = data.Data[0];
+                                _motorInfoBuffer.IO_Input_Low.Data = data.Data[1];
+                                _motorInfoBuffer.IO_Output_High.Data = data.Data[2];
+                                _motorInfoBuffer.IO_Output_Low.Data = data.Data[3];
 
-                                MotorInfo.ErrorCode = (data.Data[4] << 16) | data.Data[5];
+                                _motorInfoBuffer.ErrorCode = (data.Data[4] << 16) | data.Data[5];
                             }
                             else if (_routeIndex == 1)
                             {
-                                MotorInfo.Pos_Target = CombineInt32(data.Data[0], data.Data[1]);
-                                MotorInfo.Pos_Command = CombineInt32(data.Data[2], data.Data[3]);
-                                MotorInfo.Pos_Actual = CombineInt32(data.Data[4], data.Data[5]);
-                                MotorInfo.Vel_Target = CombineInt32(data.Data[6], data.Data[7]);
-                                MotorInfo.Vel_Command = CombineInt32(data.Data[8], data.Data[9]);
-                                MotorInfo.Vel_Actual = CombineInt32(data.Data[10], data.Data[11]);
-                                MotorInfo.ErrorComm = (data.Data[12] << 16) | data.Data[13];
+                                _motorInfoBuffer.Pos_Target = CombineInt32(data.Data[0], data.Data[1]);
+                                _motorInfoBuffer.Pos_Command = CombineInt32(data.Data[2], data.Data[3]);
+                                _motorInfoBuffer.Pos_Actual = CombineInt32(data.Data[4], data.Data[5]);
+                                _motorInfoBuffer.Vel_Target = CombineInt32(data.Data[6], data.Data[7]);
+                                _motorInfoBuffer.Vel_Command = CombineInt32(data.Data[8], data.Data[9]);
+                                _motorInfoBuffer.Vel_Actual = CombineInt32(data.Data[10], data.Data[11]);
+                                _motorInfoBuffer.ErrorComm = (data.Data[12] << 16) | data.Data[13];
 
                             }
                             else if (_routeIndex == 2)
                             {
-                                MotorInfo.OpData_IdSelect = (data.Data[0] << 16) | data.Data[1];
-                                MotorInfo.OpData_IdOp = (data.Data[2] << 16) | data.Data[3];
-                                MotorInfo.OpData_Pos_Command = CombineInt32(data.Data[4], data.Data[5]);
-                                MotorInfo.OpData_VelR_Command = CombineInt32(data.Data[6], data.Data[7]);
-                                MotorInfo.OpData_Vel_Command = CombineInt32(data.Data[8], data.Data[9]);
-                                MotorInfo.OpData_Pos_Actual = CombineInt32(data.Data[10], data.Data[11]);
-                                MotorInfo.OpData_VelR_Actual = CombineInt32(data.Data[12], data.Data[13]);
-                                MotorInfo.OpData_Vel_Actual = CombineInt32(data.Data[14], data.Data[15]);
-                                MotorInfo.OpData_Trq_Monitor = Convert.ToDouble(CombineInt32(data.Data[20], data.Data[21])) / 10.0;
-                                MotorInfo.OpData_Load_Monitor = Convert.ToDouble(CombineInt32(data.Data[22], data.Data[23])) / 10.0;
+                                _motorInfoBuffer.OpData_IdSelect = (data.Data[0] << 16) | data.Data[1];
+                                _motorInfoBuffer.OpData_IdOp = (data.Data[2] << 16) | data.Data[3];
+                                _motorInfoBuffer.OpData_Pos_Command = CombineInt32(data.Data[4], data.Data[5]);
+                                _motorInfoBuffer.OpData_VelR_Command = CombineInt32(data.Data[6], data.Data[7]);
+                                _motorInfoBuffer.OpData_Vel_Command = CombineInt32(data.Data[8], data.Data[9]);
+                                _motorInfoBuffer.OpData_Pos_Actual = CombineInt32(data.Data[10], data.Data[11]);
+                                _motorInfoBuffer.OpData_VelR_Actual = CombineInt32(data.Data[12], data.Data[13]);
+                                _motorInfoBuffer.OpData_Vel_Actual = CombineInt32(data.Data[14], data.Data[15]);
+                                _motorInfoBuffer.OpData_Trq_Monitor = Convert.ToDouble(CombineInt32(data.Data[20], data.Data[21])) / 10.0;
+                                _motorInfoBuffer.OpData_Load_Monitor = Convert.ToDouble(CombineInt32(data.Data[22], data.Data[23])) / 10.0;
                             }
                             else if (_routeIndex == 3)
-                            { 
-                                int _mode_ori = (data.Data[0] << 16) | data.Data[1];
+                            {
+                                // 原本讀取JOG模式，但目前不使用此功能，先註解掉
+                                //int _mode_ori = (data.Data[0] << 16) | data.Data[1];
 
-                                int _mode = 2;
+                                //int _mode = 2;
 
-                                if (_mode_ori == 48) _mode = 0;
-                                else if (_mode_ori == 50) _mode = 1;
+                                //if (_mode_ori == 48) _mode = 0;
+                                //else if (_mode_ori == 50) _mode = 1;
 
-                                MotorInfo.JogMode = _mode;
+                                //_motorInfoBuffer.JogMode = _mode;
                             }
+
+                            // 如果是最後一筆資料讀取，則進行資料轉移
+                            if (data.FinalCommand)
+                                MotorInfo.CopyBaseInfo(_motorInfoBuffer);
                         }
                     }
                 }
@@ -233,12 +240,37 @@ namespace ChargerControlApp.DataAccess.Motor.Services
             }
             return result;
         }
+        public bool LoadExPersistence()
+        {
+            bool result = false;
+            if (_persistence != null)
+            {
+                if (_persistence.IsFileExExist)
+                {
+                    var opDataEx = _persistence.LoadEx();
+                    if (opDataEx.Length > 0)
+                    {
+                        Array.Copy(opDataEx, MotorInfo.OpDataExArray, opDataEx.Length);
+                        result = true;
+                    }
+                }
+            }
+            return result;
+        }
 
         public void SavePersistence()
         {
             if (_persistence != null)
             {
                 _persistence.Save(MotorInfo.OpDataArray);
+            }
+        }
+
+        public void SaveExPersistence()
+        {
+            if (_persistence != null)
+            {
+                _persistence.SaveEx(MotorInfo.OpDataExArray);
             }
         }
 

@@ -1016,7 +1016,8 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 result = false;
                                 errorFrame.AxisId = posFrame.AxisId;
                                 errorFrame.ErrorCode = 92;
-                                errorFrame.ErrorMessage = $"MoveToPositionAsync failed: AxisId={posFrame.AxisId}, PosDataNo={posFrame.PosDataNo}, Message={_hardwareManager.Robot.ErrorMessage}";
+                                //errorFrame.ErrorMessage = $"MoveToPositionAsync failed: AxisId={posFrame.AxisId}, PosDataNo={posFrame.PosDataNo}, Message={_hardwareManager.Robot.ErrorMessage}";
+                                errorFrame.ErrorMessage = $"MoveToPositionAsync failed: {ConvertMovedAxisAndPosition(posFrame.AxisId, posFrame.PosDataNo)}, Message={_hardwareManager.Robot.ErrorMessage}";
                                 _logger.LogError(errorFrame.ErrorMessage);
                                 LastError = errorFrame.Clone();
                                 break;
@@ -1115,7 +1116,8 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 result = false;
                                 errorFrame.AxisId = posFrame.AxisId;
                                 errorFrame.ErrorCode = 92;
-                                errorFrame.ErrorMessage = $"MoveToPositionAsync failed: AxisId={posFrame.AxisId}, PosDataNo={posFrame.PosDataNo}, Message={_hardwareManager.Robot.ErrorMessage}";
+                                //errorFrame.ErrorMessage = $"MoveToPositionAsync failed: AxisId={posFrame.AxisId}, PosDataNo={posFrame.PosDataNo}, Message={_hardwareManager.Robot.ErrorMessage}";
+                                errorFrame.ErrorMessage = $"MoveToPositionAsync failed: {ConvertMovedAxisAndPosition(posFrame.AxisId, posFrame.PosDataNo)}, Message={_hardwareManager.Robot.ErrorMessage}";
                                 _logger.LogError(errorFrame.ErrorMessage);
                                 LastError = errorFrame.Clone();
                                 break;
@@ -1485,7 +1487,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 break;
                         }
 
-                        await Task.Delay(100);
+                        await Task.Delay(10);
                     }
                     while (MainProcedureCase >= 0);
                 }
@@ -1613,6 +1615,27 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                     _hardwareManager.SlotServices.TransitionTo(i, SlotState.Initialization);
                 }
             }
+        }
+
+        #endregion
+
+        #region Command Function
+
+        public string ConvertMovedAxisAndPosition(int axis, int position)
+        {
+            string result = "";
+
+            switch (axis)
+            {
+                case 0: result = "旋轉軸"; break;
+                case 1: result = "Y軸"; break;
+                case 2: result = "Z軸"; break;
+                default: result = $"未知軸-{axis}"; break;
+            }
+
+            result += $"移動到位置{position}";
+
+            return result;
         }
 
         #endregion

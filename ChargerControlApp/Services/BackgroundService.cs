@@ -31,7 +31,7 @@ namespace ChargerControlApp.Services
         //private readonly IServiceProvider _serviceProvider;
         private readonly ChargingStationStateMachine _chargingStationStateMachine;
         private readonly RobotService _robotService;
-        private readonly ChargersReader _chargersController;
+        private readonly ChargersReader_test _chargersController;
 
         //public CanBusPollingService(NPB1700Controller npbController, ILogger<CanBusPollingService> logger)
         //{
@@ -46,7 +46,7 @@ namespace ChargerControlApp.Services
             _chargingStationStateMachine = serviceProvider.GetService<ChargingStationStateMachine>();
             //_npbController = serviceProvider.GetService<NPB1700Controller>();
             _robotService = serviceProvider.GetService<RobotService>();
-            _chargersController = serviceProvider.GetService<ChargersReader>();
+            _chargersController = serviceProvider.GetService<ChargersReader_test>();
         }
         //public CanBusPollingService(HardwareManager hardwareManager, ILogger<CanBusPollingService> logger)
         //{

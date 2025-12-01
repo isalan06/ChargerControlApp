@@ -54,6 +54,7 @@ namespace ChargerControlApp.DataAccess.Motor.Models
         public int CurrentDataNo { get; set; } = 0;
 
         public MotorOpDataDto[] OpDataArray { get; set; } = new MotorOpDataDto[20];
+        public MotorOpDataDto[] OpDataExArray { get; set; } = new MotorOpDataDto[48];
 
         #endregion
 
@@ -62,8 +63,6 @@ namespace ChargerControlApp.DataAccess.Motor.Models
         public int JogMode { get; set; } = 2;  // 0: Low Ppeed; 1; High Speed; 2: Pitch
 
         #endregion
-
-
 
         #region structure
 
@@ -431,6 +430,11 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 return unchecked((int)combined);
             }
 
+            /// <summary>
+            /// 從 ushort 陣列設定屬性值，陣列長度必須為 6，依序為 OpType 高低位、Position 高低位、Velocity 高低位
+            /// </summary>
+            /// <param name="setValue"></param>
+            /// <exception cref="ArgumentException"></exception>
             public void FromUShortArray(ushort[] setValue)
             {
                 if (setValue == null || setValue.Length != 6)
@@ -441,6 +445,11 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 Velocity = CombineUShortToInt(setValue[4], setValue[5]);
             }
 
+            /// <summary>
+            /// 從 int 陣列設定屬性值，陣列長度必須為 3，依序為 OpType、Position、Velocity
+            /// </summary>
+            /// <param name="values"></param>
+            /// <exception cref="ArgumentException"></exception>
             public void FromIntArray(int[] values)
             {
                 if (values == null || values.Length != 3)
@@ -450,6 +459,10 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 Velocity = values[2];
             }
 
+            /// <summary>
+            /// 將屬性值轉換為 ushort 陣列，陣列長度為 6，依序為 OpType 高低位、Position 高低位、Velocity 高低位
+            /// </summary>
+            /// <returns></returns>
             public ushort[] ToUShortArray()
             {
                 ushort[] result = new ushort[6];
@@ -463,6 +476,10 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 return result;
             }
 
+            /// <summary>
+            /// 將 Position 屬性轉換為 ushort 陣列，陣列長度為 2，依序為 Position 高低位
+            /// </summary>
+            /// <returns></returns>
             public ushort[] ToPositionUShortArray()
             {
                 ushort[] result = new ushort[2];
@@ -472,6 +489,10 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 return result;
             }
 
+            /// <summary>
+            /// 將屬性值轉換為 int 陣列，陣列長度為 3，依序為 OpType、Position、Velocity
+            /// </summary>
+            /// <returns></returns>
             public int[] ToIntArray()
             {
                 return new int[]
@@ -488,5 +509,43 @@ namespace ChargerControlApp.DataAccess.Motor.Models
 
 
         #endregion
+
+        /// <summary>
+        /// 複製來源 MotorInfo 的基礎資訊到目前物件
+        /// </summary>
+        /// <param name="source"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public void CopyBaseInfo(MotorInfo source)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            Id = source.Id;
+            IO_Input_High = source.IO_Input_High;
+            IO_Input_Low = source.IO_Input_Low;
+            IO_Output_High = source.IO_Output_High;
+            IO_Output_Low = source.IO_Output_Low;
+            Jog_Home_Setting = source.Jog_Home_Setting;
+            ErrorCode = source.ErrorCode;
+            Pos_Target = source.Pos_Target;
+            Pos_Command = source.Pos_Command;
+            Pos_Actual = source.Pos_Actual;
+            Vel_Target = source.Vel_Target;
+            Vel_Command = source.Vel_Command;
+            Vel_Actual = source.Vel_Actual;
+            ErrorComm = source.ErrorComm;
+            OpData_IdSelect = source.OpData_IdSelect;
+            OpData_IdOp = source.OpData_IdOp;
+            OpData_Pos_Command = source.OpData_Pos_Command;
+            OpData_VelR_Command = source.OpData_VelR_Command;
+            OpData_Vel_Command = source.OpData_Vel_Command;
+            OpData_Pos_Actual = source.OpData_Pos_Actual;
+            OpData_VelR_Actual = source.OpData_VelR_Actual;
+            OpData_Vel_Actual = source.OpData_Vel_Actual;
+            OpData_Trq_Monitor = source.OpData_Trq_Monitor;
+            OpData_Load_Monitor = source.OpData_Load_Monitor;
+            CurrentDataNo = source.CurrentDataNo;
+            OpDataArray = source.OpDataArray;
+            JogMode = source.JogMode;
+        }
     }
 }

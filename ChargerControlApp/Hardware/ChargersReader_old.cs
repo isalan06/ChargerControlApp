@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace ChargerControlApp.Hardware
 {
-    public class ChargersReader : IDisposable
+    public class ChargersReader_old : IDisposable
     {
         private readonly ICANBusService _canBusService;
         public bool IsRunning { get; internal set; } = false;
@@ -21,10 +21,10 @@ namespace ChargerControlApp.Hardware
 
         #region costructor
 
-        private ChargersReader()
+        private ChargersReader_old()
         { }
 
-        public ChargersReader(ICANBusService canBusService) : this()
+        public ChargersReader_old(ICANBusService canBusService) : this()
         {
             _canBusService = canBusService;
             Open();
@@ -54,7 +54,7 @@ namespace ChargerControlApp.Hardware
         }
 
         // // TODO: 僅有當 'Dispose(bool disposing)' 具有會釋出非受控資源的程式碼時，才覆寫完成項
-        ~ChargersReader()
+        ~ChargersReader_old()
         {
             // 請勿變更此程式碼。請將清除程式碼放入 'Dispose(bool disposing)' 方法
             Dispose(disposing: false);

@@ -140,27 +140,51 @@ namespace ChargerControlApp.Hardware
                                     if (readResult != null)
                                     {
                                         Motors[command.Id].MotorInfo.OpDataArray[i].FromUShortArray(readResult);
-                                        this.SaveParameter(command.Id);
                                     }
                                 }
+                                this.SaveParameter(command.Id);
+
+
                             }
                         }
-                        else if ((command.Name == "WriteOpData") || (command.Name == "WriteOpData_DefaultVelocityForJog"))
+                        else if(command.Name == "ReadOpExData")
                         {
                             if (command.SubFrames != null)
                             {
                                 for (int i = 0; i < command.SubFrames.Count; i++)
                                 {
-                                    if(command.Name == "WriteOpData")
+                                    var readResult = await Motors[command.Id].ReadFrame(command.SubFrames[i]);
+                                    if (readResult != null)
                                     {
-                                        this.SaveParameter(command.Id);
+                                        Motors[command.Id].MotorInfo.OpDataExArray[i].FromUShortArray(readResult);
                                     }
+                                }
+                                this.SaveExParameter(command.Id);
+                            }
+                        }
+                        else if ((command.Name == "WriteOpData") || (command.Name == "WriteOpExData") || (command.Name == "WriteOpData_DefaultVelocityForJog"))
+                        {
+                            if (command.SubFrames != null)
+                            {
+                                for (int i = 0; i < command.SubFrames.Count; i++)
+                                {
+                                    
 
                                     var writeResult = await Motors[command.Id].WriteFrame(command.SubFrames[i]);
                                     bool write_finished = writeResult;
                                     if (write_finished)
                                     {
                                     }
+                                }
+
+                                if (command.Name == "WriteOpData")
+                                {
+                                    this.SaveParameter(command.Id);
+                                }
+
+                                if(command.Name == "WriteOpExData")
+                                {
+                                    this.SaveExParameter(command.Id);
                                 }
                             }
                         }
@@ -203,7 +227,7 @@ namespace ChargerControlApp.Hardware
         // Initialize once - set jog mode to pitch for all motors
         private void InitializeOnce()
         {
-            for(int i=0;i< MOTOR_COUNT; i++)
+            for (int i = 0; i < MOTOR_COUNT; i++)
             {
                 Task.Delay(1000).Wait(); // Wait for Modbus service to be ready
 
@@ -218,16 +242,37 @@ namespace ChargerControlApp.Hardware
                 if (this.ReadParameter(i))
                 {
                     if (running)
+                    {
                         this.WriteOpData(i);
+                    }
                 }
                 else
                 {
                     if (running)
+                    {
                         this.ReadOpData(i);
+                    }
                     else
                         this.SaveParameter(i);
                 }
-                
+
+                if (this.ReadExParameter(i))
+                {
+                    if (running)
+                    {
+                        this.WriteOpExData(i);
+                    }
+
+                }
+                else
+                { 
+                    if(running)
+                    {
+                        this.ReadOpExData(i);
+                    }
+                    else
+                        this.SaveExParameter(i);
+                }
             }
         }
 
@@ -280,6 +325,19 @@ namespace ChargerControlApp.Hardware
             return result;
         }
 
+        public bool ReadExParameter(int motorId)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                if (this.Motors[motorId].LoadExPersistence())
+                {
+                    result = true;
+                }
+            }
+            return result;
+        }
+
         public void SaveParameter(int motorId)
         {
             if (motorId >= 0 && motorId < MOTOR_COUNT)
@@ -287,6 +345,14 @@ namespace ChargerControlApp.Hardware
                 this.Motors[motorId].SavePersistence();
             }
         }   
+
+        public void SaveExParameter(int motorId)
+        {
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                this.Motors[motorId].SaveExPersistence();
+            }
+        }
 
         #endregion
 
@@ -616,6 +682,21 @@ namespace ChargerControlApp.Hardware
             return result;
         }
 
+        public bool ReadOpExData(int motorId)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                var command = MotorCommandList.CommandMap["ReadOpExData"].Clone();
+                command.Id = (byte)motorId;
+                command.DataFrame.SlaveAddress = (byte)(motorId + 1);
+                command.SetSubFramesSlaveAddress((byte)(motorId + 1));
+                _manualCommand.Enqueue(command);
+                result = true;
+            }
+            return result;
+        }
+
         public bool WriteOpData(int motorId)
         {
             bool result = false;
@@ -640,16 +721,63 @@ namespace ChargerControlApp.Hardware
             return result;
         }
 
+        public bool WriteOpExData(int motorId)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
+                var command = MotorCommandList.CommandMap["WriteOpExData"].Clone();
+                command.Id = (byte)motorId;
+                if (command.SubFrames != null)
+                {
+                    for (int i = 0; i < command.SubFrames.Count; i++)
+                    {
+                        command.SubFrames[i].DataFrame.SlaveAddress = (byte)(motorId + 1);
+                        command.SubFrames[i].DataFrame.DataNumber = 6;
+                        command.SubFrames[i].DataFrame.Data = Motors[motorId].MotorInfo.OpDataExArray[i].ToUShortArray();
+                    }
+                    _manualCommand.Enqueue(command);
+                    result = true;
+                }
+            }
+            return result;
+        }
+
         public bool WriteOpData_Position(int motorId, int posIndex, int position) 
         {
             bool result = false;
 
             if (motorId >= 0 && motorId < MOTOR_COUNT)
             {
+                if (posIndex >= 0 && posIndex < Motors[motorId].MotorInfo.OpDataExArray.Length)
+                {
+                    Motors[motorId].MotorInfo.OpDataExArray[posIndex].Position = Motors[motorId].MotorInfo.Pos_Actual;//position;
+                    var command = MotorCommandList.CommandMap["WriteOpData_Position"].Clone();
+                    command.Id = (byte)motorId;
+                    if (command.SubFrames != null)
+                    {
+                        command.DataFrame = command.SubFrames[posIndex].DataFrame.Clone();
+                        command.DataFrame.SlaveAddress = (byte)(motorId + 1);
+                        command.DataFrame.DataNumber = 2;
+                        command.DataFrame.Data = Motors[motorId].MotorInfo.OpDataExArray[posIndex].ToPositionUShortArray();
+                        _manualCommand.Enqueue(command);
+                        result = true;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public bool WriteOpExData_Position(int motorId, int posIndex, int position)
+        {
+            bool result = false;
+            if (motorId >= 0 && motorId < MOTOR_COUNT)
+            {
                 if (posIndex >= 0 && posIndex < Motors[motorId].MotorInfo.OpDataArray.Length)
                 {
                     Motors[motorId].MotorInfo.OpDataArray[posIndex].Position = Motors[motorId].MotorInfo.Pos_Actual;//position;
-                    var command = MotorCommandList.CommandMap["WriteOpData_Position"].Clone();
+                    var command = MotorCommandList.CommandMap["WriteOpExData_Position"].Clone();
                     command.Id = (byte)motorId;
                     if (command.SubFrames != null)
                     {
@@ -662,7 +790,6 @@ namespace ChargerControlApp.Hardware
                     }
                 }
             }
-
             return result;
         }
 
@@ -845,7 +972,7 @@ namespace ChargerControlApp.Hardware
             while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await Task.Delay(100, cancellationToken);
+                await Task.Delay(20, cancellationToken);
             }
 
             //while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.IN_POS)
@@ -854,10 +981,10 @@ namespace ChargerControlApp.Hardware
             //    await Task.Delay(100, cancellationToken);
             //}
 
-            await Task.Delay(200, cancellationToken); // 等待一段時間讓馬達穩定
+            await Task.Delay(20, cancellationToken); // 等待一段時間讓馬達穩定
 
             return_value = InPosition(axisId, posDataNo);
-            ErrorMessage = $"Check PosNo [{posDataNo}] value = {Motors[axisId].MotorInfo.OpDataArray[posDataNo].Position} ; Real value={Motors[axisId].MotorInfo.Pos_Actual}";
+            ErrorMessage = $"定位位置偏差過大 位置[{posDataNo}]的數據 = {Motors[axisId].MotorInfo.OpDataArray[posDataNo].Position} ; 目前馬達位置數據={Motors[axisId].MotorInfo.Pos_Actual}";
 
             return return_value;
         }
