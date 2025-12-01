@@ -275,7 +275,7 @@ namespace ChargerControlApp.Hardware
         //    //_canBusService = canBusService; //TODO: 要改DI
         //    
         //}
-        public NPB450Controller(ChargingStationStateMachine stateMachine, ICANBusService canBusService, int id, ILogger<NPB450Controller> logger)
+        public NPB450Controller_old(ChargingStationStateMachine stateMachine, ICANBusService canBusService, int id, ILogger<NPB450Controller> logger)
         {
             _chargingStationStateMachine = stateMachine;
             _canBusService = canBusService;
