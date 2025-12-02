@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ChargerControlApp.DataAccess.CANBus.Mocks
 {
-    public class MockCANBusService : ICANBusService
+    public class MockCANBusService// : ICANBusService
     {
         private readonly ConcurrentQueue<CanMessage> _incomingMessages = new();
         private readonly List<CanMessage> _sentMessages = new();

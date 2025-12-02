@@ -59,7 +59,7 @@ public class Program
         });
 
         // 註冊 CANBUS 服務
-        builder.Services.AddSingleton<ICANBusService, SocketCANBusService_test>();
+        builder.Services.AddSingleton<ICANBusService, SocketCANBusService>();
         //builder.Services.AddSingleton<SocketCANBusService>(sp =>
         //{
         //    return new SocketCANBusService();
@@ -127,10 +127,11 @@ public class Program
 
         
         // 註冊 ChargersController
-        builder.Services.AddSingleton<ChargersReader_test>(sp => 
+        builder.Services.AddSingleton<ChargersReader>(sp => 
         {
             var canBusService = sp.GetRequiredService<ICANBusService>();
-            return new ChargersReader_test(canBusService);
+            var hardwareManager = sp.GetRequiredService<HardwareManager>();
+            return new ChargersReader(canBusService, hardwareManager);
         });
 
         // 註冊其他服務

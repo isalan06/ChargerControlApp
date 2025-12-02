@@ -14,6 +14,8 @@ namespace ChargerControlApp.DataAccess.CANBus.Interfaces
         //Task SendAsync(CanMessage message);
         public void SendCommand(byte[] data, uint canid);
         public byte[] ReceiveMessage();
+
+        public byte[] ReceiveMessageWithID(ref uint canid, ref ushort commandCode);
         public void ClearCANBuffer();
     }
 }

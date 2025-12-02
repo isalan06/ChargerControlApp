@@ -31,7 +31,7 @@ namespace ChargerControlApp.Services
         //private readonly IServiceProvider _serviceProvider;
         private readonly ChargingStationStateMachine _chargingStationStateMachine;
         private readonly RobotService _robotService;
-        private readonly ChargersReader_test _chargersController;
+        private readonly ChargersReader _chargersController;
 
         //public CanBusPollingService(NPB1700Controller npbController, ILogger<CanBusPollingService> logger)
         //{
@@ -46,7 +46,7 @@ namespace ChargerControlApp.Services
             _chargingStationStateMachine = serviceProvider.GetService<ChargingStationStateMachine>();
             //_npbController = serviceProvider.GetService<NPB1700Controller>();
             _robotService = serviceProvider.GetService<RobotService>();
-            _chargersController = serviceProvider.GetService<ChargersReader_test>();
+            _chargersController = serviceProvider.GetService<ChargersReader>();
         }
         //public CanBusPollingService(HardwareManager hardwareManager, ILogger<CanBusPollingService> logger)
         //{
@@ -104,11 +104,8 @@ namespace ChargerControlApp.Services
                         
                         try
                         {
-                            if (NPB450Controller.ChargerUseAsync)
-                                await _hardwareManager.Charger[i].PollingOnceAsync(); // 使用非同步版本
-                            else
-                                //await Task.Run(() => _hardwareManager.Charger[i].PollingOnce()); // 使用同步版本
-                                await Task.Run(() => _hardwareManager.Charger[i].PollingOnceSync()); // 使用同步版本-改用 PollingOnceSync
+                            await Task.Run(() => _hardwareManager.Charger[i].PollingOnce()); // 使用同步版本
+                            //await Task.Run(() => _hardwareManager.Charger[i].PollingOnceSync()); // 使用同步版本-改用 PollingOnceSync
                         }
                         catch (Exception ex)
                         {
@@ -176,6 +173,9 @@ namespace ChargerControlApp.Services
                 // 依 Charger 錯誤訊息決定 Slot 狀態
                 /*if ((charger.FAULT_STATUS.Data != 0) && (slotState.State.CurrentState.CurrentState != SlotState.SupplyError))
                     slotService.TransitionTo(index, SlotState.SupplyError);*/
+                // 若無法讀取資料，視為設備斷線，則轉為錯誤狀態
+                if (charger.IsReadTimeout && (slotState.State.CurrentState.CurrentState != SlotState.SupplyError))
+                    slotService.TransitionTo(index, SlotState.SupplyError);
 
                 // 從Slot狀態錯誤決定 Slot 狀態
                 //if (slotState.StateError && (charger.FAULT_STATUS.Data == 0) && (slotState.State.CurrentState.CurrentState != SlotState.StateError))

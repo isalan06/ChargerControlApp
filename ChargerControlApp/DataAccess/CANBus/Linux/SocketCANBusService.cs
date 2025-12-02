@@ -187,6 +187,30 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
             }
 
         }
+
+        public byte[] ReceiveMessageWithID(ref uint canid, ref ushort commandCode)
+        {
+            try
+            {
+                Console.WriteLine("等待接收 CAN 消息...");
+                var frame = _socket.Read(out CanFrame canFrame);
+                canid = canFrame.CanId & 0xFFu;
+                if (canFrame.Length >= 2)
+                {
+                    commandCode = (ushort)(canFrame.Data[1] << 8 | canFrame.Data[0]);
+                }
+                //Console.WriteLine($"接收到 CAN 消息: ID=0x{canFrame.CanId:X}, Data={BitConverter.ToString(canFrame.Data, 0, canFrame.Length)}");
+                Console.WriteLine($"接收到 CAN 消息: ID=0x{canFrame.CanId:X} => {canid}, CommandCode=0x{commandCode:X}, Data={BitConverter.ToString(canFrame.Data, 0, canFrame.Length)}");
+                return canFrame.Data;
+            }
+            catch(Exception ex)
+            {
+                //_logger.LogError("CANbus ReceiveMessageError: ", ex.Message);
+                Console.WriteLine($"Error while receiving CAN message: {ex.Message}");
+                return null; // 返回 null 或其他适当的错误值
+            }
+        }
+
         /// <summary>
         /// 清空 CAN bus 接收 buffer，避免讀到舊資料。
         /// </summary>
