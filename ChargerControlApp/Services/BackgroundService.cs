@@ -214,10 +214,12 @@ namespace ChargerControlApp.Services
     {
         private readonly IServiceProvider _mainProvider;
         private IHost? _grpcHost;
+        private readonly GrpcClientService _grpcClientService;
 
         public GrpcBackgroundService(IServiceProvider mainProvider)
         {
             _mainProvider = mainProvider;
+            _grpcClientService = _mainProvider.GetRequiredService<GrpcClientService>();
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -268,6 +270,13 @@ namespace ChargerControlApp.Services
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
+            Console.WriteLine("結束gRPC相關功能及釋放資源");
+
+            if (GrpcClientService.IsOnline)
+            {
+                await _grpcClientService.DeleteRegisterAsync();
+            }
+
             if (_grpcHost != null)
             {
                 await _grpcHost.StopAsync(cancellationToken);

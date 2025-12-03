@@ -416,19 +416,19 @@ namespace ChargerControlApp.DataAccess.Robot.Services
         /// <summary>
         /// Start Place Slot Battery Procedure
         /// </summary>
-        /// <param name="slotNo"></param>
-        public void StartTakeSlotBatteryProcedure(int slotNo)
+        /// <param name="posNo"></param>
+        public void StartTakeSlotBatteryProcedure(int posNo)
         {
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             if (IsProcedureRunning) return;
             checkSensorPoint = false;
-            DefaultTakeSlotBatteryProcedure.Z_Input = slotNo;
+            DefaultTakeSlotBatteryProcedure.Z_Input = posNo;
             DefaultTakeSlotBatteryProcedure.Refresh();
             _procedureFrames = DefaultTakeSlotBatteryProcedure.ProcedureFrames;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
-            _logger.LogInformation($"Start to execute procedure of taking battery from slot #{slotNo}");
+            _logger.LogInformation($"Start to execute procedure of taking battery from pos #{posNo}");
             Task.Run(async () =>
             {
                 await ExecutePosAct();
@@ -438,19 +438,19 @@ namespace ChargerControlApp.DataAccess.Robot.Services
         /// <summary>
         /// Start Place Slot Battery Procedure
         /// </summary>
-        /// <param name="slotNo"></param>
-        public void StartPlaceSlotBatteryProcedure(int slotNo)
+        /// <param name="posNo"></param>
+        public void StartPlaceSlotBatteryProcedure(int posNo)
         {
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             if (IsProcedureRunning) return;
             checkSensorPoint = false;
-            DefaultPlaceSlotBatteryProcedure.Z_Input = slotNo;
+            DefaultPlaceSlotBatteryProcedure.Z_Input = posNo;
             DefaultPlaceSlotBatteryProcedure.Refresh();
             _procedureFrames = DefaultPlaceSlotBatteryProcedure.ProcedureFrames;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
-            _logger.LogInformation($"Start to execute procedure of placing battery to slot #{slotNo}");
+            _logger.LogInformation($"Start to execute procedure of placing battery to pos #{posNo}");
             Task.Run(async () =>
             {
                 await ExecutePosAct();
