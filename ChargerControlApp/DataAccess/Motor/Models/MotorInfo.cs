@@ -38,9 +38,9 @@ namespace ChargerControlApp.DataAccess.Motor.Models
 
         #region Read Operation Data
 
-        public int OpData_IdSelect { get;  set; } = 0;
-        public int OpData_IdOp { get;  set; } = 0;
-        public int OpData_Pos_Command { get;  set; } = 0; // unit: step
+        public int OpData_IdSelect { get; set; } = 0;
+        public int OpData_IdOp { get; set; } = 0;
+        public int OpData_Pos_Command { get; set; } = 0; // unit: step
         public int OpData_VelR_Command { get; set; } = 0;  // unit: r/min
         public int OpData_Vel_Command { get; set; } = 0;  // unit: step/sec
         public int OpData_Pos_Actual { get; set; } = 0;  // unit: step
@@ -215,27 +215,27 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 public bool USR_OUT1 => (Value & (1 << 15)) != 0;
             }
         }
-        
-        
-         /// <summary> 
-         /// Sturcture of Motor IO Output Low 127 (7Fh)
-         /// bit 0: R-OUT0 [SON-MON]
-         /// bit 1: R-OUT1 [PLOOP-MON]
-         /// bit 2: R-OUT2 [TRQ-LMTD]
-         /// bit 3: R-OUT3 [RDY-DD-OPE]
-         /// bit 4: R-OUT4 [ABSPEN]
-         /// bit 5: R-OUT5 [STOP_R]
-         /// bit 6: R-OUT6 [FREE_R]
-         /// bit 7: R-OUT7 [ALM-A]
-         /// bit 8: R-OUT8 [SYS-BSY]
-         /// bit 9: R-OUT9 [IN-POS]
-         /// bit 10: R-OUT10 [RDY-HOME-OPE]
-         /// bit 11: R-OUT11 [RDY-FWRV-OPE]
-         /// bit 12: R-OUT12 [RDY-SD-OPE]
-         /// bit 13: R-OUT13 [MOVE]
-         /// bit 14: R-OUT14 [VA]
-         /// bit 15: R-OUT15 [TLC]
-         /// </summary>
+
+
+        /// <summary> 
+        /// Sturcture of Motor IO Output Low 127 (7Fh)
+        /// bit 0: R-OUT0 [SON-MON]
+        /// bit 1: R-OUT1 [PLOOP-MON]
+        /// bit 2: R-OUT2 [TRQ-LMTD]
+        /// bit 3: R-OUT3 [RDY-DD-OPE]
+        /// bit 4: R-OUT4 [ABSPEN]
+        /// bit 5: R-OUT5 [STOP_R]
+        /// bit 6: R-OUT6 [FREE_R]
+        /// bit 7: R-OUT7 [ALM-A]
+        /// bit 8: R-OUT8 [SYS-BSY]
+        /// bit 9: R-OUT9 [IN-POS]
+        /// bit 10: R-OUT10 [RDY-HOME-OPE]
+        /// bit 11: R-OUT11 [RDY-FWRV-OPE]
+        /// bit 12: R-OUT12 [RDY-SD-OPE]
+        /// bit 13: R-OUT13 [MOVE]
+        /// bit 14: R-OUT14 [VA]
+        /// bit 15: R-OUT15 [TLC]
+        /// </summary>
         [StructLayout(LayoutKind.Explicit)]
         public struct Motor_IO_Output_Low
         {
@@ -328,16 +328,16 @@ namespace ChargerControlApp.DataAccess.Motor.Models
                 ushort[] result = new ushort[32];
 
                 // 依序拆解每個 int 屬性為高低兩個 ushort
-                result[0]  = (ushort)((JogDistance >> 16) & 0xFFFF); // 高位
-                result[1]  = (ushort)(JogDistance & 0xFFFF);         // 低位
-                result[2]  = (ushort)((JogSpeed >> 16) & 0xFFFF);
-                result[3]  = (ushort)(JogSpeed & 0xFFFF);
-                result[4]  = (ushort)((JogAccDec >> 16) & 0xFFFF);
-                result[5]  = (ushort)(JogAccDec & 0xFFFF);
-                result[6]  = (ushort)((JogStartVel >> 16) & 0xFFFF);
-                result[7]  = (ushort)(JogStartVel & 0xFFFF);
-                result[8]  = (ushort)((JogHighSpeed >> 16) & 0xFFFF);
-                result[9]  = (ushort)(JogHighSpeed & 0xFFFF);
+                result[0] = (ushort)((JogDistance >> 16) & 0xFFFF); // 高位
+                result[1] = (ushort)(JogDistance & 0xFFFF);         // 低位
+                result[2] = (ushort)((JogSpeed >> 16) & 0xFFFF);
+                result[3] = (ushort)(JogSpeed & 0xFFFF);
+                result[4] = (ushort)((JogAccDec >> 16) & 0xFFFF);
+                result[5] = (ushort)(JogAccDec & 0xFFFF);
+                result[6] = (ushort)((JogStartVel >> 16) & 0xFFFF);
+                result[7] = (ushort)(JogStartVel & 0xFFFF);
+                result[8] = (ushort)((JogHighSpeed >> 16) & 0xFFFF);
+                result[9] = (ushort)(JogHighSpeed & 0xFFFF);
                 result[10] = (ushort)((JogHomeOpCommandSTimeConst >> 16) & 0xFFFF);
                 result[11] = (ushort)(JogHomeOpCommandSTimeConst & 0xFFFF);
                 result[12] = (ushort)((JogHomeOpTorqueLmt >> 16) & 0xFFFF);
@@ -365,7 +365,7 @@ namespace ChargerControlApp.DataAccess.Motor.Models
             }
 
             public int[] ToArray()
-                            {
+            {
                 return new int[]
                 {
                     JogDistance,
@@ -416,8 +416,8 @@ namespace ChargerControlApp.DataAccess.Motor.Models
         #region Motor Data Info
 
         public struct MotorOpDataDto
-        { 
-            public int OpType { get; set; } = 1; 
+        {
+            public int OpType { get; set; } = 1;
             public int Position { get; set; } = 0; // unit: step
             public int Velocity { get; set; } = 0; // unit: r/min
 
@@ -544,8 +544,26 @@ namespace ChargerControlApp.DataAccess.Motor.Models
             OpData_Trq_Monitor = source.OpData_Trq_Monitor;
             OpData_Load_Monitor = source.OpData_Load_Monitor;
             CurrentDataNo = source.CurrentDataNo;
-            OpDataArray = source.OpDataArray;
+
             JogMode = source.JogMode;
+        }
+
+        public void CopyOpDataArray(MotorOpDataDto[] sourceArray, bool isExArray)
+        {
+            if (sourceArray == null)
+                throw new ArgumentNullException(nameof(sourceArray));
+            if (isExArray)
+            {
+                if (OpDataExArray == null || OpDataExArray.Length != sourceArray.Length)
+                    OpDataExArray = new MotorOpDataDto[sourceArray.Length];
+                Array.Copy(sourceArray, OpDataExArray, sourceArray.Length);
+            }
+            else
+            {
+                if (OpDataArray == null || OpDataArray.Length != sourceArray.Length)
+                    OpDataArray = new MotorOpDataDto[sourceArray.Length];
+                Array.Copy(sourceArray, OpDataArray, sourceArray.Length);
+            }
         }
     }
 }

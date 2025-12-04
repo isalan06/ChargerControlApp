@@ -242,6 +242,7 @@
                         <label><input type="radio" name="posVelMotorRadio" value="2">馬達3-Z軸</label>
                     </div>
                     <button id="posVelRefreshBtn" type="button">Refresh</button>
+                    <button id="posVelLoadBtn" type="button">Load</button>
                     <button id="posVelSaveBtn" type="button">Save</button>
                 </div>
                 <table id="posVelTable" class="table table-bordered" style="width:100%;text-align:center;">
@@ -865,6 +866,11 @@
             .then(res => res.json());
     }
 
+    function fetchPosVelLoadData(motorId){
+        return fetch(`/Motor/LoadPosVelData?motorId=${motorId}`)
+            .then(res => res.json());
+    }
+
     function renderPosVelTable(data) {
         const tbody = document.querySelector('#posVelTable tbody');
         tbody.innerHTML = '';
@@ -934,6 +940,11 @@
     // Refresh 按鈕事件
     document.getElementById('posVelRefreshBtn').onclick = function() {
         fetchPosVelData(posVelCurrentMotorId).then(data => renderPosVelTable(data));
+    };
+
+    // Load 按鈕事件
+    document.getElementById('posVelLoadBtn').onclick = function() {
+        fetchPosVelLoadData(posVelCurrentMotorId).then(data => renderPosVelTable(data));
     };
 
 	// Save 按鈕事件（儲存所有數據的值）

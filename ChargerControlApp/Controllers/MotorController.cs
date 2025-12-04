@@ -255,6 +255,29 @@ namespace ChargerControlApp.Controllers
             if (motorId < 0 || motorId >= _robotController.Motors.Length)
                 return BadRequest();
 
+            var opDataArray = _robotController.Motors[motorId].MotorInfo.OpDataArray;
+            var result = new List<object>();
+            for (int i = 0; i < 20; i++)
+            {
+                var op = (opDataArray != null && i < opDataArray.Length)
+                    ? opDataArray[i]
+                    : new MotorInfo.MotorOpDataDto();
+                result.Add(new
+                {
+                    opType = op.OpType,
+                    position = op.Position,
+                    velocity = op.Velocity
+                });
+            }
+            return Json(result);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> LoadPosVelData(int motorId)
+        {
+            if (motorId < 0 || motorId >= _robotController.Motors.Length)
+                return BadRequest();
+
             // 先從 Modbus 讀取最新資料
             _robotController.ReadOpData(motorId);
 
