@@ -315,6 +315,7 @@ namespace ChargerControlApp.Controllers
                 }
             }
             // ©I¥s WriteOpData
+            _robotController.DoNotSaveParameter = false;
             _robotController.WriteOpData(dto.MotorId);
 
             return Json(new { success = true });

@@ -112,6 +112,7 @@ namespace ChargerControlApp.Hardware
                                             ushort Voltage = BitConverter.ToUInt16(new byte[] { VoltageBytes[2], VoltageBytes[3] }.ToArray(), 0);
                                             _hardwareManager.Charger[chargerIndex].Voltage = (double)Voltage / 100;
                                             _hardwareManager.Charger[chargerIndex].RoutueCommandFrames.CaptureResponse(cmd);
+                                            Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetVoltage_Sync()-Voltage: {_hardwareManager.Charger[chargerIndex].Voltage} V");
                                         }
                                         break;
 
@@ -127,6 +128,7 @@ namespace ChargerControlApp.Hardware
                                             ushort Current = BitConverter.ToUInt16(new byte[] { CurrentBytes[2], CurrentBytes[3] }.ToArray(), 0);
                                             _hardwareManager.Charger[chargerIndex].Current = (double)Current / 100;
                                             _hardwareManager.Charger[chargerIndex].RoutueCommandFrames.CaptureResponse(cmd);
+                                            Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetCurrent_Sync()-Current: {_hardwareManager.Charger[chargerIndex].Current} A");
                                         }
                                         break;
                                         
@@ -144,6 +146,7 @@ namespace ChargerControlApp.Hardware
                                             CHG_STATUS.Data = BitConverter.ToUInt16(new byte[] { CHG_STATUS_BYTES[2], CHG_STATUS_BYTES[3] }.ToArray(), 0);
                                             _hardwareManager.Charger[chargerIndex].CHG_STATUS = CHG_STATUS;
                                             _hardwareManager.Charger[chargerIndex].RoutueCommandFrames.CaptureResponse(cmd);
+                                            Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetCHG_STATUS_Sync()-CHG_STATUS: 0x{_hardwareManager.Charger[chargerIndex].CHG_STATUS.Data:X}");
                                         }
                                         break;
 
@@ -158,6 +161,7 @@ namespace ChargerControlApp.Hardware
                                         FAULT_STATUS.Data = BitConverter.ToUInt16(new byte[] { FAULT_STATUS_BYTES[2], FAULT_STATUS_BYTES[3] }.ToArray(), 0);
                                         _hardwareManager.Charger[chargerIndex].FAULT_STATUS = FAULT_STATUS;
                                         _hardwareManager.Charger[chargerIndex].RoutueCommandFrames.CaptureResponse(cmd);
+                                        Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetFAULT_STATUS_Sync()-FAULT_STATUS: 0x{_hardwareManager.Charger[chargerIndex].FAULT_STATUS.Data:X}");
                                         break;
 
                                     default:

@@ -44,20 +44,20 @@ namespace ChargerControlApp.Services
                 State = _robotService.GetEquipmentStatus,  //SlotServices.StationState,//StationState.Idle,
                 HighestSoc = 98
             };
-            for(int i=0;i<HardwareManager.NPB450ControllerInstnaceNumber;i++)
+            for (int i = 0; i < HardwareManager.NPB450ControllerInstnaceNumber; i++)
             {
-                var slot=_slotServices.SlotInfo[i];
+                var slot = _slotServices.SlotInfo[i];
                 var npb450 = _hardwareManager.Charger[i];
                 var slotStatus = new SlotStatus
                 {
                     Name = slot.Name,
                     Soc = (int)slot.ChargingProcessValue,
-                    Current = slot.ChargeState == SlotChargeState.Charging ? 15f : 0.12f,
-                    Voltage = slot.ChargeState != SlotChargeState.Empty ? 54.2f - (54.2f - 48.2f) * (float)(slot.ChargingProcessValue / 100.0) : 0,
+                    Current = (float)_hardwareManager.Charger[i].Current,  //slot.ChargeState == SlotChargeState.Charging ? 15f : 0.12f,
+                    Voltage = (float)_hardwareManager.Charger[i].Voltage, //slot.ChargeState != SlotChargeState.Empty ? 54.2f - (54.2f - 48.2f) * (float)(slot.ChargingProcessValue / 100.0) : 0,
                     State = slot.ChargeState
                 };
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
+                { 
                     slotStatus.Current = (float)npb450.GetCachedCurrent();
                     slotStatus.Voltage = (float)npb450.GetCachedVoltage();
                 }
@@ -115,13 +115,23 @@ namespace ChargerControlApp.Services
                     LogInformation("Swap action trigger failed.");
                 }
 
+                // To Do: 轉換狀態非Idle在return
+                while (_robotService.GetEquipmentStatus == StationState.Idle)
+                {
+                    Task.Delay(50).Wait();
+                }
+
+                return Task.FromResult(new Google.Protobuf.WellKnownTypes.Empty());
+
             }
             else if (request.Action == ActionType.Ems)
             {
                 _robotService.StopAutoProcedure();
-            }
-
                 return Task.FromResult(new Google.Protobuf.WellKnownTypes.Empty());
+            }
+            else
+                return Task.FromResult(new Google.Protobuf.WellKnownTypes.Empty());
+
         }
 
         public string GetCurrentStationState()

@@ -34,29 +34,38 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
         private DateTime dtReadTimeout = DateTime.Now; // 讀取逾時計時器
 
         public double TimeoutValue_ms { get; set; } = 60000;
-        
 
-        public List<CanRouteCommandFrame> Commands = new List<CanRouteCommandFrame>()
+
+        public CanRouteCommandFrame[] Commands = new CanRouteCommandFrame[]
         {
             new CanRouteCommandFrame()
             {
                 Index = 0,
-                Command = NPB450Controller.CanbusReadCommand.READ_VOUT
+                Command = NPB450Controller.CanbusReadCommand.READ_VOUT,
+                HasCommand = false,
+                HasResponse = false
+
             },
             new CanRouteCommandFrame()
-            { 
+            {
                 Index = 1,
-                Command = NPB450Controller.CanbusReadCommand.READ_IOUT
+                Command = NPB450Controller.CanbusReadCommand.READ_IOUT,
+                HasCommand = false,
+                HasResponse = false
             },
             new CanRouteCommandFrame()
-            { 
+            {
                 Index = 2,
-                Command = NPB450Controller.CanbusReadCommand.CHG_STATUS
+                Command = NPB450Controller.CanbusReadCommand.CHG_STATUS,
+                HasCommand = false,
+                HasResponse = false
             },
             new CanRouteCommandFrame()
-            { 
+            {
                 Index = 3,
-                Command = NPB450Controller.CanbusReadCommand.FAULT_STATUS
+                Command = NPB450Controller.CanbusReadCommand.FAULT_STATUS,
+                HasCommand = false,
+                HasResponse = false
             }
 
         };
@@ -73,6 +82,8 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
             command = null;
             isFinal = false;
 
+            //Console.WriteLine($"CanRouteCommandFrameList.Next()-CommandIndex:{CommandIndex}, HasCommand:{Commands[CommandIndex].HasCommand}, HasResponse:{Commands[CommandIndex].HasResponse}");
+
             try
             {
                 if (Commands[CommandIndex].HasCommand)
@@ -83,8 +94,11 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
 
                         Commands[CommandIndex].HasCommand = false;
                         Commands[CommandIndex].HasResponse = false;
+                        CommandIndex++;
 
-                        if (++CommandIndex > Commands.Count)
+                        //Console.WriteLine($"CanRouteCommandFrameList.Next()-Move to next CommandIndex:{CommandIndex}");
+
+                        if (CommandIndex >= Commands.Length)
                         {
                             CommandIndex = 0;
                             isFinal = true;
@@ -93,6 +107,8 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
                         else
                         { 
                             command = Commands[CommandIndex];
+                            Commands[CommandIndex].HasCommand = true;
+                            Commands[CommandIndex].HasResponse = false;
                             result = true;
                         }
                     }
@@ -113,7 +129,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
 
         public void Reset()
         {
-            for (int i = 0; i < Commands.Count; i++)
+            for (int i = 0; i < Commands.Length; i++)
             {
                 Commands[i].HasResponse = false;
                 Commands[i].HasCommand = false;
@@ -123,6 +139,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
 
         public bool CaptureResponse(NPB450Controller.CanbusReadCommand command)
         {
+            //Console.WriteLine($"CanRouteCommandFrameList.CaptureResponse()-Command:{command}");
             bool result = true;
             try
             {
@@ -130,15 +147,19 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
                 {
                     case NPB450Controller.CanbusReadCommand.READ_VOUT:
                         Commands[0].HasResponse = true;
+                        //Console.WriteLine($"CanRouteCommandFrameList.CaptureResponse()-READ_VOUT-Set HasResponse true");
                         break;
                     case NPB450Controller.CanbusReadCommand.READ_IOUT:
                         Commands[1].HasResponse = true;
+                        //Console.WriteLine($"CanRouteCommandFrameList.CaptureResponse()-READ_IOUT-Set HasResponse true");
                         break;
                     case NPB450Controller.CanbusReadCommand.CHG_STATUS:
                         Commands[2].HasResponse = true;
+                        //Console.WriteLine($"CanRouteCommandFrameList.CaptureResponse()-CHG_STATUS-Set HasResponse true");
                         break;
                     case NPB450Controller.CanbusReadCommand.FAULT_STATUS:
                         Commands[3].HasResponse = true;
+                        //Console.WriteLine($"CanRouteCommandFrameList.CaptureResponse()-FAULT_STATUS-Set HasResponse true");
                         break;
                     default:
                         result = false;

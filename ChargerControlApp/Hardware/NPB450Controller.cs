@@ -290,19 +290,21 @@ namespace ChargerControlApp.Hardware
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-Start");
+                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-Start");
                 _canBusService.ClearCANBuffer();
                 // 這裡是實際和硬體通訊的地方
                 var commandFrame = new CanRouteCommandFrame();
                 var isFinal = false;
-                if (RoutueCommandFrames.Next(out commandFrame, out isFinal))
+                bool routeResult = RoutueCommandFrames.Next(out commandFrame, out isFinal);
+                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-Next Result: {routeResult}, IsFinal: {isFinal}");
+                if (routeResult)
                 {
                     await GetStatusFromDevice_OnlySend(commandFrame.Command);
                 }
 
                 // 需要完整的輪詢週期才進行啟動/停止充電的指令
-                if (RoutueCommandFrames.IsCompletedOneTime)
-                {
+                //if (RoutueCommandFrames.IsCompletedOneTime)
+                //{
                     if (this.startChargingTrigger)
                     {
                         _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StartCharging()");
@@ -325,8 +327,8 @@ namespace ChargerControlApp.Hardware
                         send[2] = (byte)0x00;
                         _canBusService.SendCommand(send, deviceCanID);
                     }
-                }
-                _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-End");
+                //}
+                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-End");
             }
             else
             {

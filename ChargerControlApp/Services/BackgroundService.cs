@@ -111,7 +111,7 @@ namespace ChargerControlApp.Services
                         {
                             _logger.LogError(ex, $"Charger[{i}] PollingOnce 發生例外");
                         }
-                        await Task.Delay(20);
+                        await Task.Delay(200);
                     }
 
                     // Read GPIO Inputs

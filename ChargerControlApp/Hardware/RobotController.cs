@@ -34,6 +34,8 @@ namespace ChargerControlApp.Hardware
         public int HomeProcedureCase { get; internal set; } = 0;
         public string ErrorMessage { get; internal set; } = string.Empty;
 
+        public bool DoNotSaveParameter = false;
+
         #region Constructor
 
         private RobotController()
@@ -142,6 +144,7 @@ namespace ChargerControlApp.Hardware
                                         Motors[command.Id].MotorInfo.OpDataArray[i].FromUShortArray(readResult);
                                     }
                                 }
+                                Console.WriteLine($"RobotController-Manual DoWork()-Motor {command.Id} ReadOpData completed, saving parameters.");
                                 this.SaveParameter(command.Id);
 
 
@@ -174,18 +177,31 @@ namespace ChargerControlApp.Hardware
                                     bool write_finished = writeResult;
                                     if (write_finished)
                                     {
+                                        //Console.WriteLine($"############RobotController-Manual-DoWork()-Motor {command.Id} {command.Name} SubFrame {i} completed.");
+                                    }
+                                    else
+                                    { 
+                                        //Console.WriteLine($"############RobotController-Manual-DoWork()-Motor {command.Id} {command.Name} SubFrame {i} failed.");
                                     }
                                 }
 
                                 if (command.Name == "WriteOpData")
                                 {
-                                    this.SaveParameter(command.Id);
+                                    //Console.WriteLine($"%%%%%%%%%%%%%%RobotController-Manual-DoWork()-Motor {command.Id} WriteOpData completed, saving parameters.");
+                                    if (!DoNotSaveParameter)
+                                    {
+                                        Console.WriteLine($"##############RobotController-Manual-DoWork()-Motor {command.Id} WriteOpData completed, saving parameters.");
+                                        this.SaveParameter(command.Id);
+                                    }
                                 }
 
                                 if(command.Name == "WriteOpExData")
                                 {
-                                    this.SaveExParameter(command.Id);
+                                    if(!DoNotSaveParameter)
+                                        this.SaveExParameter(command.Id);
                                 }
+
+                                
                             }
                         }
                         else
@@ -227,10 +243,10 @@ namespace ChargerControlApp.Hardware
         // Initialize once - set jog mode to pitch for all motors
         private void InitializeOnce()
         {
+            Task.Delay(5000).Wait(); // Wait for Modbus service to be ready
+
             for (int i = 0; i < MOTOR_COUNT; i++)
             {
-                Task.Delay(1000).Wait(); // Wait for Modbus service to be ready
-
                 var running = _modbusService.IsRunning;
                 if (running)
                 {
@@ -239,21 +255,30 @@ namespace ChargerControlApp.Hardware
                     this.WriteROutFunction_26to29(i);
                     this.ReadJogAndHomeSetting(i);
                 }
+                DoNotSaveParameter = true; // Prevent saving parameters immediately after reading
                 if (this.ReadParameter(i))
                 {
+                    Console.WriteLine($"Read Parameter: {Motors[i].MotorInfo.OpDataArray[0].Position}");
+                    //Console.WriteLine($"!!!!!!!!!RobotController-InitializeOnce()-Motor {i} ReadParameter() succeeded.");
                     if (running)
                     {
+                        
                         this.WriteOpData(i);
+
                     }
                 }
                 else
                 {
+                    //Console.WriteLine($"!!!!!!!!!!RobotController-InitializeOnce()-Motor {i} ReadParameter() failed, loading default parameters.");
                     if (running)
                     {
                         this.ReadOpData(i);
                     }
                     else
+                    {
+                        //Console.WriteLine($"RobotController-InitializeOnce()-Motor {i} ReadParameter() failed, saving default parameters.");
                         this.SaveParameter(i);
+                    }
                 }
 
                 if (this.ReadExParameter(i))
@@ -981,7 +1006,7 @@ namespace ChargerControlApp.Hardware
             //    await Task.Delay(100, cancellationToken);
             //}
 
-            await Task.Delay(20, cancellationToken); // 等待一段時間讓馬達穩定
+            await Task.Delay(200, cancellationToken); // 等待一段時間讓馬達穩定
 
             return_value = InPosition(axisId, posDataNo);
             ErrorMessage = $"定位位置偏差過大 位置[{posDataNo}]的數據 = {Motors[axisId].MotorInfo.OpDataArray[posDataNo].Position} ; 目前馬達位置數據={Motors[axisId].MotorInfo.Pos_Actual}";

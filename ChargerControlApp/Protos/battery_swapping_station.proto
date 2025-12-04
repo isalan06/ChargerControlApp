@@ -12,6 +12,7 @@ enum SlotChargeState {
     CHARGING = 1;
     FLOATING = 2;
     EMPTY = 3;
+    ERROR_ = 4;
 }
 
 enum StationState {

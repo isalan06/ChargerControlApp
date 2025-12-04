@@ -291,7 +291,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
            
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
-            int timeoutMs = 600000; // 600秒逾時，可依需求調整
+            int timeoutMs = 6000000; // 600秒逾時，可依需求調整
 
             Task.Run(async () =>
             {
@@ -355,7 +355,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             LastError.Clear();
             ProcedureStatusMessage = string.Empty;
             _procedureFrames = new List<ProcedureFrame>()
-            { new PosFrame{ AxisId = 1, PosDataNo = 0, Name="Y0", Description="Y axis move to Y0 when homing", DelayTime_ms=200 } };
+            { new PosFrame{ AxisId = 1, PosDataNo = 0, Name="Y0", Description="Y axis move to Y0 when homing", DelayTime_ms=200, Timeout_ms=1200000 } };
 
             var result = await ExecutePosActWhenHoming();
 
@@ -677,12 +677,12 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 MainProcedureStatusMessage = $"[Home Case 12] Homing Y Axis: Waiting HOME_END ON";
                                 _homeError.ErrorCode = 53;
                                 _homeError.ErrorMessage = $" Homing Timeout: case = {HomeProcedureCase}";
-                                if (motor_y_info.IO_Output_High.Bits.HOME_END)
-                                {
+                                //if (motor_y_info.IO_Output_High.Bits.HOME_END)
+                                //{
                                     _hardwareManager.Robot.Motors[1].IsHomeFinished = true;
                                     HomeProcedureCase = 13; // Y軸復歸完成 若還要再進行其他動作，請在此設定 caseIndex
                                     Task.Delay(500).Wait(); // 等待500ms，確保位置穩定
-                                }
+                                //}
                                 break;
 
                             case 13: // Y軸移動到Y0
