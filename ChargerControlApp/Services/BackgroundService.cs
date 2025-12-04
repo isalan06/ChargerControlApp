@@ -170,12 +170,13 @@ namespace ChargerControlApp.Services
             var slotService = _hardwareManager.SlotServices;
             if (slotState.IsEnabled)
             {
+                // To Do: 先確認好後續處理
                 // 依 Charger 錯誤訊息決定 Slot 狀態
-                /*if ((charger.FAULT_STATUS.Data != 0) && (slotState.State.CurrentState.CurrentState != SlotState.SupplyError))
-                    slotService.TransitionTo(index, SlotState.SupplyError);*/
-                // 若無法讀取資料，視為設備斷線，則轉為錯誤狀態
-                if (charger.IsReadTimeout && (slotState.State.CurrentState.CurrentState != SlotState.SupplyError))
-                    slotService.TransitionTo(index, SlotState.SupplyError);
+                //if ((charger.FAULT_STATUS.Data != 0) && (slotState.State.CurrentState.CurrentState != SlotState.SupplyError))
+                //    slotService.TransitionTo(index, SlotState.SupplyError);
+                //// 若無法讀取資料，視為設備斷線，則轉為錯誤狀態
+                //if (charger.IsReadTimeout && (slotState.State.CurrentState.CurrentState != SlotState.SupplyError))
+                //    slotService.TransitionTo(index, SlotState.SupplyError);
 
                 // 從Slot狀態錯誤決定 Slot 狀態
                 //if (slotState.StateError && (charger.FAULT_STATUS.Data == 0) && (slotState.State.CurrentState.CurrentState != SlotState.StateError))

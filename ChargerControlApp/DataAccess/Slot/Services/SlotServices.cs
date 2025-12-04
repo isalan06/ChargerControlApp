@@ -77,8 +77,6 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
                 default:
                 case SlotState.NotUsed:
-                case SlotState.SupplyError:
-                case SlotState.StateError:
                     SlotInfo[index].ChargeState = SlotChargeState.Unspecified;
                     break;
                 case SlotState.Idle:
@@ -88,6 +86,10 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
                 case SlotState.Floating:
                     SlotInfo[index].ChargeState = SlotChargeState.Floating;
+                    break;
+                case SlotState.StateError:
+                case SlotState.SupplyError:
+                    SlotInfo[index].ChargeState = SlotChargeState.Error;
                     break;
             }
         }
