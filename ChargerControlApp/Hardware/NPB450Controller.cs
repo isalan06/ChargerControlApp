@@ -690,7 +690,7 @@ namespace ChargerControlApp.Hardware
             {
 
                 byte[] sendBytes = BitConverter.GetBytes((ushort)command);
-                _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-GetStatusFromDevice_OnlySend()-Command:{command.ToString()} Bytes:{BitConverter.ToString(sendBytes)}");
+                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-GetStatusFromDevice_OnlySend()-Command:{command.ToString()} Bytes:{BitConverter.ToString(sendBytes)}");
                 _canBusService.SendCommand(sendBytes, deviceCanID);
             }
         }

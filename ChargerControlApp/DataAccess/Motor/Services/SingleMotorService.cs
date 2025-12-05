@@ -39,6 +39,7 @@ namespace ChargerControlApp.DataAccess.Motor.Services
             _modbusRTUService = modbusRTUService;
             SlaveAddress = slaveAddress;
             MotorInfo.Id = id;
+            _motorInfoBuffer.Id = id;
             _persistence = new SingleMotorPersistence(id);
         }
 
@@ -161,9 +162,9 @@ namespace ChargerControlApp.DataAccess.Motor.Services
                             {
                                 MotorInfo.CopyBaseInfo(_motorInfoBuffer);
                                 
-                                Console.WriteLine($"\r\nMotor-{MotorInfo.Id} Info retrieved from BLDC Driver:\r\n");
-                                Console.WriteLine($"Set Pos No: {MotorInfo.CurrentDataNo}; Real Pos No: {MotorInfo.CurrentPosNo}; Real Pos Value: {MotorInfo.Pos_Actual}; Start Trigger: {MotorInfo.IO_Input_High.Bits.START};\r\n");
-                                Console.WriteLine($"RDY_SD_OPE: {MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE}; MOVE: {MotorInfo.IO_Output_Low.Bits.MOVE}; IN_POS: {MotorInfo.IO_Output_Low.Bits.IN_POS};\r\n");
+                                Console.WriteLine($"\r\nMotor-{MotorInfo.Id} Info retrieved from BLDC Driver:");
+                                Console.WriteLine($"Pos No Data: {MotorInfo.IO_Input_High.Data}; Real Pos No: {MotorInfo.CurrentPosNo}; Real Pos Value: {MotorInfo.Pos_Actual}; Start Trigger: {MotorInfo.IO_Input_High.Bits.START};");
+                                Console.WriteLine($"RDY_SD_OPE: {MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE}; MOVE: {MotorInfo.IO_Output_Low.Bits.MOVE}; IN_POS: {MotorInfo.IO_Output_Low.Bits.IN_POS};");
 
                             }
                         }
