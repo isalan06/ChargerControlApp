@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Collections;
+using System.Runtime.InteropServices;
 
 namespace ChargerControlApp.DataAccess.Motor.Models
 {
@@ -19,6 +20,16 @@ namespace ChargerControlApp.DataAccess.Motor.Models
             get
             {
                 return MotorAlarmList.GetAlarmDescription(ErrorCode);
+            }
+        }
+
+        public int CurrentPosNo
+        {
+            get
+            {
+                // M0..M7 對應到 IO_Input_High.Bits.Value 的 bit 8..15
+                // 右移 8 位再取低 8 位即可得到 0..255 的整數值
+                return (IO_Input_High.Bits.Value >> 8) & 0xFF;
             }
         }
 

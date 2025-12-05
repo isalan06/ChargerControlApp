@@ -154,13 +154,13 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
             if (data.Length <= 8)
             {
                 var frame = new CanFrame(canId, data); // 标准 CAN
-                Console.WriteLine("STD CAN: " + frame.ToString());
+                //Console.WriteLine("STD CAN: " + frame.ToString());
                 _socket.Write(frame);
             }
             else if (data.Length <= 64)
             {
                 var frame = new CanFdFrame(canId, data, CanFdFlags.CANFD_FDF); // CAN FD
-                Console.WriteLine("CAN FD: " + frame.ToString());
+                //Console.WriteLine("CAN FD: " + frame.ToString());
                 _socket.Write(frame);
             }
             else
@@ -173,9 +173,9 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
         {
             try
             {
-                Console.WriteLine("等待接收 CAN 消息...");
+               // Console.WriteLine("等待接收 CAN 消息...");
                 var frame = _socket.Read(out CanFrame canFrame);
-                Console.WriteLine($"接收到 CAN 消息: ID=0x{canFrame.CanId:X}, Data={BitConverter.ToString(canFrame.Data, 0, canFrame.Length)}");
+                //Console.WriteLine($"接收到 CAN 消息: ID=0x{canFrame.CanId:X}, Data={BitConverter.ToString(canFrame.Data, 0, canFrame.Length)}");
                 return canFrame.Data;
             }
             catch (Exception ex)
@@ -192,15 +192,14 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
         {
             try
             {
-                Console.WriteLine("等待接收 CAN 消息...");
+                //Console.WriteLine("等待接收 CAN 消息...");
                 var frame = _socket.Read(out CanFrame canFrame);
                 canid = canFrame.CanId & 0xFFu;
                 if (canFrame.Length >= 2)
                 {
                     commandCode = (ushort)(canFrame.Data[1] << 8 | canFrame.Data[0]);
                 }
-                //Console.WriteLine($"接收到 CAN 消息: ID=0x{canFrame.CanId:X}, Data={BitConverter.ToString(canFrame.Data, 0, canFrame.Length)}");
-                Console.WriteLine($"接收到 CAN 消息: ID=0x{canFrame.CanId:X} => {canid}, CommandCode=0x{commandCode:X}, Data={BitConverter.ToString(canFrame.Data, 0, canFrame.Length)}");
+                //Console.WriteLine($"接收到 CAN 消息: ID=0x{canFrame.CanId:X} => {canid}, CommandCode=0x{commandCode:X}, Data={BitConverter.ToString(canFrame.Data, 0, canFrame.Length)}");
                 return canFrame.Data;
             }
             catch(Exception ex)

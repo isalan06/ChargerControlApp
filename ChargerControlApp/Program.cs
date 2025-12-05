@@ -25,6 +25,8 @@ public class Program
 {
     public static void Main(string[] args)
     {
+        Console.WriteLine("Version. 1.0.0.......Start.......");
+
         ThreadPool.SetMinThreads(100, 100);
 
         //var test = GPIOService.GetValue("BatteryExistInFork");
