@@ -11,6 +11,7 @@ using ChargerControlApp.DataAccess.Slot.Models;
 using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
 using ChargerControlApp.Services;
+using ChargerControlApp.Test.Function;
 using ChargerControlApp.Test.Robot;
 using ChargerControlApp.Utilities;
 using Grpc.Net.Client;
@@ -25,7 +26,25 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        Console.WriteLine("Version. 1.0.4.......Start.......");
+        Console.WriteLine("Version. 1.0.5.......Start.......");
+
+        // 顯示目前程式位置（可同時查看可執行檔路徑、應用程式基底目錄與目前工作目錄）
+        try
+        {
+            var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName
+                          ?? System.Reflection.Assembly.GetEntryAssembly()?.Location
+                          ?? string.Empty;
+            var appBase = AppContext.BaseDirectory;                // 應用程式 base 目錄
+            var currentDir = Environment.CurrentDirectory;         // 目前工作目錄
+
+            Console.WriteLine($"Executable path: {exePath}");
+            Console.WriteLine($"App base directory: {appBase}");
+            Console.WriteLine($"Current working directory: {currentDir}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Unable to get paths: {ex.Message}");
+        }
 
         ThreadPool.SetMinThreads(100, 100);
 
@@ -51,6 +70,11 @@ public class Program
         HardwareManager.SensorCheckPass = settings.SensorCheckPass; // 設定 感測器檢查是否移除
         RobotController.PositionInPos_Offset = settings.PositionInPosOffset; // 設定 PositionInPos_Offset
         NPB450Controller.ChargerUseAsync = settings.ChargerUseAsync; // 設定 充電器是否使用非同步模式
+
+        // To Do: Just Test
+        //CanRouteCommandFrameTest test = new CanRouteCommandFrameTest();
+        //test.Start();
+
 
         // ModbusRTUService
         builder.Services.AddSingleton<ModbusRTUService>(sp =>

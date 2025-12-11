@@ -16,7 +16,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
 
     public class CanRouteCommandFrameList
     {
-        public static int CommandIndex { get; internal set; } = 0;
+        public int CommandIndex { get; internal set; } = 0;
 
         public bool IsCompletedOneTime { get; internal set; } = false;
 
