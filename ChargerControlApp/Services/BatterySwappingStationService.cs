@@ -4,11 +4,11 @@ using ChargerControlApp.Hardware;
 using Grpc.Core;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using TAC.Hardware;
+using Nexano.Hardware.BatterySwappingStation.Protos;
 
 namespace ChargerControlApp.Services
 {
-    public class SwappingStationService : TAC.Hardware.SwappingStationService.SwappingStationServiceBase
+    public class SwappingStationService : Nexano.Hardware.BatterySwappingStation.Protos.SwappingStationService.SwappingStationServiceBase
     {
         private readonly ILogger<SwappingStationService> _logger;
         private readonly SlotServices _slotServices;
@@ -33,13 +33,13 @@ namespace ChargerControlApp.Services
                 _logMessages.TryDequeue(out _);
             }
         }
-        public override Task<StationStatus> GetStatus(Google.Protobuf.WellKnownTypes.Empty request, ServerCallContext context)
+        public override Task<SwappingStationStatus> GetStatus(Google.Protobuf.WellKnownTypes.Empty request, ServerCallContext context)
         {
             Random random = new Random();
 
             LogInformation("[gRPC] GetStatus called");
 
-            var status = new StationStatus
+            var status = new SwappingStationStatus
             {
                 State = _robotService.GetEquipmentStatus,  //SlotServices.StationState,//StationState.Idle,
                 HighestSoc = 98

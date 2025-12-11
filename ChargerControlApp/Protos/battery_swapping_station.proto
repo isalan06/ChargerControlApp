@@ -1,34 +1,38 @@
 syntax = "proto3";
 
 package batteryswappingstation;
-option csharp_namespace = "TAC.Hardware";
+option csharp_namespace = "Nexano.Hardware.BatterySwappingStation.Protos";
 
 import "google/protobuf/empty.proto";
+
+// ***** Note *****
+// This proto file is for Battery Swapping Station device only.
+// 這個檔案並沒有和換電站 Server 的 proto 檔案做整合
 
 // ----------- Enums -----------
 
 enum SlotChargeState {
     SLOT_CHARGE_STATE_UNSPECIFIED = 0;
-    CHARGING = 1;
-    FLOATING = 2;
-    EMPTY = 3;
-    ERROR_ = 4;
+    SLOT_CHARGE_STATE_CHARGING = 1;
+    SLOT_CHARGE_STATE_FLOATING = 2;
+    SLOT_CHARGE_STATE_EMPTY = 3;
+    SLOT_CHARGE_STATE_ERROR = 4;
 }
 
 enum StationState {
     STATION_STATE_UNSPECIFIED = 0;
-    INITIAL = 1;
-    IDLE = 2;
-    SWAPPING = 3;
-    MANUAL = 4;
-    ERROR = 5;
+    STATION_STATE_INITIAL = 1;
+    STATION_STATE_IDLE = 2;
+    STATION_STATE_SWAPPING = 3;
+    STATION_STATE_MANUAL = 4;
+    STATION_STATE_ERROR = 5;
 }
 
 enum ActionType {
     ACTION_TYPE_UNSPECIFIED = 0;
-    SWAP = 1;
-    RESET = 2;
-    EMS = 3; // reserved for future use
+    ACTION_TYPE_SWAP = 1;
+    ACTION_TYPE_RESET = 2; // 2025.12.03 換電站目前沒有這個功能
+    ACTION_TYPE_EMS = 3; // 換電站會停止當前動作，狀態變成 ERROR，等待人工處理
 }
 
 // ----------- Messages -----------
@@ -41,7 +45,7 @@ message SlotStatus {
     SlotChargeState state = 5;
 }
 
-message StationStatus {
+message SwappingStationStatus {
     repeated SlotStatus slot_statuses = 1;
     StationState state = 2;
     int32 highest_soc = 3;
@@ -55,6 +59,6 @@ message ActionRequest {
 // ----------- Services -----------
 
 service SwappingStationService {
-rpc GetStatus(google.protobuf.Empty) returns (StationStatus);
-rpc PerformAction(ActionRequest) returns (google.protobuf.Empty);
+    rpc GetStatus(google.protobuf.Empty) returns (SwappingStationStatus);
+    rpc PerformAction(ActionRequest) returns (google.protobuf.Empty);
 }

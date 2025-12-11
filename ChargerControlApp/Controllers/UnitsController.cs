@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ChargerControlApp.DataAccess.GPIO.Services;
 using ChargerControlApp.DataAccess.Slot.Services;
-using TAC.Hardware;
+using Nexano.Hardware.BatterySwappingStation.Protos;
 using ChargerControlApp.Services;
 using ChargerControlApp.DataAccess.Robot.Services; // 假設 StationState enum 在這裡
 

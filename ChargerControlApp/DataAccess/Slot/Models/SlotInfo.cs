@@ -1,5 +1,5 @@
 ﻿using ChargerControlApp.DataAccess.Slot.Services;
-using TAC.Hardware;
+using Nexano.Hardware.BatterySwappingStation.Protos;
 
 namespace ChargerControlApp.DataAccess.Slot.Models
 {

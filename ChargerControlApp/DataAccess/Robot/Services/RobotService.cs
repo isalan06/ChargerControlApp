@@ -4,7 +4,7 @@ using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
 using ChargerControlApp.Services;
 using System.Threading.Tasks;
-using TAC.Hardware;
+using Nexano.Hardware.BatterySwappingStation.Protos;
 using Nexano.FMS.DeviceController.Protos;
 
 namespace ChargerControlApp.DataAccess.Robot.Services

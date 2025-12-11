@@ -13,7 +13,8 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         Floating,
         StopCharge,
         SupplyError,
-        StateError
+        StateError,
+        CommError
     }
 
     public abstract class SlotStateBase<T> where T : Enum
@@ -72,6 +73,9 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
                 case SlotState.StateError:
                     _context.TransitionTo<StateErrorSlotState>();
+                    break;
+                case SlotState.CommError:
+                    _context.TransitionTo<CommErrorSlotState>();
                     break;
                 case SlotState.Initialization:
                     Console.WriteLine($"Slot[{_index}] 已經在初始化狀態");
@@ -167,6 +171,10 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     _context.TransitionTo<StateErrorSlotState>();
                     break;
 
+                case SlotState.CommError:
+                    _context.TransitionTo<CommErrorSlotState>();
+                    break;
+
                 default:
                     Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
                     result = false;
@@ -214,6 +222,10 @@ namespace ChargerControlApp.DataAccess.Slot.Services
 
                 case SlotState.StateError:
                     _context.TransitionTo<StateErrorSlotState>();
+                    break;
+
+                case SlotState.CommError:
+                    _context.TransitionTo<CommErrorSlotState>();
                     break;
 
                 default:
@@ -269,6 +281,10 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     _context.TransitionTo<StateErrorSlotState>();
                     break;
 
+                case SlotState.CommError:
+                    _context.TransitionTo<CommErrorSlotState>();
+                    break;
+
                 default:
                     Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
                     result = false;
@@ -322,6 +338,10 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     _context.TransitionTo<StateErrorSlotState>();
                     break;
 
+                case SlotState.CommError:
+                    _context.TransitionTo<CommErrorSlotState>();
+                    break;
+
                 default:
                     Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
                     result = false;
@@ -371,6 +391,10 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     _context.TransitionTo<StateErrorSlotState>();
                     break;
 
+                case SlotState.CommError:
+                    _context.TransitionTo<CommErrorSlotState>();
+                    break;
+
                 default:
                     Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
                     result = false;
@@ -402,6 +426,14 @@ namespace ChargerControlApp.DataAccess.Slot.Services
 
                 case SlotState.SupplyError:
                     Console.WriteLine($"Slot[{_index}] 已經在電源供應器錯誤狀態");
+                    break;
+
+                case SlotState.StateError:
+                    _context.TransitionTo<StateErrorSlotState>();
+                    break;
+
+                case SlotState.CommError:
+                    _context.TransitionTo<CommErrorSlotState>();
                     break;
 
                 case SlotState.NotUsed:
@@ -439,6 +471,59 @@ namespace ChargerControlApp.DataAccess.Slot.Services
 
                 case SlotState.StateError:
                     Console.WriteLine($"Slot[{_index}] 已經在狀態錯誤狀態");
+                    break;
+
+                case SlotState.SupplyError:
+                    _context.TransitionTo<SupplyErrorSlotState>();
+                    break;
+
+                case SlotState.CommError:
+                    _context.TransitionTo<CommErrorSlotState>();
+                    break;
+
+                case SlotState.NotUsed:
+                    _context.TransitionTo<NotUsedSlotState>();
+                    break;
+
+                default:
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    result = false;
+                    break;
+            }
+
+            return result;
+        }
+    }
+
+    public class CommErrorSlotState : SlotStateBase<SlotState>
+    {
+        public CommErrorSlotState()
+        {
+            _currentState = _stateEnum = SlotState.StateError;
+        }
+        public override void EnterState()
+        {
+            Console.WriteLine($"Slot[{_index}] 進入通訊錯誤狀態");
+        }
+        public override bool HandleTransition(SlotState nextState)
+        {
+            bool result = true;
+            switch (nextState)
+            {
+                case SlotState.Initialization:
+                    _context.TransitionTo<InitializationSlotState>();
+                    break;
+
+                case SlotState.CommError:
+                    Console.WriteLine($"Slot[{_index}] 已經在通訊錯誤狀態");
+                    break;
+
+                case SlotState.SupplyError:
+                    _context.TransitionTo<SupplyErrorSlotState>();
+                    break;
+
+                case SlotState.StateError:
+                    _context.TransitionTo<StateErrorSlotState>();
                     break;
 
                 case SlotState.NotUsed:

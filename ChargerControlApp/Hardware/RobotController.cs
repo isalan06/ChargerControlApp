@@ -307,9 +307,6 @@ namespace ChargerControlApp.Hardware
         {
             if (motorId < 0 || motorId >= MOTOR_COUNT)
                 return false;
-            //Console.WriteLine($"Check Real Pos: {Motors[motorId].MotorInfo.Pos_Actual}; Target Pos: {Motors[motorId].MotorInfo.OpDataArray[posIndex].Position}");
-            //Console.WriteLine($"{Math.Abs(Motors[motorId].MotorInfo.Pos_Actual - Motors[motorId].MotorInfo.OpDataArray[posIndex].Position)} <= {PositionInPos_Offset}");
-            //Console.WriteLine($"result: {(Math.Abs(Motors[motorId].MotorInfo.Pos_Actual - Motors[motorId].MotorInfo.OpDataArray[posIndex].Position) <= PositionInPos_Offset)}");
             return (Math.Abs(Motors[motorId].MotorInfo.Pos_Actual - Motors[motorId].MotorInfo.OpDataArray[posIndex].Position) <= PositionInPos_Offset);
         }
         public bool InPositions(int motorId, int[] posIndexArray)
@@ -641,7 +638,7 @@ namespace ChargerControlApp.Hardware
                 command.DataFrame.DataNumber = 1;
                 command.DataFrame.Data = new ushort[] { Motors[motorId].MotorInfo.IO_Input_High.Data };
 
-                Console.WriteLine($"SetDataNo_M Success: motorId: {motorId}; dataNo: {dataNo}: data: {Motors[motorId].MotorInfo.IO_Input_High.Data}");
+                //Console.WriteLine($"SetDataNo_M Success: motorId: {motorId}; dataNo: {dataNo}: data: {Motors[motorId].MotorInfo.IO_Input_High.Data}");
 
                 _manualCommand.Enqueue(command);
                 result = true;
@@ -986,14 +983,14 @@ namespace ChargerControlApp.Hardware
             ErrorMessage = string.Empty;
 
             ErrorMessage = $"Wait RDY_SD_OPE == false => {Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE}";
-            Console.WriteLine(ErrorMessage);
+            //Console.WriteLine(ErrorMessage);
             while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 await Task.Delay(100, cancellationToken);
             }
 
-            Console.WriteLine($"Set Motor-{axisId} Position Data No = {posDataNo}");
+            //Console.WriteLine($"Set Motor-{axisId} Position Data No = {posDataNo}");
             var result = this.SetDataNo_M(axisId, posDataNo); // 設定要進行的位置
 
             //await Task.Delay(50); // 等待設定生效
@@ -1017,7 +1014,7 @@ namespace ChargerControlApp.Hardware
                 return false;
             }
 
-            Console.WriteLine($"Set Motor-{axisId} Start Command = true");
+            //Console.WriteLine($"Set Motor-{axisId} Start Command = true");
             result = this.SetStart(axisId, true); // 下達開始命令
 
             ErrorMessage = $"Wait RDY_SD_OPE == true => {Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE}";
@@ -1027,7 +1024,7 @@ namespace ChargerControlApp.Hardware
                 await Task.Delay(100, cancellationToken);
             }
 
-            Console.WriteLine($"Set Motor-{axisId} Start Command = false");
+            //Console.WriteLine($"Set Motor-{axisId} Start Command = false");
             result = this.SetStart(axisId, false); // 將開始命令取消掉
 
             ErrorMessage = $"Wait RDY_SD_OPE == true => {Motors[axisId].MotorInfo.IO_Output_Low.Bits.RDY_SD_OPE}";
@@ -1037,7 +1034,7 @@ namespace ChargerControlApp.Hardware
                 await Task.Delay(20, cancellationToken);
             }
 
-            Console.WriteLine($"Wait In Position for Data No = {posDataNo}");
+            //Console.WriteLine($"Wait In Position for Data No = {posDataNo}");
             //while (!Motors[axisId].MotorInfo.IO_Output_Low.Bits.IN_POS)
             //{
             //    cancellationToken.ThrowIfCancellationRequested();

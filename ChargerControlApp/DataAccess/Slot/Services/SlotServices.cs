@@ -3,7 +3,7 @@ using ChargerControlApp.Hardware;
 using Google.Protobuf.WellKnownTypes;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using TAC.Hardware;
+using Nexano.Hardware.BatterySwappingStation.Protos;
 
 namespace ChargerControlApp.DataAccess.Slot.Services
 {

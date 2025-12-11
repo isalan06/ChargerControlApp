@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -33,7 +33,6 @@
     <None Remove="Protos\charger_action_service.proto" />
     <None Remove="Protos\charger_status_service.proto" />
     <None Remove="Protos\kernel_device_common.proto" />
-    <None Remove="Protos\kernel_device_registration_service.proto" />
     <None Remove="Protos\kernel_device_status_service.proto" />
   </ItemGroup>
 
@@ -59,7 +58,7 @@
 
   <ItemGroup>
     <Protobuf Include="Protos\battery_swapping_station.proto" GrpcServices="Server" />
-    <Protobuf Include="Protos\kernel_device_registration_service.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos\device_registration_service.proto" GrpcServices="Client" />
   </ItemGroup>
 
   <ItemGroup>

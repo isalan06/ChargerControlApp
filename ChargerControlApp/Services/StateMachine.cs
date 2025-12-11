@@ -10,7 +10,7 @@ using System;
 using System.Diagnostics;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using TAC.Hardware;
+using Nexano.Hardware.BatterySwappingStation.Protos;
 using Nexano.FMS.DeviceController.Protos;
 using static ChargerControlApp.Services.InitialState;
 
