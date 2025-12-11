@@ -28,9 +28,10 @@ namespace ChargerControlApp.Test.Function
                         bool isFinal = false;
                         bool result = commandList.Next(out command, out isFinal);
 
-                        Console.WriteLine($"List {i} - Next Command Result: {result}, Command Index: {commandList?.CommandIndex}, Is Final: {isFinal}");
-
+                        Console.WriteLine($"List {i} - Next Command Result: {result}, Command Index: {commandList?.CommandIndex}, Is Final: {isFinal}, IsTimeout: {commandList?.IsReadTimeout}, ElapsedTime: {commandList?.ElapsedTime_ms}");
                         
+
+
                     }
 
                     if (count++ >= 15)

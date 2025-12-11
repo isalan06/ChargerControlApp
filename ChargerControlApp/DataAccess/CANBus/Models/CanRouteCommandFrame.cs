@@ -31,6 +31,19 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
             }
         }
 
+        public double ElapsedTime_ms
+        {
+            get
+            {
+                return DateTime.Now.Subtract(dtReadTimeout).TotalMilliseconds;
+            }
+        }
+
+        public void ResetReadTimeout()
+        {
+            dtReadTimeout = DateTime.Now;
+        }
+
         private DateTime dtReadTimeout = DateTime.Now; // 讀取逾時計時器
 
         public double TimeoutValue_ms { get; set; } = 60000;
@@ -90,7 +103,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
                 {
                     if (Commands[CommandIndex].HasResponse)
                     {
-                        dtReadTimeout = DateTime.Now; // 重置讀取逾時計時器
+                        //dtReadTimeout = DateTime.Now; // 重置讀取逾時計時器
 
                         Commands[CommandIndex].HasCommand = false;
                         Commands[CommandIndex].HasResponse = false;
@@ -143,6 +156,8 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
             bool result = true;
             try
             {
+                dtReadTimeout = DateTime.Now; // 重置讀取逾時計時器
+
                 switch (command)
                 {
                     case NPB450Controller.CanbusReadCommand.READ_VOUT:
