@@ -34,8 +34,9 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                 if (dto.Index >= 0 && dto.Index < slotInfos.Length)
                 {
                     slotInfos[dto.Index].BatteryMemory = dto.BatteryMemory;
-                    if (slotInfos[dto.Index].State.CurrentState.GetStateEnum() != SlotState.NotUsed)
-                        slotInfos[dto.Index].State.TransitionToState(dto.State);
+                    // To Do: Decide if we want to restore state for all slots or only those that were not "NotUsed"
+                    //if (slotInfos[dto.Index].State.CurrentState.GetStateEnum() != SlotState.NotUsed)
+                    //    slotInfos[dto.Index].State.TransitionToState(dto.State);
                 }
             }
         }

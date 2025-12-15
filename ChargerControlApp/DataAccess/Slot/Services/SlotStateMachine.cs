@@ -24,12 +24,14 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         protected SlotState _stateEnum;
         protected T _currentState;
         protected int _index = 0;
+        protected HardwareManager _hardwareManager;
         public T CurrentState => _currentState;
         public void SetContext(SlotStateMachine context, IServiceProvider serviceProvider, int index)
         {
             _context = context;
             _serviceProvider = serviceProvider;
             _index = index;
+            _hardwareManager = _serviceProvider.GetRequiredService<HardwareManager>();
         }
         public virtual void TransistTo(T newState)
         {
@@ -194,6 +196,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         public override void EnterState()
         {
             Console.WriteLine($"Slot[{_index}] 進入閒置狀態");
+            _hardwareManager.Charger[_index].StopCharging(); // 確保充電器停止充電
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -247,6 +250,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         public override void EnterState()
         {
             Console.WriteLine($"Slot[{_index}] 進入充電狀態");
+            _hardwareManager.Charger[_index].StartCharging(); // 開始充電
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -361,6 +365,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         public override void EnterState()
         {
             Console.WriteLine($"Slot[{_index}] 進入停止充電狀態");
+            _hardwareManager.Charger[_index].StopCharging(); // 停止充電
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -414,6 +419,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         public override void EnterState()
         {
             Console.WriteLine($"Slot[{_index}] 進入電源供應器錯誤狀態");
+            //_hardwareManager.Charger[_index].StopCharging();
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -459,6 +465,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         public override void EnterState()
         {
             Console.WriteLine($"Slot[{_index}] 進入狀態錯誤狀態");
+            //_hardwareManager.Charger[_index].StopCharging();
         }
         public override bool HandleTransition(SlotState nextState)
         {

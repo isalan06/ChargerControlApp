@@ -1,0 +1,119 @@
+﻿@{
+    ViewData["Title"] = "System";
+}
+
+<ul class="nav nav-tabs" id="systemTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="version-tab" data-bs-toggle="tab" data-bs-target="#version" type="button" role="tab">Version</button>
+    </li>
+
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="canbus-tab" data-bs-toggle="tab" data-bs-target="#canbus" type="button" role="tab">CANBus</button>
+    </li>
+</ul>
+
+<div class="tab-content mt-3" id="systemTabContent">
+    <div class="tab-pane fade show active" id="version" role="tabpanel">
+        <h4>System Version Information</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Version</th>
+                </tr>
+            </thead>
+            <tbody>
+                @model Dictionary<string,string>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Key</td>
+                        <td>@item.Value</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="tab-pane fade" id="canbus" role="tabpanel">
+        <h4>CANBus Status</h4>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card border-secondary mb-3">
+                    <div class="card-header">電源供應器設備與連線</div>
+                    <div class="card-body text-secondary">
+                        <dl class="row mb-0">
+                            <dt class="col-6">設備最大數量</dt>
+                            <dd class="col-6"><span id="can-device-max-count">-</span></dd>
+
+                            <dt class="col-6">設備使用數量</dt>
+                            <dd class="col-6"><span id="can-device-count">-</span></dd>
+
+                            <dt class="col-6">現在連線數量</dt>
+                            <dd class="col-6"><span id="can-connected-count">-</span></dd>
+                        </dl>
+
+                        <!-- 分隔線 -->
+                        <hr />
+
+                        <!-- 每台設備的讀取次數會放在這裡 -->
+                        <div id="can-device-cycles" class="small">
+                            <em>載入中…</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        (function () {
+            const url = '/System/CanbusStatus';
+            const deviceEl = document.getElementById('can-device-count');
+            const connectedEl = document.getElementById('can-connected-count');
+            const devicemaxEl = document.getElementById('can-device-max-count');
+            const cyclesContainer = document.getElementById('can-device-cycles');
+
+            function renderCycles(cycles) {
+                if (!Array.isArray(cycles) || cycles.length === 0) {
+                    cyclesContainer.innerHTML = '<em>無設備資料</em>';
+                    return;
+                }
+
+                // 以 <div> 列出每台設備
+                const rows = cycles.map(c => {
+                    const enabledText = c.enabled ? '' : ' (未啟用)';
+                    return `<div>設備[${c.index}] 讀取次數: ${c.cycleCount}${enabledText}</div>`;
+                });
+
+                cyclesContainer.innerHTML = rows.join('');
+            }
+
+            async function updateCanbusStatus() {
+                try {
+                    const res = await fetch(url, { cache: 'no-store' });
+                    if (!res.ok) throw new Error('Network response was not ok');
+                    const json = await res.json();
+
+                    deviceEl.textContent = json.deviceUseCount ?? '-';
+                    connectedEl.textContent = json.connectedCount ?? '-';
+                    devicemaxEl.textContent = json.deviceMaxCount ?? '-';
+
+                    renderCycles(json.cycles);
+                } catch (err) {
+                    console.error('Failed to fetch CANBus status:', err);
+                    deviceEl.textContent = 'N/A';
+                    connectedEl.textContent = 'N/A';
+                    devicemaxEl.textContent = 'N/A';
+                    cyclesContainer.innerHTML = '<em>無法取得資料</em>';
+                }
+            }
+
+            // 立刻呼叫一次，然後每 5 秒更新
+            updateCanbusStatus();
+            setInterval(updateCanbusStatus, 5000);
+        })();
+    </script>
+}

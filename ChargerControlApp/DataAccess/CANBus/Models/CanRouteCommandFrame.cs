@@ -20,6 +20,8 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
 
         public bool IsCompletedOneTime { get; internal set; } = false;
 
+        public ulong CycleCount { get; internal set; } = 0;
+
         /// <summary>
         /// 是否讀取逾時
         /// </summary>
@@ -116,6 +118,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
                             CommandIndex = 0;
                             isFinal = true;
                             IsCompletedOneTime = true;
+                            CycleCount++;
                         }
                         else
                         { 

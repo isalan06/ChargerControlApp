@@ -152,7 +152,8 @@ namespace ChargerControlApp.DataAccess.Robot.Services
         {
             get
             {
-                return _hardwareManager.SlotServices.IsAnySlotInErrorState;
+                //return _hardwareManager.SlotServices.IsAnySlotInErrorState;
+                return _slotServices.IsAnySlotInErrorState;
             }
         }
 
@@ -190,7 +191,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             swapOut = 0;
             bool result = false;
             int[] swapOuts = null;
-            if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
+            if (_slotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
             {
                 swapOut = _hardwareManager.SwapOut(swapOuts);
                 result = true;
@@ -515,7 +516,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
 
             this.LastError.Clear();
 
-            _hardwareManager.SlotServices.ResetAllAlarm();
+            _slotServices.ResetAllAlarm();
         }
 
         public async Task ResetStatus()
@@ -1220,7 +1221,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 else // 正常模式下使用實際的路徑產生
                                 {
                                     MainProcedureStatusMessage = $"[Auto Case 1] Generating Swap Slot Info";
-                                    if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
+                                    if (_slotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
                                     {
                                         swapOut = _hardwareManager.SwapOut(swapOuts);
                                         MainProcedureCase = 10;
@@ -1307,9 +1308,9 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                         if (checkSensorPoint)
                                         {
                                             // 感測器檢查點失敗，代表slot已經有電池，無法放入，將註記slot狀態為狀態錯誤，並在近進行一次路徑判別
-                                            _hardwareManager.SlotServices.SetBatteryMemory(swapIn - 1, true, false);
-                                            _hardwareManager.SlotServices.TransitionTo(swapIn - 1, SlotState.StateError);
-                                            if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
+                                            _slotServices.SetBatteryMemory(swapIn - 1, true, false);
+                                            _slotServices.TransitionTo(swapIn - 1, SlotState.StateError);
+                                            if (_slotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
                                             {
                                                 swapOut = _hardwareManager.SwapOut(swapOuts);
                                                 MainProcedureCase = 30;
@@ -1329,7 +1330,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
 
                             case 42: // 成功放入電池
                                 MainProcedureStatusMessage = $"[Auto Case 42] Successfully Placed Battery into Slot {swapIn}";
-                                _hardwareManager.SlotServices.TransitionTo(swapIn - 1, SlotState.Idle); // 成功放入電池，將slot狀態改為Idle
+                                _slotServices.TransitionTo(swapIn - 1, SlotState.Idle); // 成功放入電池，將slot狀態改為Idle
                                 _slotServices.SetBatteryMemory(swapIn - 1, true);
                                 MainProcedureCase = 43;
                                 break;
@@ -1364,8 +1365,8 @@ namespace ChargerControlApp.DataAccess.Robot.Services
 
                             case 52: // 取出電池前先停止充電
                                 MainProcedureStatusMessage = $"[Auto Case 52] Stopping Charging before Taking Battery from Slot {swapOut}";
-                                _hardwareManager.SlotServices.TransitionTo(swapOut - 1, SlotState.StopCharge); // 取出電池前將slot狀態改為StopCharge
-                                _hardwareManager.Charger[swapOut-1].StopCharging(); // 取出電池前先停止充電
+                                _slotServices.TransitionTo(swapOut - 1, SlotState.StopCharge); // 取出電池前將slot狀態改為StopCharge
+                                //_hardwareManager.Charger[swapOut-1].StopCharging(); // 取出電池前先停止充電 => 已由SlotStateMachine處理
                                 MainProcedureCase = 60;
                                 break;
 
@@ -1391,9 +1392,9 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                         if (checkSensorPoint)
                                         {
                                             // 感測器檢查點失敗，代表slot已經沒電池，無法取出，將註記slot狀態為空，並在近進行一次路徑判別
-                                            _hardwareManager.SlotServices.SetBatteryMemory(swapOut - 1, false, false);
-                                            _hardwareManager.SlotServices.TransitionTo(swapOut - 1, SlotState.StateError);
-                                            if (_hardwareManager.SlotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
+                                            _slotServices.SetBatteryMemory(swapOut - 1, false, false);
+                                            _slotServices.TransitionTo(swapOut - 1, SlotState.StateError);
+                                            if (_slotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
                                             {
                                                 swapOut = _hardwareManager.SwapOut(swapOuts);
                                                 MainProcedureCase = 50;
@@ -1414,7 +1415,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                             case 62: // 成功取出電池
                                 MainProcedureStatusMessage = $"[Auto Case 62] Successfully Took Battery from Slot {swapOut}";
                                 _slotServices.SetBatteryMemory(swapOut - 1, false);
-                                _hardwareManager.SlotServices.TransitionTo(swapOut - 1, SlotState.Initialization); // 成功取出電池，將slot狀態改為Empty
+                                _slotServices.TransitionTo(swapOut - 1, SlotState.Initialization); // 成功取出電池，將slot狀態改為Empty
                                 
                                 MainProcedureCase = 70;
                                 break;
@@ -1614,10 +1615,10 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                     bool empty = (testExecuteIndex == i);
 
                     if (empty)
-                        _hardwareManager.SlotServices.SetBatteryMemory(i, false);
+                        _slotServices.SetBatteryMemory(i, false);
                     else
-                        _hardwareManager.SlotServices.SetBatteryMemory(i, true);
-                    _hardwareManager.SlotServices.TransitionTo(i, SlotState.Initialization);
+                        _slotServices.SetBatteryMemory(i, true);
+                    _slotServices.TransitionTo(i, SlotState.Initialization);
                 }
             }
         }

@@ -182,10 +182,12 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                 return;
             }
 
-            if((SlotInfo[index].State.CurrentState.CurrentState == SlotState.StateError) ||
+            SlotInfo[index].StateError = false;
+
+            if ((SlotInfo[index].State.CurrentState.CurrentState == SlotState.StateError) ||
                 (SlotInfo[index].State.CurrentState.CurrentState == SlotState.SupplyError))
                 SlotInfo[index].State.CurrentState.HandleTransition(SlotState.Initialization); // 錯誤狀態，重置為 Idle
-            SlotInfo[index].StateError = false;
+            
         }
         public void ResetAllAlarm()
         {
@@ -203,8 +205,12 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                 return;
             }
 
+            SlotInfo[index].StateError = false;
+
             if (SlotInfo[index].State.CurrentState.CurrentState != SlotState.NotUsed) 
                 SlotInfo[index].State.CurrentState.HandleTransition(SlotState.Initialization); // 非 NotUsed 狀態，重置為 Initialization
+
+            
         }
 
         public void ResetAllSlotStatus()

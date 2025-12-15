@@ -32,6 +32,7 @@ namespace ChargerControlApp.Services
         private readonly ChargingStationStateMachine _chargingStationStateMachine;
         private readonly RobotService _robotService;
         private readonly ChargersReader _chargersController;
+        private readonly SlotServices _slotServices;
 
         //public CanBusPollingService(NPB1700Controller npbController, ILogger<CanBusPollingService> logger)
         //{
@@ -47,6 +48,7 @@ namespace ChargerControlApp.Services
             //_npbController = serviceProvider.GetService<NPB1700Controller>();
             _robotService = serviceProvider.GetService<RobotService>();
             _chargersController = serviceProvider.GetService<ChargersReader>();
+            _slotServices = serviceProvider.GetService<SlotServices>();
         }
         //public CanBusPollingService(HardwareManager hardwareManager, ILogger<CanBusPollingService> logger)
         //{
@@ -66,34 +68,21 @@ namespace ChargerControlApp.Services
                 if (i < HardwareManager.NPB450ControllerInstnaceNumber)
                 {
                     _hardwareManager.Charger[i].IsUsed = true;
-                    if(_hardwareManager.SlotServices.SlotInfo[i].State.CurrentState.GetStateEnum() == SlotState.NotUsed)
+                    if(_slotServices.SlotInfo[i].State.CurrentState.GetStateEnum() == SlotState.NotUsed)
                     {
-                        _hardwareManager.SlotServices.TransitionTo(i, state: SlotState.Initialization);
+                        _slotServices.TransitionTo(i, state: SlotState.Initialization);
                         _hardwareManager.Charger[i].StopCharging(); // 停止充電
                     }
                 }
                 else
                 {
-                    if (_hardwareManager.SlotServices.SlotInfo[i].State.CurrentState.GetStateEnum() != SlotState.NotUsed)
-                        _hardwareManager.SlotServices.TransitionTo(i, state: SlotState.NotUsed);
+                    if (_slotServices.SlotInfo[i].State.CurrentState.GetStateEnum() != SlotState.NotUsed)
+                        _slotServices.TransitionTo(i, state: SlotState.NotUsed);
                 }
-                _hardwareManager.SlotServices.TransferToSlotChargeState(i); // 同步更新充電狀態
+                _slotServices.TransferToSlotChargeState(i); // 同步更新充電狀態
             }
 
-            //if (HardwareManager.ServoOnAndHomeAfterStartup) // 啟動後是否啟用伺服並回原點
-            //{
-            //    try
-            //    {
-            //        _hardwareManager.Robot.SetAllServo(true);
-            //        await Task.Delay(2000);
-            //        _robotService.StartHomeProcedure();
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        _logger.LogError(ex, "機械手臂伺服啟動或回原點失敗");
-            //    }
-            //}
-
+            // Polling Loop
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
@@ -105,7 +94,6 @@ namespace ChargerControlApp.Services
                         try
                         {
                             await Task.Run(() => _hardwareManager.Charger[i].PollingOnce()); // 使用同步版本
-                            //await Task.Run(() => _hardwareManager.Charger[i].PollingOnceSync()); // 使用同步版本-改用 PollingOnceSync
                         }
                         catch (Exception ex)
                         {
@@ -120,32 +108,6 @@ namespace ChargerControlApp.Services
                     //_hardwareManager.Charger.PollingOnce();
                     //_logger.LogDebug("輪詢成功，電壓: {Voltage}", _hardwareManager.Charger.GetCachedVoltage());
 
-                    /*
-                    //State monitoring
-                    if (_chargingStationStateMachine._currentState is IdleState ||
-                        _chargingStationStateMachine._currentState is ReservedState)
-                    {
-                        if (_hardwareManager.Charger[0].GetCachedVoltage() >= 10)
-                        {
-                            _chargingStationStateMachine.TransitionTo<OccupiedState>();
-                        }
-                    }
-                    if (_chargingStationStateMachine._currentState is OccupiedState)
-                    {
-                        if (_hardwareManager.Charger[0].GetCachedVoltage() < 10)
-                        {
-                            _chargingStationStateMachine.TransitionTo<IdleState>();
-                        }
-                    }
-                    if (_chargingStationStateMachine._currentState is ChargingStateClass)
-                    {
-                        if (_hardwareManager.Charger[0].GetCachedVoltage() >= 57.5 &&
-                            _hardwareManager.Charger[0].GetCachedCurrent() < 2.5)
-                        {
-                            _chargingStationStateMachine.TransitionTo<OccupiedState>();
-                        }
-                    }
-                    */
                 }
                 catch (Exception ex)
                 {
@@ -166,24 +128,28 @@ namespace ChargerControlApp.Services
         protected void SlotStateCheck(int index)
         {
             var charger = _hardwareManager.Charger[index];
-            var slotState = _hardwareManager.SlotServices.SlotInfo[index];
-            var slotService = _hardwareManager.SlotServices;
+            var slotState = _slotServices.SlotInfo[index];
+            var slotService = _slotServices;
+
+            bool isError = (slotState.State.CurrentState.CurrentState != SlotState.SupplyError) &&
+                (slotState.State.CurrentState.CurrentState != SlotState.CommError) &&
+                (slotState.State.CurrentState.CurrentState != SlotState.StateError);
+
             if (slotState.IsEnabled)
             {
-                // To Do: 先確認好後續處理
                 // 依 Charger 錯誤訊息決定 Slot 狀態
-                //if ((charger.FAULT_STATUS.Data != 0) && (slotState.State.CurrentState.CurrentState != SlotState.SupplyError))
-                //    slotService.TransitionTo(index, SlotState.SupplyError);
-                //// 若無法讀取資料，視為設備斷線，則轉為錯誤狀態
-                //if (charger.IsReadTimeout && (slotState.State.CurrentState.CurrentState != SlotState.SupplyError))
-                //    slotService.TransitionTo(index, SlotState.SupplyError);
+                if ((charger.IsSupplyError) && !isError)
+                    slotService.TransitionTo(index, SlotState.SupplyError);
+
+                // 若無法讀取資料，視為設備斷線，則轉為錯誤狀態
+                if (charger.IsReadTimeout && !isError)
+                    slotService.TransitionTo(index, SlotState.CommError);
 
                 // 從Slot狀態錯誤決定 Slot 狀態
-                //if (slotState.StateError && (charger.FAULT_STATUS.Data == 0) && (slotState.State.CurrentState.CurrentState != SlotState.StateError))
-                if (slotState.StateError && (slotState.State.CurrentState.CurrentState != SlotState.StateError))
+                if (slotState.StateError && !isError)
                         slotService.TransitionTo(index, SlotState.StateError);
 
-                if (slotState.StateError && (charger.FAULT_STATUS.Data != 0)) return;
+                //if (slotState.StateError && (charger.FAULT_STATUS.Data != 0)) return;
 
                 // 狀態轉換邏輯   
                 if (slotState.State.CurrentState.CurrentState == SlotState.Initialization)
@@ -197,8 +163,9 @@ namespace ChargerControlApp.Services
                 else if (slotState.State.CurrentState.CurrentState == SlotState.Idle)
                 {
                     // 有電池，等待充電，下達充電指令
-                    charger.StartCharging();
-                    slotService.TransitionTo(index, SlotState.Charging);
+                    //charger.StartCharging();
+                    if(charger.IsCompletedOneTime)
+                        slotService.TransitionTo(index, SlotState.Charging);
                 }
                 else if (slotState.State.CurrentState.CurrentState == SlotState.Charging)
                 {

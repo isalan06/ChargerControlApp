@@ -32,18 +32,56 @@ namespace ChargerControlApp.Hardware
         public RobotController Robot { get; private set; }
         public ModbusRTUService modbusRTUService { get; private set; }
 
-        public SlotServices SlotServices { get; private set; }
+        //public SlotServices SlotServices { get; private set; }
 
 
         public bool CanbusConnected
         {
-            get { return (canBusService!= null) ? canBusService.IsConnected : false; }
+            // 原先用 SocketCANBusService中的IsConnected來處理但有問題，後改用CanRouteCommandFrame的資訊來判斷
+            //get { return (canBusService!= null) ? canBusService.IsConnected : false; }
+            get 
+            {
+                bool result = false;
+
+                for (int i = 0; i < Charger.Length; i++)
+                {
+                    if (Charger[i].IsCompletedOneTime)
+                    {
+                        if (!Charger[i].IsReadTimeout)
+                        {
+                            result = true;
+                            break;
+                        }
+                    }
+                }
+
+                return result;
+            }
         }
         public bool ModbusConnected
         {
             get { return (modbusRTUService != null) ? modbusRTUService.IsConnected : false; }
         }
+        public uint CanbusConnectedNumber
+        {
+            get
+            {
+                uint count = 0;
 
+                for (int i = 0; i < NPB450ControllerInstnaceNumber; i++)
+                {
+                    if (Charger[i].IsCompletedOneTime)
+                    {
+                        if (!Charger[i].IsReadTimeout)
+                        {
+                            count++;
+                        }
+                    }
+                }
+
+                return count;
+            }
+        }
 
         public HardwareManager(IServiceProvider serviceProvider)
         {
@@ -96,7 +134,7 @@ namespace ChargerControlApp.Hardware
             Robot = serviceProvider.GetRequiredService<RobotController>();
 
             // 取得 SlotServices
-            SlotServices = serviceProvider.GetRequiredService<SlotServices>();
+            //SlotServices = serviceProvider.GetRequiredService<SlotServices>();
         }
 
         public int SwapOut(int[] swapOuts)

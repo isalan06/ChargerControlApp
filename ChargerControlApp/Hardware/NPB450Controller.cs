@@ -63,6 +63,42 @@ namespace ChargerControlApp.Hardware
                 return RoutueCommandFrames.IsReadTimeout;
             }
         }
+        public bool IsCompletedOneTime
+        {
+            get
+            {
+                if(!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    return true; // Windows 模擬環境直接回傳 true
+                }
+                return RoutueCommandFrames.IsCompletedOneTime;
+            }
+        }
+        public ulong CycleCount
+        {
+            get
+            {
+                return RoutueCommandFrames.CycleCount;
+            }
+        }
+        public bool IsTriggerStartCharging { get; internal set; } = false;
+
+        public bool IsSupplyError
+        {
+            get
+            {
+                bool result = false;
+
+                result =    FAULT_STATUS.Bits.HI_TEMP ||
+                            FAULT_STATUS.Bits.OLP ||
+                            FAULT_STATUS.Bits.OTP ||
+                            FAULT_STATUS.Bits.OVP ||
+                            FAULT_STATUS.Bits.SHORT ||
+                            FAULT_STATUS.Bits.AC_FAIL;
+
+                return result;
+            }
+        }
 
         public enum CanbusReadCommand : ushort
         {
@@ -303,8 +339,8 @@ namespace ChargerControlApp.Hardware
                 }
 
                 // 需要完整的輪詢週期才進行啟動/停止充電的指令
-                //if (RoutueCommandFrames.IsCompletedOneTime)
-                //{
+                if (RoutueCommandFrames.IsCompletedOneTime)
+                {
                     if (this.startChargingTrigger)
                     {
                         _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StartCharging()");
@@ -315,6 +351,7 @@ namespace ChargerControlApp.Hardware
                         sendBytes.CopyTo(send, 0);
                         send[2] = (byte)0x01;
                         _canBusService.SendCommand(send, deviceCanID);
+                        IsTriggerStartCharging = true;
                     }
                     if (this.stopChargingTrigger)
                     {
@@ -326,8 +363,9 @@ namespace ChargerControlApp.Hardware
                         sendBytes.CopyTo(send, 0);
                         send[2] = (byte)0x00;
                         _canBusService.SendCommand(send, deviceCanID);
+                        IsTriggerStartCharging = false;
                     }
-                //}
+                }
                 //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-End");
             }
             else

@@ -21,12 +21,45 @@ using RJCP.IO.Ports;
 using Smart.Modbus;
 using System.Collections;
 using System.Data;
+using System.Diagnostics;
+using System.Reflection;
 
 public class Program
 {
     public static void Main(string[] args)
     {
-        Console.WriteLine("Version. 1.0.5.......Start.......");
+        //Console.WriteLine("Version. 1.0.5.......Start.......");
+
+        // 從 assembly/專案嵌入資訊讀取版本（優先 AssemblyInformationalVersion，再退回到 AssemblyName.Version 或 ProductVersion）
+        string version = "unknown";
+        try
+        {
+            var entry = Assembly.GetEntryAssembly();
+            if (entry != null)
+            {
+                version = entry.GetName()?.Version?.ToString();
+
+
+                //var a = entry.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+                //var b = entry.GetName()?.Version?.ToString();
+                //var c = FileVersionInfo.GetVersionInfo(entry.Location).ProductVersion;
+            }
+            else
+            {
+                // 如果 GetEntryAssembly 為 null（例如特殊 host），嘗試用目前 process 的 main module
+                var path = Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
+                if (!string.IsNullOrEmpty(path))
+                {
+                    version = FileVersionInfo.GetVersionInfo(path).ProductVersion ?? "unknown";
+                }
+            }
+        }
+        catch
+        {
+            version = "unknown";
+        }
+
+        Console.WriteLine($"Version. {version}.......Start.......");
 
         // 顯示目前程式位置（可同時查看可執行檔路徑、應用程式基底目錄與目前工作目錄）
         try
