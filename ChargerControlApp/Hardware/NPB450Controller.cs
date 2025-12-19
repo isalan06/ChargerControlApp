@@ -332,7 +332,7 @@ namespace ChargerControlApp.Hardware
                 var commandFrame = new CanRouteCommandFrame();
                 var isFinal = false;
                 bool routeResult = RoutueCommandFrames.Next(out commandFrame, out isFinal);
-                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-Next Result: {routeResult}, IsFinal: {isFinal}");
+                _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-Next Result: {routeResult}, IsFinal: {isFinal}");
                 if (routeResult)
                 {
                     await GetStatusFromDevice_OnlySend(commandFrame.Command);
@@ -728,7 +728,7 @@ namespace ChargerControlApp.Hardware
             {
 
                 byte[] sendBytes = BitConverter.GetBytes((ushort)command);
-                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-GetStatusFromDevice_OnlySend()-Command:{command.ToString()} Bytes:{BitConverter.ToString(sendBytes)}");
+                _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-GetStatusFromDevice_OnlySend()-Command:{command.ToString()} Bytes:{BitConverter.ToString(sendBytes)}");
                 _canBusService.SendCommand(sendBytes, deviceCanID);
             }
         }

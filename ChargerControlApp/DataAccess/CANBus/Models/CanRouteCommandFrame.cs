@@ -46,9 +46,32 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
             dtReadTimeout = DateTime.Now;
         }
 
+        public bool NeedRetry
+        {
+            get
+            {
+                return (DateTime.Now.Subtract(dtRetryTimer).TotalMilliseconds > RetryInterval_ms);
+            }
+        }
+        public double ElapsedRetryTime_ms
+        {
+            get
+            {
+                return DateTime.Now.Subtract(dtRetryTimer).TotalMilliseconds;
+            }
+        }
+
+        public void ResetRetryTimer()
+        {
+            dtRetryTimer = DateTime.Now;
+        }
+
         private DateTime dtReadTimeout = DateTime.Now; // 讀取逾時計時器
 
         public double TimeoutValue_ms { get; set; } = 60000;
+
+        private DateTime dtRetryTimer = DateTime.Now; // 重試計時器
+        public double RetryInterval_ms { get; set; } = 300000;
 
 
         public CanRouteCommandFrame[] Commands = new CanRouteCommandFrame[]
@@ -121,13 +144,19 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
                             CycleCount++;
                         }
                         else
-                        { 
+                        {
                             command = Commands[CommandIndex];
                             Commands[CommandIndex].HasCommand = true;
                             Commands[CommandIndex].HasResponse = false;
                             result = true;
                         }
                     }
+                    else if (this.NeedRetry)
+                    {
+                        Commands[CommandIndex].HasCommand = false;
+                        this.ResetRetryTimer();
+                    }
+
                 }
                 else
                 {
@@ -160,6 +189,7 @@ namespace ChargerControlApp.DataAccess.CANBus.Models
             try
             {
                 dtReadTimeout = DateTime.Now; // 重置讀取逾時計時器
+                dtRetryTimer = DateTime.Now; // 重置重試計時器
 
                 switch (command)
                 {

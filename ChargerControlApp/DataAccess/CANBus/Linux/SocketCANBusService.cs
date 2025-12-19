@@ -192,14 +192,14 @@ namespace ChargerControlApp.DataAccess.CANBus.Linux
         {
             try
             {
-                //Console.WriteLine("等待接收 CAN 消息...");
+                Console.WriteLine("等待接收 CAN 消息...");
                 var frame = _socket.Read(out CanFrame canFrame);
                 canid = canFrame.CanId & 0xFFu;
                 if (canFrame.Length >= 2)
                 {
                     commandCode = (ushort)(canFrame.Data[1] << 8 | canFrame.Data[0]);
                 }
-                //Console.WriteLine($"接收到 CAN 消息: ID=0x{canFrame.CanId:X} => {canid}, CommandCode=0x{commandCode:X}, Data={BitConverter.ToString(canFrame.Data, 0, canFrame.Length)}");
+                Console.WriteLine($"接收到 CAN 消息: ID=0x{canFrame.CanId:X} => {canid}, CommandCode=0x{commandCode:X}, Data={BitConverter.ToString(canFrame.Data, 0, canFrame.Length)}");
                 return canFrame.Data;
             }
             catch(Exception ex)
