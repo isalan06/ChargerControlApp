@@ -34,6 +34,10 @@ namespace ChargerControlApp.Utilities
         public bool ServoOnAndHomeAfterStartup { get; set; }
 
         public bool ChargerUseAsync { get; set; }
+
+        public bool GRPCRegisterOnlyResponse { get; set; }
+
+        public bool CheckBattaryExistByMemory { get; set; }
     }
 
     public class HardwareVersion

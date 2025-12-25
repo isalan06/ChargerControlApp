@@ -100,6 +100,25 @@ namespace ChargerControlApp.Hardware
             }
         }
 
+        public bool IsBatteryExist
+        {
+            get
+            {
+                bool result = false;
+
+                if (IsCompletedOneTime)
+                {
+                    if (!IsReadTimeout)
+                    {
+                        if (Voltage > 1.0)
+                            result = true;
+                    }
+                }
+
+                return result;
+            }
+        }
+
         public enum CanbusReadCommand : ushort
         {
             OPERATION = 0x0000,

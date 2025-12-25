@@ -81,7 +81,8 @@ namespace ChargerControlApp.Services
 
                 var response = await _client.PostAsync(request, callOptions);
                 LogInformation($"[gRPC] DevicePostRegistration Response: UUID={response.RequestUuid}, DeviceName={response.DeviceName}, HeartbeatIpPort={response.HeartbeatIpPort}");
-                if(response.DeviceName == _settings.DeviceName) IsOnline = true; // 註冊成功後，設置為在線狀態
+                if (_settings.GRPCRegisterOnlyResponse) IsOnline = true;
+                else if(response.DeviceName == _settings.DeviceName) IsOnline = true; // 註冊成功後，設置為在線狀態
                 //response.Success = true;
                 return response;
             }
