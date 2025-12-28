@@ -163,10 +163,11 @@ public class Program
             var stateMachine = sp.GetRequiredService<ChargingStationStateMachine>();
             var canBusService = sp.GetRequiredService<ICANBusService>();
             var logger = sp.GetRequiredService<ILogger<NPB450Controller>>();
+            var appSettings = sp.GetRequiredService<AppSettings>();
             var arr = new NPB450Controller[NPB450Controller.NPB450ControllerInstnaceMaxNumber];
             for (int i = 0; i < NPB450Controller.NPB450ControllerInstnaceMaxNumber; i++)
             {
-                arr[i] = new NPB450Controller(stateMachine, canBusService, i, logger); // id 可依需求調整
+                arr[i] = new NPB450Controller(stateMachine, canBusService, i, logger, appSettings); // id 可依需求調整
             }
             return arr;
         });

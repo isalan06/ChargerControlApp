@@ -3,12 +3,14 @@ using ChargerControlApp.DataAccess.CANBus.Interfaces;
 using ChargerControlApp.DataAccess.CANBus.Linux;
 using ChargerControlApp.DataAccess.CANBus.Models;
 using ChargerControlApp.Services;
+using ChargerControlApp.Utilities;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection.Metadata;
@@ -19,7 +21,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using static System.Net.Mime.MediaTypeNames;
-using System.Diagnostics;
 
 
 namespace ChargerControlApp.Hardware
@@ -32,6 +33,7 @@ namespace ChargerControlApp.Hardware
 
         private readonly ICANBusService _canBusService;
         private readonly ChargingStationStateMachine _chargingStationStateMachine;
+        private readonly AppSettings _appSettings;
 
         private static uint rpb1700DeviceID = 3; // 此參數為固定測值，後續不使用該數值
         private static uint rpb1700MessageID = 0x000C0100; 
@@ -53,13 +55,19 @@ namespace ChargerControlApp.Hardware
         // timeout
         private bool isReadError = false;
         private long timeoutMilliseconds = 1000;
-        private Stopwatch stopwatch = new Stopwatch();  
+        private Stopwatch stopwatch = new Stopwatch(); 
+        private Stopwatch rechargeTimer = new Stopwatch();
+        private Stopwatch fullchargeCheckDelay = new Stopwatch();
 
         public CanRouteCommandFrameList RoutueCommandFrames { get; set; } = new CanRouteCommandFrameList();
         public bool IsReadTimeout
         {
             get
             {
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    return false; // Windows 模擬環境直接回傳 false
+                }
                 return RoutueCommandFrames.IsReadTimeout;
             }
         }
@@ -110,13 +118,48 @@ namespace ChargerControlApp.Hardware
                 {
                     if (!IsReadTimeout)
                     {
-                        if (Voltage > 1.0)
+                        if (Voltage > _appSettings.CheckBatteryExistValue_Voltage_V)
                             result = true;
                     }
                 }
 
                 return result;
             }
+        }
+
+        public bool IsFullCharged
+        {
+            get
+            {
+                bool result = false;
+                if (IsCompletedOneTime)
+                {
+                    if (!IsReadTimeout)
+                    {
+                        if (IsBatteryExist)
+                        {
+                            bool flag = (Current < _appSettings.CheckBatteryFullChargeValue_A);
+                            if (!flag) fullchargeCheckDelay.Restart();
+                            else if (fullchargeCheckDelay.ElapsedMilliseconds > _appSettings.FullChargeCheckDelay_Seconds * 1000)
+                                result = true;
+                        }
+                    }
+                }
+                return result;
+            }
+        }
+
+
+        public void ResetRechargeTimer()
+        {
+            rechargeTimer.Restart();
+        }
+        public bool IsRechargeTimeout()
+        {
+            if (rechargeTimer.ElapsedMilliseconds >= _appSettings.RechargeAfterFullDischarge_Minutes * 1000 * 60)
+                return true;
+            else
+                return false;
         }
 
         public enum CanbusReadCommand : ushort
@@ -328,8 +371,9 @@ namespace ChargerControlApp.Hardware
         //polling
         private bool _running = true;
 
-        public NPB450Controller(ChargingStationStateMachine stateMachine, ICANBusService canBusService, int id, ILogger<NPB450Controller> logger)
+        public NPB450Controller(ChargingStationStateMachine stateMachine, ICANBusService canBusService, int id, ILogger<NPB450Controller> logger, AppSettings appSettings)
         {
+            _appSettings = appSettings;
             _chargingStationStateMachine = stateMachine;
             _canBusService = canBusService;
             deviceID = (uint)id;

@@ -33,6 +33,7 @@ namespace ChargerControlApp.Services
         private readonly RobotService _robotService;
         private readonly ChargersReader _chargersController;
         private readonly SlotServices _slotServices;
+        private readonly AppSettings _settings;
 
         //public CanBusPollingService(NPB1700Controller npbController, ILogger<CanBusPollingService> logger)
         //{
@@ -49,6 +50,7 @@ namespace ChargerControlApp.Services
             _robotService = serviceProvider.GetService<RobotService>();
             _chargersController = serviceProvider.GetService<ChargersReader>();
             _slotServices = serviceProvider.GetService<SlotServices>();
+            _settings = serviceProvider.GetRequiredService<AppSettings>();
         }
         //public CanBusPollingService(HardwareManager hardwareManager, ILogger<CanBusPollingService> logger)
         //{
@@ -135,6 +137,10 @@ namespace ChargerControlApp.Services
                 (slotState.State.CurrentState.CurrentState != SlotState.CommError) &&
                 (slotState.State.CurrentState.CurrentState != SlotState.StateError);
 
+            bool isBatteryExist = _settings.CheckBattaryExistByMemory?
+                slotState.BatteryMemory :
+                charger.IsBatteryExist;
+
             if (slotState.IsEnabled)
             {
                 // 依 Charger 錯誤訊息決定 Slot 狀態
@@ -155,7 +161,7 @@ namespace ChargerControlApp.Services
                 if (slotState.State.CurrentState.CurrentState == SlotState.Initialization)
                 {
                     // 初始化完成，轉到 Empty 狀態(無電池) 或 Idle 狀態(有電池)
-                    if (slotState.BatteryMemory)
+                    if (isBatteryExist)
                         slotService.TransitionTo(index, SlotState.Idle);
                     else
                         slotService.TransitionTo(index, SlotState.Empty);
@@ -164,7 +170,7 @@ namespace ChargerControlApp.Services
                 {
                     // 有電池，等待充電，下達充電指令
                     //charger.StartCharging();
-                    if(charger.IsCompletedOneTime)
+                    if (charger.IsCompletedOneTime)
                         slotService.TransitionTo(index, SlotState.Charging);
                 }
                 else if (slotState.State.CurrentState.CurrentState == SlotState.Charging)
@@ -172,6 +178,18 @@ namespace ChargerControlApp.Services
                     // 充電中，檢查是否浮充
                     if (charger.CHG_STATUS.Bits.FVM)
                         slotService.TransitionTo(index, SlotState.Floating);
+                    if (charger.IsFullCharged)
+                        slotService.TransitionTo(index, SlotState.FullCharge);
+                }
+                else if (slotState.State.CurrentState.CurrentState == SlotState.Floating)
+                {
+                    if (charger.IsFullCharged)
+                        slotService.TransitionTo(index, SlotState.FullCharge);
+                }
+                else if (slotState.State.CurrentState.CurrentState == SlotState.FullCharge)
+                {
+                    if (charger.IsRechargeTimeout())
+                        slotService.TransitionTo(index, SlotState.Idle);
                 }
             }
         }

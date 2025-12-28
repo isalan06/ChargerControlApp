@@ -38,6 +38,14 @@ namespace ChargerControlApp.Utilities
         public bool GRPCRegisterOnlyResponse { get; set; }
 
         public bool CheckBattaryExistByMemory { get; set; }
+
+        public double CheckBatteryExistValue_Voltage_V { get; set; }
+
+        public double CheckBatteryFullChargeValue_A { get; set; }
+
+        public long RechargeAfterFullDischarge_Minutes { get; set; }
+
+        public long FullChargeCheckDelay_Seconds { get; set; }
     }
 
     public class HardwareVersion

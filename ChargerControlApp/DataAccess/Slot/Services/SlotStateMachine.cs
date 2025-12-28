@@ -12,6 +12,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         Charging,
         Floating,
         StopCharge,
+        FullCharge,
         SupplyError,
         StateError,
         CommError
@@ -273,6 +274,10 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     _context.TransitionTo<StopChargeSlotState>();
                     break;
 
+                case SlotState.FullCharge:
+                    _context.TransitionTo<FullChargeSlotState>();
+                    break;
+
                 case SlotState.NotUsed:
                     _context.TransitionTo<NotUsedSlotState>();
                     break;
@@ -330,6 +335,10 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     _context.TransitionTo<StopChargeSlotState>();
                     break;
 
+                case SlotState.FullCharge:
+                    _context.TransitionTo<FullChargeSlotState>();
+                    break;
+
                 case SlotState.NotUsed:
                     _context.TransitionTo<NotUsedSlotState>();
                     break;
@@ -382,6 +391,62 @@ namespace ChargerControlApp.DataAccess.Slot.Services
 
                 case SlotState.Charging:
                     _context.TransitionTo<ChargingSlotState>();
+                    break;
+
+                case SlotState.NotUsed:
+                    _context.TransitionTo<NotUsedSlotState>();
+                    break;
+
+                case SlotState.SupplyError:
+                    _context.TransitionTo<SupplyErrorSlotState>();
+                    break;
+
+                case SlotState.StateError:
+                    _context.TransitionTo<StateErrorSlotState>();
+                    break;
+
+                case SlotState.CommError:
+                    _context.TransitionTo<CommErrorSlotState>();
+                    break;
+
+                default:
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    result = false;
+                    break;
+            }
+
+            return result;
+        }
+    }
+
+
+    public class FullChargeSlotState : SlotStateBase<SlotState>
+    {
+        public FullChargeSlotState()
+        {
+            _currentState = _stateEnum = SlotState.StopCharge;
+        }
+        public override void EnterState()
+        {
+            Console.WriteLine($"Slot[{_index}] 進入停止充電狀態");
+            _hardwareManager.Charger[_index].ResetRechargeTimer(); // 重置重新充電Timer
+            _hardwareManager.Charger[_index].StopCharging(); // 停止充電
+        }
+        public override bool HandleTransition(SlotState nextState)
+        {
+            bool result = true;
+            switch (nextState)
+            {
+                case SlotState.Initialization:
+                    _context.TransitionTo<InitializationSlotState>();
+                    break;
+
+                case SlotState.FullCharge:
+                    Console.WriteLine($"Slot[{_index}] 已經在充滿電狀態");
+                    break;
+
+                case SlotState.Idle:
+                    _context.TransitionTo<IdleSlotState>();
                     break;
 
                 case SlotState.NotUsed:

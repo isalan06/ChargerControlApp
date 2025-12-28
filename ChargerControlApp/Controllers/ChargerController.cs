@@ -63,7 +63,9 @@ namespace ChargerControlApp.Controllers
                     short_ = false,
                     ac_fail = false,
                     op_off = false,
-                    hi_temp = false
+                    hi_temp = false,
+                    battery_exist = false,
+                    full_charged = false,
                 });
             }
 
@@ -87,7 +89,9 @@ namespace ChargerControlApp.Controllers
                 short_ = charger.FAULT_STATUS.Bits.SHORT,
                 ac_fail = charger.FAULT_STATUS.Bits.AC_FAIL,
                 op_off = charger.FAULT_STATUS.Bits.OP_OFF,
-                hi_temp = charger.FAULT_STATUS.Bits.HI_TEMP
+                hi_temp = charger.FAULT_STATUS.Bits.HI_TEMP,
+                battery_exist = charger.IsBatteryExist,
+                full_charged = charger.IsFullCharged
             });
         }
     }
