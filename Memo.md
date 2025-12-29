@@ -1,5 +1,122 @@
 <h1> 開發隨記 </h1>
 
+# 20251229
+
+## 開啟啟動測試
+使用樹梅派來測試
+
+- 創建服務文件：在 /etc/systemd/system/ 目錄下創建一個名為 chargercontrolapp.service 的文件。
+
+```bash
+sudo nano /etc/systemd/system/chargercontrolapp.service
+```
+
+- 編輯服務內容(有問題，請用下面的)
+```bash
+[Unit]
+Description=Battery Swapping Station - ASP.NET Core App
+After=network.target
+
+[Service]
+WorkingDirectory=/home/pi/Program/app/publish/
+ExecStart=/usr/bin/dotnet /home/pi/Program/app/publish/ChargerControlApp.dll
+Restart=always
+# RestartSec=10 # 錯誤發生後 10 秒重啟
+#User=pi # 執行應用程式的 Linux 使用者
+Environment=ASPNETCORE_ENVIRONMENT=Production
+# Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false # 關閉遙測訊息
+
+[Install]
+WantedBy=multi-user.target
+```
+
+- 重新載入 Systemd
+```bash
+sudo systemctl daemon-reload
+```
+
+- 啟用並啟動服務
+```bash
+sudo systemctl enable chargercontrolapp.service # 開機自動啟動
+sudo systemctl start chargercontrolapp.service # 立即啟動
+```
+
+- 檢查狀態
+```bash
+sudo systemctl status chargercontrolapp.service
+```
+
+- 出現問題
+```bash
+chargercontrolapp.service - Battery Swapping Station - ASP.NET Core App
+     Loaded: loaded (/etc/systemd/system/chargercontrolapp.service; enabled; preset: enabled)
+     Active: failed (Result: exit-code) since Mon 2025-12-29 19:54:26 CST; 3s ago
+   Duration: 4ms
+    Process: 1753 ExecStart=/usr/bin/dotnet /home/pi/Program/app/publish/ChargerControlApp.dll (code=exited, status=203/EXEC)
+   Main PID: 1753 (code=exited, status=203/EXEC)
+        CPU: 3ms
+
+Dec 29 19:54:26 BSS-pi4 systemd[1]: chargercontrolapp.service: Scheduled restart job, restart counter is at 5.
+Dec 29 19:54:26 BSS-pi4 systemd[1]: Stopped chargercontrolapp.service - Battery Swapping Station - ASP.NET Core App.
+Dec 29 19:54:26 BSS-pi4 systemd[1]: chargercontrolapp.service: Start request repeated too quickly.
+Dec 29 19:54:26 BSS-pi4 systemd[1]: chargercontrolapp.service: Failed with result 'exit-code'.
+Dec 29 19:54:26 BSS-pi4 systemd[1]: Failed to start chargercontrolapp.service - Battery Swapping Station - ASP.NET Core App.
+```
+錯誤 status=203/EXEC 表示 systemd 無法執行 ExecStart 中指定的命令。通常是因為找不到 dotnet 或路徑不正確。
+
+- 確認 dotnet 的實際路徑
+```bash
+# 查找 dotnet 的完整路徑
+which dotnet
+
+# 或者
+whereis dotnet
+
+# 測試 dotnet 是否可以執行
+dotnet --version
+```
+結果為 /home/pi/.dotnet/dotnet
+
+- 修改 檔案並增加等待 setup-serial-can.service完成後才執行
+
+```bash
+sudo nano /etc/systemd/system/chargercontrolapp.service
+```
+內容
+```bash
+[Unit]
+Description=Battery Swapping Station - ASP.NET Core App
+After=network.target setup-serial-can.service
+Requires=setup-serial-can.service
+
+[Service]
+WorkingDirectory=/home/pi/Program/app/publish/
+ExecStart=/home/pi/.dotnet/dotnet /home/pi/Program/app/publish/ChargerControlApp.dll
+Restart=always
+# RestartSec=10 # 錯誤發生後 10 秒重啟
+#User=pi # 執行應用程式的 Linux 使用者
+Environment=ASPNETCORE_ENVIRONMENT=Production
+# Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false # 關閉遙測訊息
+
+[Install]
+WantedBy=multi-user.target
+```
+
+- 重新載入並啟動服務
+```bash
+# 重新載入 systemd 設定
+sudo systemctl daemon-reload
+
+# 清除失敗狀態
+sudo systemctl reset-failed chargercontrolapp.service
+
+# 啟動服務
+sudo systemctl start chargercontrolapp.service
+
+# 檢查狀態
+sudo systemctl status chargercontrolapp.service
+```
+
 # 20251220
 
 ## gRPC 調整項目
