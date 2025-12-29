@@ -1,5 +1,6 @@
 using ChargerControlApp.DataAccess.Modbus.Services;
 using ChargerControlApp.DataAccess.Robot.Services;
+using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
 using ChargerControlApp.Models;
 using ChargerControlApp.Services;
@@ -17,8 +18,9 @@ namespace ChargerControlApp.Controllers
         private readonly RobotService _robotService;
         private readonly MonitoringService _monitoringService;
         private readonly GrpcClientService _grpcClientService;
+        private readonly SlotServices _slotServices;
 
-        public HomeController(ILogger<HomeController> logger, RobotController robotController, ChargingStationStateMachine stateMachine, HardwareManager hardwareManager, RobotService robotService, MonitoringService monitoringService, GrpcClientService grpcClientService)
+        public HomeController(ILogger<HomeController> logger, RobotController robotController, ChargingStationStateMachine stateMachine, HardwareManager hardwareManager, RobotService robotService, MonitoringService monitoringService, GrpcClientService grpcClientService, SlotServices slotServices)
         {
             _logger = logger;
             _robotController = robotController;
@@ -27,6 +29,7 @@ namespace ChargerControlApp.Controllers
             _robotService = robotService;
             _monitoringService = monitoringService;
             _grpcClientService = grpcClientService;
+            _slotServices = slotServices;
         }
 
 
@@ -51,6 +54,7 @@ namespace ChargerControlApp.Controllers
                 errorMessage = _robotService.LastError.ErrorMessage,
                 mainProcedureStatusMessage = _robotService.MainProcedureStatusMessage,
                 procedureStatusMessage = _robotService.ProcedureStatusMessage,
+                isGrpcAutoLoading = GrpcClientService.IsGrpcWaitRegisterResponse
             });
         }
 
@@ -79,6 +83,13 @@ namespace ChargerControlApp.Controllers
         {
             _monitoringService.ResetAlarm();
             return Json(new { success = true, message = "告警已重置。" });
+        }
+
+        [HttpPost]
+        public IActionResult SlotReset()
+        {
+            _slotServices.ResetAllSlotStatus();
+            return Json(new { success = true, message = "Slot重置已觸發。" });
         }
 
         [HttpPost]

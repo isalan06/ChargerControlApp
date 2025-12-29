@@ -784,7 +784,7 @@ namespace ChargerControlApp.Hardware
             {
                 if (posIndex >= 0 && posIndex < Motors[motorId].MotorInfo.OpDataExArray.Length)
                 {
-                    Motors[motorId].MotorInfo.OpDataExArray[posIndex].Position = Motors[motorId].MotorInfo.Pos_Actual;//position;
+                    Motors[motorId].MotorInfo.OpDataArray[posIndex].Position = Motors[motorId].MotorInfo.Pos_Actual;//position;
                     var command = MotorCommandList.CommandMap["WriteOpData_Position"].Clone();
                     command.Id = (byte)motorId;
                     if (command.SubFrames != null)
@@ -792,7 +792,7 @@ namespace ChargerControlApp.Hardware
                         command.DataFrame = command.SubFrames[posIndex].DataFrame.Clone();
                         command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                         command.DataFrame.DataNumber = 2;
-                        command.DataFrame.Data = Motors[motorId].MotorInfo.OpDataExArray[posIndex].ToPositionUShortArray();
+                        command.DataFrame.Data = Motors[motorId].MotorInfo.OpDataArray[posIndex].ToPositionUShortArray();
                         _manualCommand.Enqueue(command);
                         result = true;
                     }
@@ -809,7 +809,7 @@ namespace ChargerControlApp.Hardware
             {
                 if (posIndex >= 0 && posIndex < Motors[motorId].MotorInfo.OpDataArray.Length)
                 {
-                    Motors[motorId].MotorInfo.OpDataArray[posIndex].Position = Motors[motorId].MotorInfo.Pos_Actual;//position;
+                    Motors[motorId].MotorInfo.OpDataExArray[posIndex].Position = Motors[motorId].MotorInfo.Pos_Actual;//position;
                     var command = MotorCommandList.CommandMap["WriteOpExData_Position"].Clone();
                     command.Id = (byte)motorId;
                     if (command.SubFrames != null)
@@ -817,7 +817,7 @@ namespace ChargerControlApp.Hardware
                         command.DataFrame = command.SubFrames[posIndex].DataFrame.Clone();
                         command.DataFrame.SlaveAddress = (byte)(motorId + 1);
                         command.DataFrame.DataNumber = 2;
-                        command.DataFrame.Data = Motors[motorId].MotorInfo.OpDataArray[posIndex].ToPositionUShortArray();
+                        command.DataFrame.Data = Motors[motorId].MotorInfo.OpDataExArray[posIndex].ToPositionUShortArray();
                         _manualCommand.Enqueue(command);
                         result = true;
                     }

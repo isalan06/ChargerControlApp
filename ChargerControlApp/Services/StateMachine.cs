@@ -129,6 +129,8 @@ namespace ChargerControlApp.Services
             var _robotService = _serviceProvider.GetRequiredService<RobotService>();
 
             DevicePostRegistrationResponse devicePostRegistrationResponse;
+
+            GrpcClientService.IsGrpcWaitRegisterResponse = true; // 開始等待註冊回應
             do
             {
                 //bypassCounter++;
@@ -138,6 +140,7 @@ namespace ChargerControlApp.Services
                 {
                     devicePostRegistrationResponse = await _grpcClientService.RegisterDeviceAsync();
                     Console.WriteLine($"收到註冊響應: {devicePostRegistrationResponse.DeviceName}");
+                    if ((devicePostRegistrationResponse.DeviceName != "") && _settings.GRPCRegisterOnlyResponse) break; // 只要收到回應就跳出迴圈
                 }
                 catch (Exception ex)
                 {
@@ -154,6 +157,8 @@ namespace ChargerControlApp.Services
 
                 await Task.Delay(5000); // 進行輪詢
             } while ((devicePostRegistrationResponse.DeviceName != _settings.DeviceName) && !RobotService.IsManualMode); // ToDo: 
+            GrpcClientService.IsGrpcWaitRegisterResponse = false; // 結束等待註冊回應
+
 
             if (HardwareManager.ServoOnAndHomeAfterStartup) // 啟動後是否啟用伺服並回原點
             {

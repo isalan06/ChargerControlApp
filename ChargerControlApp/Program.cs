@@ -95,7 +95,9 @@ public class Program
 
         // 綁定設定
         var settings = new AppSettings();
-        configuration.GetSection("AppSettings").Bind(settings);
+        ConfigLoader.Load();
+        settings = ConfigLoader.GetSettings();
+        //configuration.GetSection("AppSettings").Bind(settings);
         builder.Services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
         builder.Services.AddSingleton(settings); // 讓 DI 容器可以取得 AppSettings
         HardwareManager.NPB450ControllerInstnaceNumber = settings.PowerSupplyInstanceNumber; // 設定 NP-B450 控制器實例數量
@@ -178,9 +180,9 @@ public class Program
         builder.Services.AddSingleton<RobotService>();
 
         // 註冊 Grpc 相關服務
-        ConfigLoader.Load();
-        AppSettings appSettings = ConfigLoader.GetSettings();
-        builder.Services.AddSingleton(GrpcChannel.ForAddress(appSettings.ServerIp));
+        //ConfigLoader.Load();
+        //AppSettings appSettings = ConfigLoader.GetSettings();
+        builder.Services.AddSingleton(GrpcChannel.ForAddress(settings.ServerIp));
         builder.Services.AddSingleton<GrpcClientService>();
         builder.Services.RegisterChargingServices(); // 共用服務註冊
         builder.Services.AddSingleton<SwappingStationService>();

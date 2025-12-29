@@ -22,6 +22,8 @@ namespace ChargerControlApp.Services
         public static IEnumerable<string> LogMessages => _logMessages;
 
         public static bool IsOnline { get; internal set; } = false;
+
+        public static bool IsGrpcWaitRegisterResponse { get; set; } = false;
         public GrpcClientService(GrpcChannel grpcChannel, ILogger<GrpcClientService> logger)
         {
             _grpcChannel = grpcChannel;
