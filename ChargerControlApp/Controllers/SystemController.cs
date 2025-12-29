@@ -4,6 +4,8 @@ using System.Reflection;
 using System.IO;
 using ChargerControlApp.DataAccess.Modbus.Services;
 using System.Text.Json;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace ChargerControlApp.Controllers
 {
@@ -157,6 +159,104 @@ namespace ChargerControlApp.Controllers
                 try { if (System.IO.File.Exists(tmpPath)) System.IO.File.Delete(tmpPath); } catch { }
                 return StatusCode(500, new { message = "Failed to save file", detail = ex.Message });
             }
+        }
+
+        // System action DTO
+        public class SystemActionRequest
+        {
+            public string Action { get; set; } = ""; // "restart-service" | "reboot" | "shutdown"
+            public string ServiceName { get; set; } = "chargercontrolapp.service"; // optional
+        }
+
+        // POST /System/SystemAction
+        [HttpPost]
+        public IActionResult SystemAction([FromBody] SystemActionRequest req)
+        {
+            if (req == null || string.IsNullOrEmpty(req.Action))
+                return BadRequest(new { message = "Missing Action" });
+
+            var action = req.Action.Trim().ToLowerInvariant();
+            var svc = string.IsNullOrWhiteSpace(req.ServiceName) ? "chargercontrolapp.service" : req.ServiceName.Trim();
+
+            try
+            {
+                string result = "";
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    if (action == "restart-service")
+                    {
+                        // 若需要 sudo，請在系統上配置 sudoers 無密碼執行 systemctl restart <svc>
+                        result = RunProcessAndCapture("systemctl", $"restart {svc}");
+                    }
+                    else if (action == "reboot")
+                    {
+                        // 需 root 權限
+                        result = RunProcessAndCapture("systemctl", "reboot");
+                    }
+                    else if (action == "shutdown")
+                    {
+                        // 需 root 權限
+                        result = RunProcessAndCapture("systemctl", "poweroff");
+                    }
+                    else
+                    {
+                        return BadRequest(new { message = "Unknown action" });
+                    }
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    if (action == "restart-service")
+                    {
+                        // 使用 PowerShell Restart-Service（需管理員權限）
+                        result = RunProcessAndCapture("powershell", $"-Command \"Restart-Service -Name '{svc}' -Force\"");
+                    }
+                    else if (action == "reboot")
+                    {
+                        // 立刻重開機（需管理員權限）
+                        result = RunProcessAndCapture("shutdown", "/r /t 0");
+                    }
+                    else if (action == "shutdown")
+                    {
+                        // 關機（需管理員權限）
+                        result = RunProcessAndCapture("shutdown", "/s /t 0");
+                    }
+                    else
+                    {
+                        return BadRequest(new { message = "Unknown action" });
+                    }
+                }
+                else
+                {
+                    return StatusCode(501, new { message = "Unsupported OS" });
+                }
+
+                return Ok(new { message = "Command started", detail = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to execute", detail = ex.Message });
+            }
+        }
+
+        private static string RunProcessAndCapture(string fileName, string arguments)
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var proc = Process.Start(psi);
+            if (proc == null) throw new InvalidOperationException("Process failed to start");
+            // 等待短時間以便捕捉輸出；某些重啟命令會立即終止進程或無輸出
+            proc.WaitForExit(5000);
+            string outp = proc.StandardOutput?.ReadToEnd() ?? "";
+            string err = proc.StandardError?.ReadToEnd() ?? "";
+            return $"ExitCode={proc.ExitCode}; StdOut={outp}; StdErr={err}";
         }
     }
 }

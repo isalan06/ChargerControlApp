@@ -161,10 +161,13 @@ namespace ChargerControlApp.Services
                 if (slotState.State.CurrentState.CurrentState == SlotState.Initialization)
                 {
                     // 初始化完成，轉到 Empty 狀態(無電池) 或 Idle 狀態(有電池)
-                    if (isBatteryExist)
-                        slotService.TransitionTo(index, SlotState.Idle);
-                    else
-                        slotService.TransitionTo(index, SlotState.Empty);
+                    if (charger.IsCompletedOneTime)
+                    {
+                        if (isBatteryExist)
+                            slotService.TransitionTo(index, SlotState.Idle);
+                        else
+                            slotService.TransitionTo(index, SlotState.Empty);
+                    }
                 }
                 else if (slotState.State.CurrentState.CurrentState == SlotState.Idle)
                 {

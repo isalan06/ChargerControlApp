@@ -23,6 +23,20 @@
 <div class="tab-content mt-3" id="systemTabContent">
     <div class="tab-pane fade show active" id="version" role="tabpanel">
         <h4>System Version Information</h4>
+
+        <div class="mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <button id="btn-restart-service" class="btn btn-sm btn-warning">Restart App Service</button>
+                <input id="service-name-input" class="form-control form-control-sm" style="width:300px;" value="chargercontrolapp.service" />
+                <button id="btn-reboot-host" class="btn btn-sm btn-danger">Reboot Host</button>
+                <button id="btn-shutdown-host" class="btn btn-sm btn-dark">Shutdown Host</button>
+                <span id="system-action-feedback" class="small text-muted"></span>
+            </div>
+            <div class="mt-1 small text-muted">
+                注意：執行需適當權限（Linux: root 或 sudoers；Windows: 管理員）。若沒有權限指令會失敗。
+            </div>
+        </div>
+
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -499,6 +513,67 @@
 
                 formDiv.style.display = '';
                 msgEl.textContent = '已載入設定，請修改後按 Save 儲存（儲存會覆寫 AppSettings 區塊）';
+
+                // --- 新增：為每個欄位套用 label tooltip（輸入框/選取框本身不設 tooltip） ---
+                (function initFieldTooltips() {
+                    const help = {
+                        ServerIp: "上位系統位址，系統會向該上位系統註冊",
+                        DeviceId: "設備ID",
+                        IPPort: "設備本身的網路位址，給上位系統來使用gRPC來讀取設備狀態及下達命令",
+                        DeviceModel: "設備型號",
+                        DeviceInfo: "設備資訊",
+                        TagName: "標籤",
+                        DeviceName: "設備名稱",
+                        ChargingStationName: "充電站名稱",
+                        MaxChargingCurrent: "最大充電電流",
+                        CanBitrate: "CANBus 通訊Baudrate",
+                        PowerSupplyInstanceNumber: "使用電源供應器數量",
+                        PositionInPosOffset: "判斷定位最大誤差，超過該數值會發生錯誤",
+                        CanInterface: "CANBus 使用介面名稱",
+                        PortName: "RS485介面名稱(Windows)",
+                        PortNameLinux: "RS485介面名稱(Linux)",
+                        CheckBattaryExistByMemory: "利用設定記憶來檢查電池存在",
+                        ServoOnAndHomeAfterStartup: "系統開啟後會自動進行原點複歸",
+                        ChargerUseAsync: "CANBus讀取使用非同步(目前無法使用)",
+                        GRPCRegisterOnlyResponse: "gRPC註冊回應僅判斷DeviceName為非空值視為完成",
+                        SensorCheckPass: "在流程中不使用感測器確認電池存在與否",
+                        CheckBatteryExistValue_Voltage_V: "當電源供應器電壓超過該數值視為有電池存在",
+                        CheckBatteryFullChargeValue_A: "當電源供應器電流低於該數值視為已經充飽電，會停止充電",
+                        RechargeAfterFullDischarge_Minutes: "當充飽電停止充電後，在經過該數值的時間後會重新充電",
+                        FullChargeCheckDelay_Seconds: "重新充電後，經過該數值的時間後才會檢查是否充飽電"
+                    };
+
+                    Object.keys(help).forEach(key => {
+                        const el = document.getElementById('fld-' + key);
+                        if (!el) return;
+                        const txt = help[key] || '';
+
+                        // 只設定欄位名稱(label)的 title / tooltip；輸入框與 checkbox 本體不設 tooltip
+                        try {
+                            // same parent (most inputs): label.form-label exists
+                            let lab = null;
+                            const parent = el.parentElement;
+                            if (parent) lab = parent.querySelector('.form-label, .form-check-label');
+                            // fallback: look for any label element nearby
+                            if (!lab) {
+                                const possible = document.querySelectorAll('label');
+                                for (const p of possible) {
+                                    if (p.textContent && p.textContent.trim().startsWith(key)) { lab = p; break; }
+                                }
+                            }
+                            if (lab) {
+                                lab.setAttribute('title', txt);
+                                if (window.bootstrap && bootstrap.Tooltip) {
+                                    const inst = bootstrap.Tooltip.getInstance(lab);
+                                    if (inst) inst.dispose();
+                                    bootstrap.Tooltip.getOrCreateInstance(lab, { placement: 'top' });
+                                }
+                            }
+                        } catch (e) {
+                            console.error('set label title error', e);
+                        }
+                    });
+                })();
             }
 
             function buildAppSettingsFromForm() {
@@ -623,6 +698,54 @@
 
             if (btnLoad) btnLoad.addEventListener('click', handleLoad);
             if (btnSave) btnSave.addEventListener('click', handleSave);
+        })();
+
+        // --- 新增：前端呼叫 SystemAction (restart service / reboot / shutdown) ---
+        (function () {
+            const btnRestart = document.getElementById('btn-restart-service');
+            const btnReboot = document.getElementById('btn-reboot-host');
+            const btnShutdown = document.getElementById('btn-shutdown-host');
+            const svcInput = document.getElementById('service-name-input');
+            const feedback = document.getElementById('system-action-feedback');
+
+            async function postAction(action, serviceName) {
+                feedback.textContent = '執行中…';
+                try {
+                    const body = { action: action, serviceName: serviceName };
+                    const res = await fetch('/System/SystemAction', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    const json = await res.json().catch(()=>null);
+                    if (!res.ok) {
+                        feedback.textContent = '失敗: ' + (json?.message ?? res.statusText);
+                        return;
+                    }
+                    feedback.textContent = '已送出指令: ' + (json?.message ?? 'ok');
+                    if (action === 'reboot' || action === 'shutdown') {
+                        setTimeout(()=>{ feedback.textContent = action === 'shutdown' ? '主機即將關機…' : '主機即將重啟…'; }, 500);
+                    }
+                } catch (ex) {
+                    feedback.textContent = '例外: ' + ex.message;
+                }
+            }
+
+            if (btnRestart) btnRestart.addEventListener('click', () => {
+                const svc = svcInput.value || 'chargercontrolapp.service';
+                if (!confirm(`確定要重新啟動 service: ${svc} ?`)) return;
+                postAction('restart-service', svc);
+            });
+
+            if (btnReboot) btnReboot.addEventListener('click', () => {
+                if (!confirm('確定要重開主機？（會中斷所有服務）')) return;
+                postAction('reboot', '');
+            });
+
+            if (btnShutdown) btnShutdown.addEventListener('click', () => {
+                if (!confirm('確定要關閉主機？（會中斷所有服務且關機）')) return;
+                postAction('shutdown', '');
+            });
         })();
     </script>
 }
