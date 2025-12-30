@@ -23,6 +23,8 @@
                     <button type="button" class="btn btn-success" onclick="startCharging(@(chargers != null && i < chargers.Length ? chargers[i].deviceID : -1))">Charging Start</button>
                     <button type="button" class="btn btn-danger" onclick="stopCharging(@(chargers != null && i < chargers.Length ? chargers[i].deviceID : -1))">Charging Stop</button>
                 </div>
+                <!-- 顯示最後按下的按鈕 -->
+                <div id="chargerLastPressed-@(chargers != null && i < chargers.Length ? chargers[i].deviceID : i)" class="charger-last-pressed" style="margin-top:6px; font-weight:600;">-</div>
                 <!-- 分隔線放這裡 -->
                 <hr class="card-divider" />
                 <div id="chargerStatus-@(chargers != null && i < chargers.Length ? chargers[i].deviceID : i)" class="charger-status text-start">
@@ -51,102 +53,110 @@
         });
     }
 
-function updateChargerStatus(id) {
-    fetch('/Charger/GetChargerStatus?id=' + id)
-        .then(response => response.json())
-        .then(data => {
-            const statusDiv = document.getElementById('chargerStatus-' + id);
-            if (statusDiv) {
-                statusDiv.innerHTML =
-                    `<div class="section-title"><strong>數值</strong></div>
-                     <div class="section-title" style="margin-bottom:4px;">
-                        電壓: ${parseFloat(data.voltage).toFixed(3)}&nbsp;&nbsp;電流: ${parseFloat(data.current).toFixed(3)}
-                     </div>
-                     <div class="section-title" style="margin-top:10px;">狀態</div>
-                     <div class="charger-lights-row">
-                        <span class="charger-status-light" style="background-color:${data.battery_exist ? 'lime' : 'white'};"></span>
-                        <span>電池存在</span>
-                        <span class="charger-status-light" style="background-color:${data.full_charged ? 'lime' : 'white'}; margin-left:18px;"></span>
-                        <span>電池充飽</span>
-                     </div>
-                     <div class="section-title" style="margin-top:10px;">IO</div>
-                     <!-- 第一排燈號 -->
-                     <div class="charger-lights-row">
-                        <span class="charger-status-light" style="background-color:${data.fullm ? 'lime' : 'white'};"></span>
-                        <span>FULLM</span>
-                        <span class="charger-status-light" style="background-color:${data.ccm ? 'lime' : 'white'}; margin-left:18px;"></span>
-                        <span>CCM</span>
-                        <span class="charger-status-light" style="background-color:${data.cvm ? 'lime' : 'white'}; margin-left:18px;"></span>
-                        <span>CVM</span>
-                     </div>
-                     <!-- 第二排燈號 -->
-                     <div class="charger-lights-row" style="margin-top:6px;">
-                        <span class="charger-status-light" style="background-color:${data.fvm ? 'lime' : 'white'};"></span>
-                        <span>FVM</span>
-                        <span class="charger-status-light" style="background-color:${data.wakeup_stop ? 'lime' : 'white'}; margin-left:18px;"></span>
-                        <span>WAKEUP_STOP</span>
-                     </div>
-                     <!-- 第三排燈號 -->
-                     <div class="charger-lights-row" style="margin-top:6px;">
-                        <span class="charger-status-light" style="background-color:${data.ntcer ? 'lime' : 'white'};"></span>
-                        <span>NTCER</span>
-                        <span class="charger-status-light" style="background-color:${data.btnc ? 'lime' : 'white'}; margin-left:18px;"></span>
-                        <span>BTNC</span>
-                        <span class="charger-status-light" style="background-color:${data.cctof ? 'lime' : 'white'}; margin-left:18px;"></span>
-                        <span>CCTOF</span>
-                     </div>
-                     <!-- 第四排燈號 -->
-                     <div class="charger-lights-row" style="margin-top:6px;">
-                        <span class="charger-status-light" style="background-color:${data.cvtof ? 'lime' : 'white'};"></span>
-                        <span>CVTOF</span>
-                        <span class="charger-status-light" style="background-color:${data.fvtof ? 'lime' : 'white'}; margin-left:18px;"></span>
-                        <span>FVTOF</span>
-                     </div>
-                    <div class="section-title" style="margin-top:14px;">錯誤訊號</div>
-                    <div class="charger-lights-row">
-                        <span class="charger-status-light" style="background-color:${data.otp ? 'red' : 'white'};"></span>
-                        <span>OTP</span>
-                        <span class="charger-status-light" style="background-color:${data.ovp ? 'red' : 'white'}; margin-left:18px;"></span>
-                        <span>OVP</span>
-                        <span class="charger-status-light" style="background-color:${data.olp ? 'red' : 'white'}; margin-left:18px;"></span>
-                        <span>OLP</span>
-                     </div>
-                     <!-- 第一列：SHORT, AC_FAIL -->
-                     <div class="charger-lights-row" style="margin-top:6px;">
-                        <span class="charger-status-light" style="background-color:${data.short ? 'red' : 'white'};"></span>
-                        <span>SHORT</span>
-                        <span class="charger-status-light" style="background-color:${data.ac_fail ? 'red' : 'white'}; margin-left:18px;"></span>
-                        <span>AC_FAIL</span>
-                     </div>
-                     <!-- 第二列：OP_OFF, HI_TEMP -->
-                     <div class="charger-lights-row" style="margin-top:6px;">
-                        <span class="charger-status-light" style="background-color:${data.op_off ? 'red' : 'white'};"></span>
-                        <span>OP_OFF</span>
-                        <span class="charger-status-light" style="background-color:${data.hi_temp ? 'red' : 'white'}; margin-left:18px;"></span>
-                        <span>HI_TEMP</span>
-                     </div>`;
-            }
-        });
-}
+    function updateChargerStatus(id) {
+        fetch('/Charger/GetChargerStatus?id=' + id)
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('chargerStatus-' + id);
+                const lastPressedDiv = document.getElementById('chargerLastPressed-' + id);
+                if (statusDiv) {
+                    statusDiv.innerHTML =
+                        `<div class="section-title"><strong>數值</strong></div>
+                         <div class="section-title" style="margin-bottom:4px;">
+                            電壓: ${parseFloat(data.voltage).toFixed(3)}&nbsp;&nbsp;電流: ${parseFloat(data.current).toFixed(3)}
+                         </div>
+                         <div class="section-title" style="margin-top:10px;">狀態</div>
+                         <div class="charger-lights-row">
+                            <span class="charger-status-light" style="background-color:${data.battery_exist ? 'lime' : 'white'};"></span>
+                            <span>電池存在</span>
+                            <span class="charger-status-light" style="background-color:${data.full_charged ? 'lime' : 'white'}; margin-left:18px;"></span>
+                            <span>電池充飽</span>
+                         </div>
+                         <div class="section-title" style="margin-top:10px;">IO</div>
+                         <!-- 第一排燈號 -->
+                         <div class="charger-lights-row">
+                            <span class="charger-status-light" style="background-color:${data.fullm ? 'lime' : 'white'};"></span>
+                            <span>FULLM</span>
+                            <span class="charger-status-light" style="background-color:${data.ccm ? 'lime' : 'white'}; margin-left:18px;"></span>
+                            <span>CCM</span>
+                            <span class="charger-status-light" style="background-color:${data.cvm ? 'lime' : 'white'}; margin-left:18px;"></span>
+                            <span>CVM</span>
+                         </div>
+                         <!-- 第二排燈號 -->
+                         <div class="charger-lights-row" style="margin-top:6px;">
+                            <span class="charger-status-light" style="background-color:${data.fvm ? 'lime' : 'white'};"></span>
+                            <span>FVM</span>
+                            <span class="charger-status-light" style="background-color:${data.wakeup_stop ? 'lime' : 'white'}; margin-left:18px;"></span>
+                            <span>WAKEUP_STOP</span>
+                         </div>
+                         <!-- 第三排燈號 -->
+                         <div class="charger-lights-row" style="margin-top:6px;">
+                            <span class="charger-status-light" style="background-color:${data.ntcer ? 'lime' : 'white'};"></span>
+                            <span>NTCER</span>
+                            <span class="charger-status-light" style="background-color:${data.btnc ? 'lime' : 'white'}; margin-left:18px;"></span>
+                            <span>BTNC</span>
+                            <span class="charger-status-light" style="background-color:${data.cctof ? 'lime' : 'white'}; margin-left:18px;"></span>
+                            <span>CCTOF</span>
+                         </div>
+                         <!-- 第四排燈號 -->
+                         <div class="charger-lights-row" style="margin-top:6px;">
+                            <span class="charger-status-light" style="background-color:${data.cvtof ? 'lime' : 'white'};"></span>
+                            <span>CVTOF</span>
+                            <span class="charger-status-light" style="background-color:${data.fvtof ? 'lime' : 'white'}; margin-left:18px;"></span>
+                            <span>FVTOF</span>
+                         </div>
+                        <div class="section-title" style="margin-top:14px;">錯誤訊號</div>
+                        <div class="charger-lights-row">
+                            <span class="charger-status-light" style="background-color:${data.otp ? 'red' : 'white'};"></span>
+                            <span>OTP</span>
+                            <span class="charger-status-light" style="background-color:${data.ovp ? 'red' : 'white'}; margin-left:18px;"></span>
+                            <span>OVP</span>
+                            <span class="charger-status-light" style="background-color:${data.olp ? 'red' : 'white'}; margin-left:18px;"></span>
+                            <span>OLP</span>
+                        </div>
+                        <!-- 第一列：SHORT, AC_FAIL -->
+                        <div class="charger-lights-row" style="margin-top:6px;">
+                            <span class="charger-status-light" style="background-color:${data.short ? 'red' : 'white'};"></span>
+                            <span>SHORT</span>
+                            <span class="charger-status-light" style="background-color:${data.ac_fail ? 'red' : 'white'}; margin-left:18px;"></span>
+                            <span>AC_FAIL</span>
+                        </div>
+                        <!-- 第二列：OP_OFF, HI_TEMP -->
+                        <div class="charger-lights-row" style="margin-top:6px;">
+                            <span class="charger-status-light" style="background-color:${data.op_off ? 'red' : 'white'};"></span>
+                            <span>OP_OFF</span>
+                            <span class="charger-status-light" style="background-color:${data.hi_temp ? 'red' : 'white'}; margin-left:18px;"></span>
+                            <span>HI_TEMP</span>
+                        </div>`;
+                }
 
-// 取得所有 charger 的 id
-const chargerIds = [];
-@{
-    if (chargers != null)
-    {
-        for (int i = 0; i < chargers.Length; i++)
+                if (lastPressedDiv) {
+                    let last = '-';
+                    if (data.final_start_trigger) last = '最後按下：開始充電';
+                    else if (data.final_stop_trigger) last = '最後按下：停止充電';
+                    lastPressedDiv.textContent = last;
+                }
+            });
+    }
+
+    // 取得所有 charger 的 id
+    const chargerIds = [];
+    @{
+        if (chargers != null)
         {
-            @:chargerIds.push(@chargers[i].deviceID);
+            for (int i = 0; i < chargers.Length; i++)
+            {
+                @:chargerIds.push(@chargers[i].deviceID);
+            }
         }
     }
-}
 
-// 定期更新所有 charger 狀態
-setInterval(function() {
-    chargerIds.forEach(function(id) {
-        updateChargerStatus(id);
-    });
-}, 1000); // 每1秒更新
+    // 定期更新所有 charger 狀態
+    setInterval(function() {
+        chargerIds.forEach(function(id) {
+            updateChargerStatus(id);
+        });
+    }, 1000); // 每1秒更新
 
 
 </script>

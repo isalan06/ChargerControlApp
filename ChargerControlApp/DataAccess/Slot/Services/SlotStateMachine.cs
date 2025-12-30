@@ -1,5 +1,7 @@
-﻿using ChargerControlApp.Hardware;
+﻿using ChargerControlApp.DataAccess.Slot.Models;
+using ChargerControlApp.Hardware;
 using ChargerControlApp.Services;
+using ChargerControlApp.Utilities;
 
 namespace ChargerControlApp.DataAccess.Slot.Services
 {
@@ -26,6 +28,9 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         protected T _currentState;
         protected int _index = 0;
         protected HardwareManager _hardwareManager;
+        protected SlotInfo _slotInfo; // reference to single SlotInfo to avoid resolving the whole array (prevent circular DI)
+        protected SlotServices _slotServices;
+        protected AppSettings _appSettings;
         public T CurrentState => _currentState;
         public void SetContext(SlotStateMachine context, IServiceProvider serviceProvider, int index)
         {
@@ -33,7 +38,13 @@ namespace ChargerControlApp.DataAccess.Slot.Services
             _serviceProvider = serviceProvider;
             _index = index;
             _hardwareManager = _serviceProvider.GetRequiredService<HardwareManager>();
+            _appSettings = _serviceProvider.GetRequiredService<AppSettings>();
         }
+        public void SetSlotServices(SlotServices slotServices)
+        {
+            _slotServices = slotServices;
+        }
+
         public virtual void TransistTo(T newState)
         {
             Console.WriteLine($"Slot[{_index}] 狀態轉換: {_currentState} → {newState}");
@@ -55,7 +66,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         }
         public override void EnterState()
         {
-            Console.WriteLine($"Slot[{_index}] 進入初始化狀態");
+            Console.WriteLine($"Slot[{_index}]進入初始化狀態");
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -94,7 +105,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
 
                 default:
-                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換: {_currentState} → {nextState}");
                     result = false;
                     break;
             }
@@ -110,7 +121,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         }
         public override void EnterState()
         {
-            Console.WriteLine($"Slot[{_index}] 進入未使用狀態");
+            Console.WriteLine($"Slot[{_index}]進入未使用狀態");
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -126,7 +137,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
 
                 default:
-                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換: {_currentState} → {nextState}");
                     result = false;
                     break;
             }
@@ -143,7 +154,11 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         }
         public override void EnterState()
         {
-            Console.WriteLine($"Slot[{_index}] 進入空狀態");
+            if (_slotServices != null && !_appSettings.CheckBattaryExistByMemory)
+            {
+                _slotServices.SetBatteryMemory(_index, false);
+            }
+            Console.WriteLine($"Slot[{_index}]進入空狀態");
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -179,7 +194,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
 
                 default:
-                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換: {_currentState} → {nextState}");
                     result = false;
                     break;
             }
@@ -196,7 +211,12 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         }
         public override void EnterState()
         {
-            Console.WriteLine($"Slot[{_index}] 進入閒置狀態");
+            if (_slotServices != null && !_appSettings.CheckBattaryExistByMemory)
+            {
+                _slotServices.SetBatteryMemory(_index, true);
+            }
+            Console.WriteLine($"Slot[{_index}]進入閒置狀態");
+            _hardwareManager.Charger[_index].RecalculateFullChargedStatus(); // 重新計算是否充滿電
             _hardwareManager.Charger[_index].StopCharging(); // 確保充電器停止充電
         }
         public override bool HandleTransition(SlotState nextState)
@@ -233,7 +253,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
 
                 default:
-                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換: {_currentState} → {nextState}");
                     result = false;
                     break;
             }
@@ -250,7 +270,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         }
         public override void EnterState()
         {
-            Console.WriteLine($"Slot[{_index}] 進入充電狀態");
+            Console.WriteLine($"Slot[{_index}]進入充電狀態");
             _hardwareManager.Charger[_index].StartCharging(); // 開始充電
         }
         public override bool HandleTransition(SlotState nextState)
@@ -295,7 +315,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
 
                 default:
-                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換: {_currentState} → {nextState}");
                     result = false;
                     break;
             }
@@ -312,7 +332,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         }
         public override void EnterState()
         {
-            Console.WriteLine($"Slot[{_index}] 進入浮充狀態");
+            Console.WriteLine($"Slot[{_index}]進入浮充狀態");
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -356,7 +376,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
 
                 default:
-                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換: {_currentState} → {nextState}");
                     result = false;
                     break;
             }
@@ -373,7 +393,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         }
         public override void EnterState()
         {
-            Console.WriteLine($"Slot[{_index}] 進入停止充電狀態");
+            Console.WriteLine($"Slot[{_index}]進入停止充電狀態");
             _hardwareManager.Charger[_index].StopCharging(); // 停止充電
         }
         public override bool HandleTransition(SlotState nextState)
@@ -410,7 +430,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
 
                 default:
-                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換: {_currentState} → {nextState}");
                     result = false;
                     break;
             }
@@ -424,11 +444,11 @@ namespace ChargerControlApp.DataAccess.Slot.Services
     {
         public FullChargeSlotState()
         {
-            _currentState = _stateEnum = SlotState.StopCharge;
+            _currentState = _stateEnum = SlotState.FullCharge;
         }
         public override void EnterState()
         {
-            Console.WriteLine($"Slot[{_index}] 進入停止充電狀態");
+            Console.WriteLine($"Slot[{_index}]進入停止充電狀態");
             _hardwareManager.Charger[_index].ResetRechargeTimer(); // 重置重新充電Timer
             _hardwareManager.Charger[_index].StopCharging(); // 停止充電
         }
@@ -466,7 +486,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
 
                 default:
-                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換: {_currentState} → {nextState}");
                     result = false;
                     break;
             }
@@ -483,7 +503,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         }
         public override void EnterState()
         {
-            Console.WriteLine($"Slot[{_index}] 進入電源供應器錯誤狀態");
+            Console.WriteLine($"Slot[{_index}]進入電源供應器錯誤狀態");
             //_hardwareManager.Charger[_index].StopCharging();
         }
         public override bool HandleTransition(SlotState nextState)
@@ -512,7 +532,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
 
                 default:
-                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換: {_currentState} → {nextState}");
                     result = false;
                     break;
             }
@@ -529,8 +549,8 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         }
         public override void EnterState()
         {
-            Console.WriteLine($"Slot[{_index}] 進入狀態錯誤狀態");
-            //_hardwareManager.Charger[_index].StopCharging();
+            Console.WriteLine($"Slot[{_index}]進入狀態錯誤狀態");
+            //_hardware_manager.Charger[_index].StopCharging();
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -558,7 +578,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
 
                 default:
-                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換: {_currentState} → {nextState}");
                     result = false;
                     break;
             }
@@ -571,11 +591,11 @@ namespace ChargerControlApp.DataAccess.Slot.Services
     {
         public CommErrorSlotState()
         {
-            _currentState = _stateEnum = SlotState.StateError;
+            _currentState = _stateEnum = SlotState.CommError;
         }
         public override void EnterState()
         {
-            Console.WriteLine($"Slot[{_index}] 進入通訊錯誤狀態");
+            Console.WriteLine($"Slot[{_index}]進入通訊錯誤狀態");
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -603,7 +623,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
 
                 default:
-                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換:  {_currentState} → {nextState}");
+                    Console.WriteLine($"Slot[{_index}] 無效的狀態轉換: {_currentState} → {nextState}");
                     result = false;
                     break;
             }
@@ -619,12 +639,23 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         private readonly IServiceProvider _serviceProvider;
         private int _index = 0;
 
+        // Backlink to the associated SlotInfo (set later when SlotInfo[] is created)
+        public SlotServices SlotService { get; private set; }
+
         public SlotStateMachine(IServiceProvider serviceProvider, int index)
         {
             _serviceProvider = serviceProvider;
             _index = index;
             InitializeStateMachine();
             
+        }
+
+        // Allow the SlotInfo array factory to set the associated SlotInfo without creating a circular DI resolution
+        public void SetSlotServices(SlotServices slotServices)
+        {
+            SlotService = slotServices;
+            // If the current state's protected _slotInfo hasn't been set (because SetContext ran earlier), update it now via the public API
+            CurrentState?.SetSlotServices(slotServices);
         }
 
         private void InitializeStateMachine()

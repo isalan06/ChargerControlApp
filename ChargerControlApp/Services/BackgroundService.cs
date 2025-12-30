@@ -191,7 +191,7 @@ namespace ChargerControlApp.Services
                 }
                 else if (slotState.State.CurrentState.CurrentState == SlotState.FullCharge)
                 {
-                    if (charger.IsRechargeTimeout())
+                    if (charger.IsRechargeTimeout() || !charger.IsFullCharged)
                         slotService.TransitionTo(index, SlotState.Idle);
                 }
             }

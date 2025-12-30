@@ -17,6 +17,24 @@ namespace ChargerControlApp.DataAccess.Slot.Services
             SlotInfo = serviceProvider.GetRequiredService<SlotInfo[]>();
             // 初始化每個 Slot 的狀態機
             SlotStatePersistence.LoadStates(SlotInfo); // 載入儲存的狀態
+
+            // 將此 SlotServices 寫回每個 SlotStateMachine，讓狀態可以直接呼叫 SlotServices（例如設定 BatteryMemory）
+            try
+            {
+                var stateMachines = serviceProvider.GetRequiredService<SlotStateMachine[]>();
+                if (stateMachines != null)
+                {
+                    for (int i =0; i < stateMachines.Length; i++)
+                    {
+                        stateMachines[i]?.SetSlotServices(this);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // 如果 SlotStateMachine[] 尚未註冊或解析失敗，紀錄例外但不丟出，以避免啟動失敗
+                Console.WriteLine($"SlotServices: 無法回寫到 SlotStateMachine[] - {ex.Message}");
+            }
         }
 
         public bool IsAnySlotInErrorState

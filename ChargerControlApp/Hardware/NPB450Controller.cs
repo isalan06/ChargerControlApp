@@ -5,6 +5,7 @@ using ChargerControlApp.DataAccess.CANBus.Models;
 using ChargerControlApp.Services;
 using ChargerControlApp.Utilities;
 using Google.Protobuf.WellKnownTypes;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -51,6 +52,8 @@ namespace ChargerControlApp.Hardware
         public bool IsUsed { get; set; } = false;
         private bool startChargingTrigger = false;
         private bool stopChargingTrigger = false;
+        public bool FinalStartChargingTrigger { get; internal set; } = false;
+        public bool FinalStopChargingTrigger { get; internal set; } = false;
 
         // timeout
         private bool isReadError = false;
@@ -139,14 +142,36 @@ namespace ChargerControlApp.Hardware
                         if (IsBatteryExist)
                         {
                             bool flag = (Current < _appSettings.CheckBatteryFullChargeValue_A);
-                            if (!flag) fullchargeCheckDelay.Restart();
+                            if (!flag)
+                            {
+                                if (fullchargeCheckDelay.IsRunning)
+                                {
+                                    RecalculateFullChargedStatus();
+                                }
+                            }
                             else if (fullchargeCheckDelay.ElapsedMilliseconds > _appSettings.FullChargeCheckDelay_Seconds * 1000)
                                 result = true;
+                            if (flag)
+                            {
+                                if (!fullchargeCheckDelay.IsRunning) { fullchargeCheckDelay.Start(); }
+                            }
+                        }
+                        else
+                        {
+                            if (fullchargeCheckDelay.IsRunning)
+                            {
+                                RecalculateFullChargedStatus();
+                            }
                         }
                     }
                 }
                 return result;
             }
+        }
+        public void RecalculateFullChargedStatus()
+        {
+                fullchargeCheckDelay.Stop();
+                fullchargeCheckDelay.Reset();
         }
 
 
@@ -518,9 +543,22 @@ namespace ChargerControlApp.Hardware
             if (this.IsUsed)
             {
                 this.Voltage += 0.1 + 0.005 * (double)deviceID;
-                this.Current += 0.015 + 0.001 * (double)deviceID;
+                if(deviceID != 3) this.Current += 0.015 + 0.001 * (double)deviceID;
                 if (this.Voltage >= 250.0) this.Voltage = 0.0;
                 if (this.Current >= 5.0) this.Current = 0.0;
+
+                if (deviceID == 2)
+                {
+                    this.Voltage = 0.8;
+                }
+                else if (deviceID == 3)
+                {
+                    this.Current += 0.001;
+                    if (this.Current >= 0.15)
+                    {
+                        this.Current = 0.0;
+                    }
+                }
             }
             //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Windows虛擬]-PollingOnce()");
 
@@ -701,11 +739,19 @@ namespace ChargerControlApp.Hardware
         public void StartCharging()
         {
             startChargingTrigger = true;
+            stopChargingTrigger = false;
+
+            FinalStartChargingTrigger = true;
+            FinalStopChargingTrigger = false;
         }
 
         public void StopCharging()
         {
             stopChargingTrigger = true;
+            startChargingTrigger = false;
+
+            FinalStopChargingTrigger = true;
+            FinalStartChargingTrigger = false;
         }
 
         public async Task<bool> IsCharging()
