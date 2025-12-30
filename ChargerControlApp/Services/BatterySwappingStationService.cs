@@ -51,9 +51,9 @@ namespace ChargerControlApp.Services
                 var slotStatus = new SlotStatus
                 {
                     Name = slot.Name,
-                    Soc = (int)slot.ChargingProcessValue,
-                    Current = (float)_hardwareManager.Charger[i].Current,  //slot.ChargeState == SlotChargeState.Charging ? 15f : 0.12f,
-                    Voltage = (float)_hardwareManager.Charger[i].Voltage, //slot.ChargeState != SlotChargeState.Empty ? 54.2f - (54.2f - 48.2f) * (float)(slot.ChargingProcessValue / 100.0) : 0,
+                    Soc = (int)npb450.SOC_Percentage,
+                    Current = (float)npb450.Current,  //slot.ChargeState == SlotChargeState.Charging ? 15f : 0.12f,
+                    Voltage = (float)npb450.Voltage, //slot.ChargeState != SlotChargeState.Empty ? 54.2f - (54.2f - 48.2f) * (float)(slot.ChargingProcessValue / 100.0) : 0,
                     State = slot.ChargeState
                 };
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))

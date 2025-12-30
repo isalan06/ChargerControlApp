@@ -153,7 +153,15 @@ namespace ChargerControlApp.Hardware
                     continue;
                 }
 
-                if(Charger[index].GetCachedVoltage() > voltage_temp)
+                SlotStateMachine[] slots = Services.GetRequiredService<SlotStateMachine[]>();
+
+                if (slots[index].CurrentState.CurrentState == SlotState.FullCharge)
+                {
+                    result = swap;
+                    break;
+                }
+
+                if (Charger[index].GetCachedVoltage() > voltage_temp)
                 {
                     voltage_temp = Charger[index].GetCachedVoltage();
                     result = swap;

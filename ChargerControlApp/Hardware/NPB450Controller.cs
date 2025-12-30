@@ -168,6 +168,27 @@ namespace ChargerControlApp.Hardware
                 return result;
             }
         }
+
+        public double SOC_Percentage
+        {
+            get
+            {
+                double result = 0.0;
+                if (IsCompletedOneTime)
+                {
+                    if (!IsReadTimeout)
+                    {
+                        if (this.Voltage >= 58.4) result = 100.0;
+                        else if (this.Voltage < 47.2) result = 0.0;
+                        else
+                        {
+                            result = 0.0241 * this.Voltage * this.Voltage - 1.4505 * this.Voltage + 60.214;
+                        }
+                    }
+                }
+                return result;
+            }
+        }
         public void RecalculateFullChargedStatus()
         {
                 fullchargeCheckDelay.Stop();
@@ -542,9 +563,10 @@ namespace ChargerControlApp.Hardware
             // 模擬資料
             if (this.IsUsed)
             {
-                this.Voltage += 0.1 + 0.005 * (double)deviceID;
+                this.Voltage += 1.0 + 0.005 * (double)deviceID;
                 if(deviceID != 3) this.Current += 0.015 + 0.001 * (double)deviceID;
-                if (this.Voltage >= 250.0) this.Voltage = 0.0;
+                if (this.Voltage >= 60.0) this.Voltage = 47.0;
+                if(this.Voltage <= 47.0) this.Voltage = 47.0;
                 if (this.Current >= 5.0) this.Current = 0.0;
 
                 if (deviceID == 2)

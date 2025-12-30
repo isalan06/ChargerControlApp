@@ -60,10 +60,18 @@
                 const statusDiv = document.getElementById('chargerStatus-' + id);
                 const lastPressedDiv = document.getElementById('chargerLastPressed-' + id);
                 if (statusDiv) {
+                    // safe parsing for numeric values; fallback to raw value when not a number
+                    const voltageStr = (!isNaN(parseFloat(data.voltage))) ? parseFloat(data.voltage).toFixed(3) : data.voltage;
+                    const currentStr = (!isNaN(parseFloat(data.current))) ? parseFloat(data.current).toFixed(3) : data.current;
+                    const socStr = (!isNaN(parseFloat(data.soc))) ? parseFloat(data.soc).toFixed(2) : data.soc;
+
                     statusDiv.innerHTML =
                         `<div class="section-title"><strong>數值</strong></div>
                          <div class="section-title" style="margin-bottom:4px;">
-                            電壓: ${parseFloat(data.voltage).toFixed(3)}&nbsp;&nbsp;電流: ${parseFloat(data.current).toFixed(3)}
+                            電壓: ${voltageStr}&nbsp;&nbsp;電流: ${currentStr}
+                         </div>
+                         <div class="section-title" style="margin-top:4px;">
+                            <strong>SOC: ${socStr} %</strong>
                          </div>
                          <div class="section-title" style="margin-top:10px;">狀態</div>
                          <div class="charger-lights-row">
@@ -127,7 +135,8 @@
                             <span>OP_OFF</span>
                             <span class="charger-status-light" style="background-color:${data.hi_temp ? 'red' : 'white'}; margin-left:18px;"></span>
                             <span>HI_TEMP</span>
-                        </div>`;
+                        </div>
+                        `;
                 }
 
                 if (lastPressedDiv) {

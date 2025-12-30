@@ -47,6 +47,7 @@ namespace ChargerControlApp.Controllers
                 {
                     voltage = "-",
                     current = "-",
+                    soc = 0.0,
                     fullm = false,
                     ccm = false,
                     cvm = false,
@@ -75,6 +76,7 @@ namespace ChargerControlApp.Controllers
             {
                 voltage = charger.GetCachedVoltage(),
                 current = charger.GetCachedCurrent(),
+                soc = charger.SOC_Percentage,
                 fullm = charger.CHG_STATUS.Bits.FULLM,
                 ccm = charger.CHG_STATUS.Bits.CCM,
                 cvm = charger.CHG_STATUS.Bits.CVM,
