@@ -67,6 +67,7 @@ namespace ChargerControlApp.Controllers
                     hi_temp = false,
                     battery_exist = false,
                     full_charged = false,
+                    ischarging = false,
                     final_start_trigger = false,
                     final_stop_trigger = false
                 });
@@ -96,6 +97,7 @@ namespace ChargerControlApp.Controllers
                 hi_temp = charger.FAULT_STATUS.Bits.HI_TEMP,
                 battery_exist = charger.IsBatteryExist,
                 full_charged = charger.IsFullCharged,
+                ischarging = charger.IsCharging,
                 final_start_trigger = charger.FinalStartChargingTrigger,
                 final_stop_trigger = charger.FinalStopChargingTrigger
             });

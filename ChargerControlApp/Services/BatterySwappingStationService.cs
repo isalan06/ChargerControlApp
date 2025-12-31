@@ -44,14 +44,17 @@ namespace ChargerControlApp.Services
                 State = _robotService.GetEquipmentStatus,  //SlotServices.StationState,//StationState.Idle,
                 HighestSoc = 98
             };
+
+           
             for (int i = 0; i < HardwareManager.NPB450ControllerInstnaceNumber; i++)
             {
                 var slot = _slotServices.SlotInfo[i];
                 var npb450 = _hardwareManager.Charger[i];
+                var soc = (int)npb450.SOC_Percentage;
                 var slotStatus = new SlotStatus
                 {
                     Name = slot.Name,
-                    Soc = (int)npb450.SOC_Percentage,
+                    Soc = soc,
                     Current = (float)npb450.Current,  //slot.ChargeState == SlotChargeState.Charging ? 15f : 0.12f,
                     Voltage = (float)npb450.Voltage, //slot.ChargeState != SlotChargeState.Empty ? 54.2f - (54.2f - 48.2f) * (float)(slot.ChargingProcessValue / 100.0) : 0,
                     State = slot.ChargeState

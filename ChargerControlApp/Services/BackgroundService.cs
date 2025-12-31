@@ -163,10 +163,25 @@ namespace ChargerControlApp.Services
                     // 初始化完成，轉到 Empty 狀態(無電池) 或 Idle 狀態(有電池)
                     if (charger.IsCompletedOneTime)
                     {
-                        if (isBatteryExist)
-                            slotService.TransitionTo(index, SlotState.Idle);
-                        else
-                            slotService.TransitionTo(index, SlotState.Empty);
+                        // Delay
+                        // 使用非阻塞的延遲：在背景任務中等待後再做狀態轉換，避免阻塞 SlotStateCheck 呼叫者
+                        var _idx = index;
+                        var _slotService = slotService;
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await Task.Delay(500); // 等待500ms，可依需求調整
+                                if (isBatteryExist)
+                                    _slotService.TransitionTo(_idx, SlotState.Idle);
+                                else
+                                    _slotService.TransitionTo(_idx, SlotState.Empty);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, $"SlotState delayed transition failed for index {_idx}");
+                            }
+                        });
                     }
                 }
                 else if (slotState.State.CurrentState.CurrentState == SlotState.Idle)

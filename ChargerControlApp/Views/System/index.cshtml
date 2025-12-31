@@ -254,6 +254,11 @@
                     <input id="fld-CheckBatteryFullChargeValue_A" type="number" step="0.01" class="form-control" />
                 </div>
 
+                <div class="col-md-4">
+                    <label class="form-label">CheckBatteryChargeValue_Voltage_V</label>
+                    <input id="fld-CheckBatteryChargeValue_Voltage_V" type="number" step="0.01" class="form-control" />
+                </div>
+
                 <div class="col-md-6">
                     <label class="form-label">RechargeAfterFullDischarge_Minutes</label>
                     <input id="fld-RechargeAfterFullDischarge_Minutes" type="number" class="form-control" />
@@ -498,6 +503,7 @@
 
                 setField('CheckBatteryExistValue_Voltage_V', app.CheckBatteryExistValue_Voltage_V);
                 setField('CheckBatteryFullChargeValue_A', app.CheckBatteryFullChargeValue_A);
+                setField('CheckBatteryChargeValue_Voltage_V', app.CheckBatteryChargeValue_Voltage_V);
                 setField('RechargeAfterFullDischarge_Minutes', app.RechargeAfterFullDischarge_Minutes);
                 setField('FullChargeCheckDelay_Seconds', app.FullChargeCheckDelay_Seconds);
 
@@ -539,6 +545,7 @@
                         SensorCheckPass: "在流程中不使用感測器確認電池存在與否",
                         CheckBatteryExistValue_Voltage_V: "當電源供應器電壓超過該數值視為有電池存在",
                         CheckBatteryFullChargeValue_A: "當電源供應器電流低於該數值視為已經充飽電，會停止充電",
+                        CheckBatteryChargeValue_Voltage_V: "充電判斷標準，當電壓超過該數值表示正在充電中",
                         RechargeAfterFullDischarge_Minutes: "當充飽電停止充電後，在經過該數值的時間後會重新充電",
                         FullChargeCheckDelay_Seconds: "重新充電後，經過該數值的時間後才會檢查是否充飽電"
                     };
@@ -612,6 +619,8 @@
                 if (v1 !== null) app['CheckBatteryExistValue_Voltage_V'] = v1;
                 const v2 = numOrNull('CheckBatteryFullChargeValue_A');
                 if (v2 !== null) app['CheckBatteryFullChargeValue_A'] = v2;
+                const vNew = numOrNull('CheckBatteryChargeValue_Voltage_V');
+                if (vNew !== null) app['CheckBatteryChargeValue_Voltage_V'] = vNew;
                 const v3 = numOrNull('RechargeAfterFullDischarge_Minutes');
                 if (v3 !== null) app['RechargeAfterFullDischarge_Minutes'] = v3;
                 const v4 = numOrNull('FullChargeCheckDelay_Seconds');

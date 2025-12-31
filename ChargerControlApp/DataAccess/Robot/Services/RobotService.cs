@@ -1221,6 +1221,12 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                                 else // 正常模式下使用實際的路徑產生
                                 {
                                     MainProcedureStatusMessage = $"[Auto Case 1] Generating Swap Slot Info";
+
+                                    // 初始化Slot State Machine 以取得最新的 Battery 存在狀態
+                                    _slotServices.ResetAllSlotStatus();
+                                    // 等待5秒以確保Slot State Machine完成初始化，不阻塞執行緒
+                                    await Task.Delay(5000);
+
                                     if (_slotServices.GetSwapSlotInfo(out swapIn, out swapOuts))
                                     {
                                         swapOut = _hardwareManager.SwapOut(swapOuts);

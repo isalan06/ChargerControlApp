@@ -41,6 +41,8 @@ namespace ChargerControlApp.Utilities
 
         public double CheckBatteryExistValue_Voltage_V { get; set; }
 
+        public double CheckBatteryChargeValue_Voltage_V { get; set; }
+
         public double CheckBatteryFullChargeValue_A { get; set; }
 
         public long RechargeAfterFullDischarge_Minutes { get; set; }

@@ -451,6 +451,12 @@ namespace ChargerControlApp.DataAccess.Slot.Services
             Console.WriteLine($"Slot[{_index}]進入停止充電狀態");
             _hardwareManager.Charger[_index].ResetRechargeTimer(); // 重置重新充電Timer
             _hardwareManager.Charger[_index].StopCharging(); // 停止充電
+            _hardwareManager.Charger[_index].IsFullChargingTrigger = true; // 設定充滿電觸發旗標
+        }
+        public override void ExitState()
+        {
+            Console.WriteLine($"Slot[{_index}]離開充滿電狀態");
+            _hardwareManager.Charger[_index].IsFullChargingTrigger = false; // 清除充滿電觸發旗標
         }
         public override bool HandleTransition(SlotState nextState)
         {

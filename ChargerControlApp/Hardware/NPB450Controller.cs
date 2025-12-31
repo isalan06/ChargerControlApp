@@ -93,6 +93,7 @@ namespace ChargerControlApp.Hardware
             }
         }
         public bool IsTriggerStartCharging { get; internal set; } = false;
+        public bool IsFullChargingTrigger { get; set; } = false;
 
         public bool IsSupplyError
         {
@@ -130,6 +131,23 @@ namespace ChargerControlApp.Hardware
             }
         }
 
+        public bool IsCharging
+        {
+            get
+            {
+                bool result = false;
+                if (IsCompletedOneTime)
+                {
+                    if (!IsReadTimeout)
+                    {
+                        if (Voltage > _appSettings.CheckBatteryChargeValue_Voltage_V)
+                            result = true;
+                    }
+                }
+                return result;
+            }
+        }
+
         public bool IsFullCharged
         {
             get
@@ -141,7 +159,7 @@ namespace ChargerControlApp.Hardware
                     {
                         if (IsBatteryExist)
                         {
-                            bool flag = (Current < _appSettings.CheckBatteryFullChargeValue_A);
+                            bool flag = IsCharging && (Current < _appSettings.CheckBatteryFullChargeValue_A);
                             if (!flag)
                             {
                                 if (fullchargeCheckDelay.IsRunning)
@@ -178,7 +196,8 @@ namespace ChargerControlApp.Hardware
                 {
                     if (!IsReadTimeout)
                     {
-                        if (this.Voltage >= 58.4) result = 100.0;
+                        if (IsFullChargingTrigger) result = 100.0;
+                        else if (this.Voltage >= 58.4) result = 100.0;
                         else if (this.Voltage < 47.2) result = 0.0;
                         else
                         {
@@ -776,24 +795,24 @@ namespace ChargerControlApp.Hardware
             FinalStartChargingTrigger = false;
         }
 
-        public async Task<bool> IsCharging()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                return false;
-            }
+        //public async Task<bool> IsCharging()
+        //{
+        //    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        //    {
+        //        return false;
+        //    }
 
-            byte[] operation = await GetStatusFromDevice2(NPB450Controller.CanbusReadCommand.OPERATION);
-            Console.WriteLine($"Operation: {operation[0]}");
-            if (operation[0] == 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        //    byte[] operation = await GetStatusFromDevice2(NPB450Controller.CanbusReadCommand.OPERATION);
+        //    Console.WriteLine($"Operation: {operation[0]}");
+        //    if (operation[0] == 0)
+        //    {
+        //        return true;
+        //    }
+        //    else
+        //    {
+        //        return false;
+        //    }
+        //}
 
         /// <summary>
         /// Can only change the current when the device is not charging.
