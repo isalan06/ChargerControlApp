@@ -13,6 +13,40 @@
 
 3. 設定開機後開啟軟體
 
+## 刪除舊有服務
+- 檢查舊服務
+```bash
+systemctl status charger-control-app.service
+```
+
+- 關閉開機啟動
+```bash
+sudo systemctl disable charger-control-app.service
+```
+
+## 新增服務
+- 創建服務
+```bash
+sudo nano /etc/systemd/system/chargercontrolapp.service
+```
+
+- 編輯內容
+```bash
+[Unit]
+Description=Battery Swapping Station - ASP.NET Core App
+After=network.target setup-serial-can.service
+Requires=setup-serial-can.service
+
+[Service]
+WorkingDirectory=/home/moxa/program/app/publish/
+ExecStart=/home/moxa/.dotnet/dotnet /home/moxa/program/app/publish/ChargerControlApp.dll
+Restart=always
+Environment=ASPNETCORE_ENVIRONMENT=Production
+
+[Install]
+WantedBy=multi-user.target
+```
+
 # 20251229
 
 ## 開啟啟動測試
