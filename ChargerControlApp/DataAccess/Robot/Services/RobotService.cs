@@ -1034,9 +1034,24 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                     {
                         // 感測器動作
                         //bool sensor_result = (bool)GPIOService.GetValue(sensorFrame.SensorName) == sensorFrame.CheckStatus;
-                        bool sensor_result = GPIOService.GetValue2(sensorFrame.SensorName) == sensorFrame.CheckStatus;
+                        
 
                         await Task.Delay(1000);
+
+                        Console.WriteLine($"Check Sensor: Name={sensorFrame.SensorName}, ExpectedStatus={sensorFrame.CheckStatus}");
+
+                        bool sensor_result = false;
+
+                        try
+                        {
+                            sensor_result = (GPIOService.GetValue2(sensorFrame.SensorName) == sensorFrame.CheckStatus);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Check Sensor Exception: {ex.Message}");
+                        }
+
+                        Console.WriteLine($"Sensor Result: Name={sensorFrame.SensorName}, Result={sensor_result}");
 
                         if (HardwareManager.SensorCheckPass) // 測試用，強制感測器檢查通過
                         {
@@ -1424,7 +1439,7 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                             case 62: // 成功取出電池
                                 MainProcedureStatusMessage = $"[Auto Case 62] Successfully Took Battery from Slot {swapOut}";
                                 _slotServices.SetBatteryMemory(swapOut - 1, false);
-                                _slotServices.TransitionTo(swapOut - 1, SlotState.Initialization); // 成功取出電池，將slot狀態改為Empty
+                                _slotServices.TransitionTo(swapOut - 1, SlotState.Empty); // 成功取出電池，將slot狀態改為Empty
                                 
                                 MainProcedureCase = 70;
                                 break;

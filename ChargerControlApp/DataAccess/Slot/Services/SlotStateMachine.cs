@@ -405,6 +405,10 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     _context.TransitionTo<InitializationSlotState>();
                     break;
 
+                case SlotState.Empty:
+                    _context.TransitionTo<EmptySlotState>();
+                    break;
+
                 case SlotState.StopCharge:
                     Console.WriteLine($"Slot[{_index}] 已經在停止充電狀態");
                     break;
