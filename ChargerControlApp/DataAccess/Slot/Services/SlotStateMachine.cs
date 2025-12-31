@@ -662,6 +662,49 @@ namespace ChargerControlApp.DataAccess.Slot.Services
             SlotService = slotServices;
             // If the current state's protected _slotInfo hasn't been set (because SetContext ran earlier), update it now via the public API
             CurrentState?.SetSlotServices(slotServices);
+
+            // Ensure every per-slot state instance also receives the SlotServices reference.
+            // The DI container holds arrays of each concrete state type; resolve each array and set the SlotServices on the instance for this slot index.
+            try
+            {
+                // List all concrete state types here and attempt to set slotServices for the instance at this index.
+                var initArr = _serviceProvider.GetService<InitializationSlotState[]>();
+                var notUsedArr = _serviceProvider.GetService<NotUsedSlotState[]>();
+                var emptyArr = _serviceProvider.GetService<EmptySlotState[]>();
+                var idleArr = _serviceProvider.GetService<IdleSlotState[]>();
+                var chargingArr = _serviceProvider.GetService<ChargingSlotState[]>();
+                var floatingArr = _serviceProvider.GetService<FloatingSlotState[]>();
+                var stopArr = _serviceProvider.GetService<StopChargeSlotState[]>();
+                var fullArr = _serviceProvider.GetService<FullChargeSlotState[]>();
+                var supplyErrArr = _serviceProvider.GetService<SupplyErrorSlotState[]>();
+                var stateErrArr = _serviceProvider.GetService<StateErrorSlotState[]>();
+                var commErrArr = _serviceProvider.GetService<CommErrorSlotState[]>();
+
+                void TrySet<T>(T[] arr) where T : SlotStateBase<SlotState>
+                {
+                    if (arr != null && _index >=0 && _index < arr.Length)
+                    {
+                        try { arr[_index]?.SetSlotServices(slotServices); } catch { }
+                    }
+                }
+
+                TrySet(initArr);
+                TrySet(notUsedArr);
+                TrySet(emptyArr);
+                TrySet(idleArr);
+                TrySet(chargingArr);
+                TrySet(floatingArr);
+                TrySet(stopArr);
+                TrySet(fullArr);
+                TrySet(supplyErrArr);
+                TrySet(stateErrArr);
+                TrySet(commErrArr);
+            }
+            catch (Exception ex)
+            {
+                // Don't let failures here prevent startup; log for diagnostics.
+                Console.WriteLine($"SlotStateMachine.SetSlotServices: warning while setting slot services on state instances - {ex.Message}");
+            }
         }
 
         private void InitializeStateMachine()

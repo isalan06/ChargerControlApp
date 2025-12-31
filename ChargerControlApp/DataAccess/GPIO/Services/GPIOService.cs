@@ -32,6 +32,16 @@ namespace ChargerControlApp.DataAccess.GPIO.Services
             return prop?.GetValue(null);
         }
 
+        public static bool GetValue2(string sensorName)
+        { 
+            if(sensorName == "BatteryExistInFork")
+                return BatteryExistInFork;
+            else if(sensorName == "BatteryExistInSlot")
+                return BatteryExistInSlot;
+            else
+                throw new ArgumentException($"Unknown sensor name: {sensorName}");
+        }
+
         // 兩個 GPIO Input 的 GPIOInfo 實例
         public static GPIOInfo Pin1 { get; } = new GPIOInfo
         {

@@ -1033,7 +1033,10 @@ namespace ChargerControlApp.DataAccess.Robot.Services
                     else if (frame is SensorFrame sensorFrame)
                     {
                         // 感測器動作
-                        bool sensor_result = (bool)GPIOService.GetValue(sensorFrame.SensorName) == sensorFrame.CheckStatus;
+                        //bool sensor_result = (bool)GPIOService.GetValue(sensorFrame.SensorName) == sensorFrame.CheckStatus;
+                        bool sensor_result = GPIOService.GetValue2(sensorFrame.SensorName) == sensorFrame.CheckStatus;
+
+                        await Task.Delay(1000);
 
                         if (HardwareManager.SensorCheckPass) // 測試用，強制感測器檢查通過
                         {
