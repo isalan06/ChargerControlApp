@@ -100,6 +100,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                 case SlotState.Idle:
                 case SlotState.Charging:
                 case SlotState.StopCharge:
+                case SlotState.FullCharge:
                     SlotInfo[index].ChargeState = SlotChargeState.Charging;
                     break;
                 case SlotState.Floating:
@@ -107,6 +108,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                     break;
                 case SlotState.StateError:
                 case SlotState.SupplyError:
+                case SlotState.CommError:
                     SlotInfo[index].ChargeState = SlotChargeState.Error;
                     break;
             }
