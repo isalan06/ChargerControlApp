@@ -127,7 +127,7 @@ Dec 29 19:54:26 BSS-pi4 systemd[1]: Failed to start chargercontrolapp.service - 
 # 查找 dotnet 的完整路徑
 which dotnet
 
-# 或者
+# 或者dq
 whereis dotnet
 
 # 測試 dotnet 是否可以執行
