@@ -66,6 +66,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         }
         public override void EnterState()
         {
+            _hardwareManager.Charger[_index].RecalculateFullChargedStatus(); // 重新計算是否充滿電
             Console.WriteLine($"Slot[{_index}]進入初始化狀態");
         }
         public override bool HandleTransition(SlotState nextState)
@@ -158,6 +159,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
             {
                 _slotServices.SetBatteryMemory(_index, false);
             }
+            _hardwareManager.Charger[_index].RecalculateFullChargedStatus(); // 重新計算是否充滿電
             Console.WriteLine($"Slot[{_index}]進入空狀態");
         }
         public override bool HandleTransition(SlotState nextState)
@@ -218,6 +220,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
             Console.WriteLine($"Slot[{_index}]進入閒置狀態");
             _hardwareManager.Charger[_index].RecalculateFullChargedStatus(); // 重新計算是否充滿電
             _hardwareManager.Charger[_index].StopCharging(); // 確保充電器停止充電
+            _hardwareManager.Charger[_index].RecalculateFullChargedStatus(); // 重新計算是否充滿電
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -395,6 +398,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
         {
             Console.WriteLine($"Slot[{_index}]進入停止充電狀態");
             _hardwareManager.Charger[_index].StopCharging(); // 停止充電
+            _hardwareManager.Charger[_index].RecalculateFullChargedStatus(); // 重新計算是否充滿電
         }
         public override bool HandleTransition(SlotState nextState)
         {
@@ -473,6 +477,10 @@ namespace ChargerControlApp.DataAccess.Slot.Services
 
                 case SlotState.FullCharge:
                     Console.WriteLine($"Slot[{_index}] 已經在充滿電狀態");
+                    break;
+
+                case SlotState.StopCharge:
+                    _context.TransitionTo<StopChargeSlotState>();
                     break;
 
                 case SlotState.Idle:

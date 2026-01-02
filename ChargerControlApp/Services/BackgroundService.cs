@@ -184,12 +184,22 @@ namespace ChargerControlApp.Services
                         });
                     }
                 }
+                else if (slotState.State.CurrentState.CurrentState == SlotState.Empty)
+                {
+                    if (charger.IsCompletedOneTime)
+                    {
+                        //if (charger.IsBatteryExist && !_robotService.IsMainProcedureRunning)
+                        //    slotService.TransitionTo(index, SlotState.Idle);
+                    }
+                }
                 else if (slotState.State.CurrentState.CurrentState == SlotState.Idle)
                 {
                     // 有電池，等待充電，下達充電指令
                     //charger.StartCharging();
                     if (charger.IsCompletedOneTime)
+                    {
                         slotService.TransitionTo(index, SlotState.Charging);
+                    }
                 }
                 else if (slotState.State.CurrentState.CurrentState == SlotState.Charging)
                 {
@@ -198,16 +208,22 @@ namespace ChargerControlApp.Services
                         slotService.TransitionTo(index, SlotState.Floating);
                     if (charger.IsFullCharged)
                         slotService.TransitionTo(index, SlotState.FullCharge);
+                    //if (!charger.IsBatteryExist && !_robotService.IsMainProcedureRunning)
+                    //    slotService.TransitionTo(index, SlotState.Empty);
                 }
                 else if (slotState.State.CurrentState.CurrentState == SlotState.Floating)
                 {
                     if (charger.IsFullCharged)
                         slotService.TransitionTo(index, SlotState.FullCharge);
+                    //if (!charger.IsBatteryExist && !_robotService.IsMainProcedureRunning)
+                    //    slotService.TransitionTo(index, SlotState.Empty);
                 }
                 else if (slotState.State.CurrentState.CurrentState == SlotState.FullCharge)
                 {
                     if (charger.IsRechargeTimeout() || !charger.IsFullCharged)
                         slotService.TransitionTo(index, SlotState.Idle);
+                    //if (!charger.IsBatteryExist && !_robotService.IsMainProcedureRunning)
+                    //    slotService.TransitionTo(index, SlotState.Empty);
                 }
             }
         }
