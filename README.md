@@ -23,6 +23,7 @@ Battery Swapping Station ASP.Net 8.0 MVC架構
 設計文件：
 - [Design](Design.md)
 - [Flow Chart](FlowChart.md)
+- [Memo-開發過程隨記](Memo.md)
 
 
 ---
@@ -105,12 +106,47 @@ fi
 
 
 - 執行程式碼
-  - 目前尚未設定到自動開啟
+  - ~~目前尚未設定到自動開啟~~2025年12月已完成
   - SSH 登入後，執行 cd program/testapp2/publish
   - 執行 ./ChargerControlApp
 
 - 設定開機執行
-  - 測試中
+  - 創建服務文件：在 /etc/systemd/system/ 目錄下創建一個名為 chargercontrolapp.service 的文件。
+    ```bash
+    sudo nano /etc/systemd/system/chargercontrolapp.service
+    ```
+  - 編輯服務內容
+  ```bash
+  [Unit]
+  Description=Battery Swapping Station - ASP.NET Core App
+  After=network.target setup-serial-can.service
+  Requires=setup-serial-can.service
+
+  [Service]
+  WorkingDirectory=/home/moxa/program/app/publish/
+  ExecStart=/home/moxa/.dotnet/dotnet /home/moxa/program/app/publish/ChargerControlApp.dll
+  Restart=always
+  # RestartSec=10 # 錯誤發生後 10 秒重啟
+  #User=pi # 執行應用程式的 Linux 使用者
+  Environment=ASPNETCORE_ENVIRONMENT=Production
+  # Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false # 關閉遙測訊息
+
+  [Install]
+  WantedBy=multi-user.target
+  ```
+  - 重新載入 Systemd
+  ```bash
+  sudo systemctl daemon-reload
+  ```
+  - 啟用並啟動服務
+  ```bash
+  sudo systemctl enable chargercontrolapp.service # 開機自動啟動
+  sudo systemctl start chargercontrolapp.service # 立即啟動
+  ```
+  - 檢查狀態
+  ```bash
+  sudo systemctl status chargercontrolapp.service
+  ```
 
 ---
 # 軟體環境
@@ -128,18 +164,21 @@ fi
  ┃ ┣ 📜GrpcController.cs
  ┃ ┣ 📜HomeController.cs
  ┃ ┣ 📜MotorController.cs
+ ┃ ┣ 📜SystemController.cs
+ ┃ ┣ 📜TestController.cs
  ┃ ┗ 📜UnitsController.cs
  ┣ 📂DataAccess                                     # 控制/通訊/模組
  ┃ ┣ 📂CANBus                                       # CANBUS 資料區
  ┃ ┃ ┣ 📂Interfaces                                 # CANBUS 介面區
- ┃ ┃ ┃ ┗ 📜ICANBusService.cs                        # 
+ ┃ ┃ ┃ ┗ 📜ICANBusService.cs                        
  ┃ ┃ ┣ 📂Linux
- ┃ ┃ ┃ ┗ 📜SocketCANBusService.cs
+ ┃ ┃ ┃ ┗ 📜SocketCANBusService.cs                   # CANBUS 基本服務
  ┃ ┃ ┣ 📂Mocks
  ┃ ┃ ┃ ┗ 📜MockCANBusService.cs
  ┃ ┃ ┣ 📂Models
  ┃ ┃ ┃ ┣ 📜CanId.cs
- ┃ ┃ ┃ ┗ 📜CanMessage.cs
+ ┃ ┃ ┃ ┣ 📜CanMessage.cs
+ ┃ ┃ ┃ ┗ 📜CanRouteCommandFrame.cs                  # MW NPB450 循環讀取命令
  ┃ ┣ 📂GPIO                                         # GPIO 資料區 - 已不用GPIO，但拿來介接馬達Sensor訊號
  ┃ ┃ ┣ 📂Models                                     # GPIO 模型 - 放置 GPIO 要用的格式
  ┃ ┃ ┃ ┗ 📜GPIOInfo.cs                              # GPIO 使用的資料格式
@@ -164,18 +203,22 @@ fi
  ┃ ┃ ┃ ┣ 📜MotorId.cs                               # Motor ID 及 Slave Address
  ┃ ┃ ┃ ┗ 📜MotorInfo.cs                             # 馬達資訊儲存格式
  ┃ ┃ ┗ 📂Services                                   # Motor 服務
+ ┃ ┃ ┃ ┣ 📜SingleMotorPersistence.cs                # 單一馬達參數讀寫模組
  ┃ ┃ ┃ ┗ 📜SingleMotorService.cs                    # 單一馬達資訊讀取和基本動作命令 如 JOG/HOME/MOVE等等
  ┃ ┣ 📂Robot                                        # 三個馬達組合成一個Robot單元，組合動作在RobotController中，此資料夾主要負責Robot的動作程序
  ┃ ┃ ┣ 📂Models                                     # Robot 資料區 - 針對程序
  ┃ ┃ ┃ ┣ 📜DefaultPlaceCarBatteryProcedure.cs       # 放置電池到車輛上的預設程序
  ┃ ┃ ┃ ┣ 📜DefaultPlaceSlotBatteryProcedure.cs      # 放置電池到槽位上的預設程序
+ ┃ ┃ ┃ ┣ 📜DefaultProcedure.cs                      # 預設程序的父類別
  ┃ ┃ ┃ ┣ 📜DefaultRotateProcedure.cs                # 旋轉動作的預設程序
  ┃ ┃ ┃ ┣ 📜DefaultTakeCarBatteryProcedure.cs        # 從車輛取出電池的預設程序
  ┃ ┃ ┃ ┣ 📜DefaultTakeSlotBatteryProcedure.cs       # 從槽位取出電池的預設程序
+ ┃ ┃ ┃ ┣ 📜DefaultTest1Procedure.cs                 # Slot1~Slot4依序交換測試的預設程序
  ┃ ┃ ┃ ┣ 📜PosErrorFrame.cs                         # 紀錄程序錯誤的格式
  ┃ ┃ ┃ ┣ 📜PosFrame.cs                              # 點位動作的格式
  ┃ ┃ ┃ ┣ 📜ProcedureFrame.cs                        # 流程動作的母類別-PosFrame跟SensorFrame都繼承該類別
- ┃ ┃ ┃ ┗ 📜SensorFrame.cs                           # 感測器檢查的格式
+ ┃ ┃ ┃ ┣ 📜SensorFrame.cs                           # 感測器檢查的格式
+ ┃ ┃ ┃ ┗ 📜TestSlotFrame.cs                         # 測試流程中Slot交換資訊的格式
  ┃ ┃ ┗ 📂Services                                   # Robot服務
  ┃ ┃ ┃ ┗ 📜RobotService.cs                          # Robot的半自動流程及全自動流程
  ┃ ┗ 📂Slot                                         # 槽位資料區 - 建立虛擬槽位資訊，資料交換及狀態管理
@@ -187,6 +230,7 @@ fi
  ┃ ┃ ┃ ┣ 📜SlotStateMachine.cs                      # 槽位狀態機，以更換狀態為主
  ┃ ┃ ┃ ┗ 📜SlotStatePersistence.cs                  # 狀態及電池記憶讀取儲存功能
  ┣ 📂Hardware                                       # 硬體資料區 - 以硬體為主的控制器
+ ┃ ┣ 📜ChargersReader.cs                            # 負責CANBUS回傳資訊的分析與將資訊寫入NPB450Controller
  ┃ ┣ 📜HardwareManager.cs                           # 管理所有硬體
  ┃ ┣ 📜NPB450Controller.cs                          # 單一台NPB450 資訊讀取及動作
  ┃ ┗ 📜RobotController.cs                           # Robot 組合的動作及流程
@@ -210,18 +254,18 @@ fi
  ┃ ┗ 📜launchSettings.json
  ┣ 📂Protos                                         # gRPC server 使用的 proto檔
  ┃ ┣ 📜battery_swapping_station.proto               # 換電站的gRPC Server用
- ┃ ┣ 📜charger_action_service.proto                 # 舊的，可能需要更換
- ┃ ┣ 📜charger_status_service.proto                 # 舊的，可能需要更換
- ┃ ┣ 📜kernel_device_common.proto                   # 舊的，可能需要更換
- ┃ ┣ 📜kernel_device_registration_service.proto     # 舊的，可能需要更換 
- ┃ ┗ 📜kernel_device_status_service.proto           # 舊的，可能需要更換 
+ ┃ ┣ 📜charger_action_service.proto                 # 舊的，已不使用
+ ┃ ┣ 📜charger_status_service.proto                 # 舊的，已不使用
+ ┃ ┣ 📜device_registration_service.proto            # 與上位 gRPC Server連線，進行註冊及刪除動作 
+ ┃ ┣ 📜kernel_device_common.proto                   # 舊的，已不使用
+ ┃ ┗ 📜kernel_device_status_service.proto           # 舊的，已不使用 
  ┣ 📂Services                                       # 服務
  ┃ ┣ 📜AppServices.cs                               # App應用
  ┃ ┣ 📜BackgroundService.cs                         # canbus 的 pollingr及Slot狀態機的變更
  ┃ ┣ 📜BatterySwappingStationService.cs             # gRPC Server的服務內容
- ┃ ┣ 📜GrpcChannelManager.cs                        # 舊的，可能需要更換 
- ┃ ┣ 📜GrpcClientService.cs                         # 舊的，可能需要更換 
- ┃ ┣ 📜GrpcServiceService.cs                        # 舊的，可能需要更換 
+ ┃ ┣ 📜GrpcChannelManager.cs                        # 舊的，已不使用
+ ┃ ┣ 📜GrpcClientService.cs                         # gRPC Client，與上位gRPC Server進行連線並執行註冊及刪除動作
+ ┃ ┣ 📜GrpcServiceService.cs                        # 舊的，已不使用 
  ┃ ┣ 📜MonitoringService.cs                         # 管理設備狀態機轉換及背景處理
  ┃ ┣ 📜ServiceRegistrationExtensions.cs             # 註冊 DI
  ┃ ┗ 📜StateMachine.cs                              # 設備狀態機，在變更狀態時可進行處理
@@ -253,6 +297,12 @@ fi
  ┃ ┃ ┣ 📜_Layout.cshtml
  ┃ ┃ ┣ 📜_Layout.cshtml.css
  ┃ ┃ ┗ 📜_ValidationScriptsPartial.cshtml
+ ┃ ┣ 📂System
+ ┃ ┃ ┣ 📜Index.cshtml
+ ┃ ┃ ┗ 📜Index.cshtml.cs
+ ┃ ┣ 📂Test
+ ┃ ┃ ┣ 📜Index.cshtml
+ ┃ ┃ ┗ 📜Index.cshtml.cs
  ┃ ┣ 📂Units
  ┃ ┃ ┣ 📜Index.cshtml
  ┃ ┃ ┗ 📜Index.cshtml.cs
@@ -289,8 +339,10 @@ NuGet上所使用的套件
   5. Charging # 此Slot上有電池且在充電中
   6. Floating # 此Slot上有電池且在浮充狀態
   7. StopCharge # 此Slot上有電池但下達停止充電以待取出
-  8. SupplyError # MW NPB450產生的錯誤訊號
-  9. StateError # 此Slot上的狀態跟電池記憶不同
+  8. FullCharge # 此Slot上已完成充電並停止充電，同時會等待一段時間後再度充電
+  9. SupplyError # MW NPB450產生的錯誤訊號
+  10. StateError # 此Slot上的狀態跟電池記憶不同
+  11. CommError # 此Slot上發生CANBUS通訊異常
 
 ## SlotChargeState狀態列舉
 為  gRPC 讀取Slot的狀態列舉
@@ -298,6 +350,7 @@ NuGet上所使用的套件
   2. Empty # 此Slot上無電池
   3. Charging # 此Slot上有電池且在充電中
   4. Floating # 此Slot上有電池且在浮充狀態
+  5. Error # 此Slot上發生Error
 
 ### SlotState跟SlotChargeState關係
  ```bash
@@ -305,10 +358,12 @@ SlotChargeState.Empty       --. SlotState.Initialization
                                ┗ SlotState.Empty
 SlotChargeState.Unspecified --. SlotState.NotUsed
                                ┣ SlotState.SupplyError
-                               ┗ SlotState.StateError
+                               ┣ SlotState.StateError
+                               ┗ SlotState.CommError
 SlotChargeState.Charging    --.  SlotState.Idle
                                ┣ SlotState.Charging
-                               ┗ SlotState.StopCharge
+                               ┣ SlotState.StopCharge
+                               ┗ SlotState.FullCharge
 SlotChargeState.Floating    --.  SlotState.Floating
 
  ```
@@ -357,6 +412,13 @@ appsettings.json
     "SensorCheckPass": false,                       // 測試用，在流程動作中不檢查在席感測器
     "ServoOnAndHomeAfterStartup": false             // 在狀態機變成Initial時是否執行Servo On跟原點復歸
     "ChargerUseAsync": true                         // SocketCANBusService 中使用 Async
+    "GRPCRegisterOnlyResponse": true,               // gRPC註冊時，只要收到不回空的回應視為完成
+    "CheckBattaryExistByMemory": false,             // 檢查Slot電池存在是否使用記憶，若是false則是利用電壓及電流來判斷
+    "CheckBatteryExistValue_Voltage_V": 1.0,        // 確認Slot電池存在的最低電壓，如超過1V視為存在
+    "CheckBatteryChargeValue_Voltage_V": 5.0,       // 確認Slot電池充電判斷的最低電壓，如超過5V視為充電中
+    "CheckBatteryFullChargeValue_A": 0.1,           // 確認Slot電池已充飽電的最高電流，如低於0.1A視為已充飽電
+    "RechargeAfterFullDischarge_Minutes": 10,       // 在充飽電的狀態下，延遲該數據地分鐘後再度充電
+    "FullChargeCheckDelay_Seconds": 10              // 判斷充飽電的延遲時間，如在電流低於0.1A的狀態延續10秒轉換成已充飽電的狀態
   }
 }
 ```
