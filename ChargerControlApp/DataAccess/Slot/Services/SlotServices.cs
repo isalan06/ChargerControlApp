@@ -229,7 +229,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
 
             if (SlotInfo[index].State.CurrentState.CurrentState != SlotState.NotUsed)
             {
-                if (SlotInfo[index].State.CurrentState.CurrentState != SlotState.FullCharge)
+                //if (SlotInfo[index].State.CurrentState.CurrentState != SlotState.FullCharge)
                     SlotInfo[index].State.CurrentState.HandleTransition(SlotState.Initialization); // 非 NotUsed 狀態，重置為 Initialization
             }
 

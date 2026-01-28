@@ -13,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -84,6 +85,10 @@ namespace ChargerControlApp.Services
                 _slotServices.TransferToSlotChargeState(i); // 同步更新充電狀態
             }
 
+            bool recheckAllSlotStatus = false; // 用於標記是否需要重新檢查所有 Slot 狀態
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            long recheckAllSlotStatusInterval = 120000; // 120秒
+
             // Polling Loop
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -109,6 +114,19 @@ namespace ChargerControlApp.Services
 
                     //_hardwareManager.Charger.PollingOnce();
                     //_logger.LogDebug("輪詢成功，電壓: {Voltage}", _hardwareManager.Charger.GetCachedVoltage());
+
+                    if (!recheckAllSlotStatus)
+                    {
+                        if(stopwatch.ElapsedMilliseconds >= recheckAllSlotStatusInterval)
+                        {
+                            recheckAllSlotStatus = true;
+                            stopwatch.Stop();
+                            _slotServices.ResetAllSlotStatus();
+                            _logger.LogInformation("重新檢查所有 Slot 狀態");
+                        }
+                    }
+
+
 
                 }
                 catch (Exception ex)
@@ -221,7 +239,11 @@ namespace ChargerControlApp.Services
                 else if (slotState.State.CurrentState.CurrentState == SlotState.FullCharge)
                 {
                     if (charger.IsRechargeTimeout() || !charger.IsFullCharged)
+                    {
+                        if (charger.IsRechargeTimeout())
+                            charger.FullChargeRetryFlag = true; // 標記為已達重充時間
                         slotService.TransitionTo(index, SlotState.Idle);
+                    }
                     //if (!charger.IsBatteryExist && !_robotService.IsMainProcedureRunning)
                     //    slotService.TransitionTo(index, SlotState.Empty);
                 }

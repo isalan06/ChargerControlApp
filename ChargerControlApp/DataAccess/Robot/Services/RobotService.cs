@@ -3,9 +3,10 @@ using ChargerControlApp.DataAccess.Robot.Models;
 using ChargerControlApp.DataAccess.Slot.Services;
 using ChargerControlApp.Hardware;
 using ChargerControlApp.Services;
-using System.Threading.Tasks;
-using Nexano.Hardware.BatterySwappingStation.Protos;
 using Nexano.FMS.DeviceController.Protos;
+using Nexano.Hardware.BatterySwappingStation.Protos;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace ChargerControlApp.DataAccess.Robot.Services
 {
@@ -1666,6 +1667,85 @@ namespace ChargerControlApp.DataAccess.Robot.Services
             result += $"移動到位置{position}";
 
             return result;
+        }
+
+        public void SaveSlotInfoBeforeSwap(int swapIn, int swapOut)
+        {
+            try
+            {
+                // 建立紀錄資料夾與檔案 (以日為單位)
+                string logDir = Path.Combine(AppContext.BaseDirectory, "SwapLog");
+                Directory.CreateDirectory(logDir);
+                string filePath = Path.Combine(logDir, $"swaplog_{DateTime.Now:yyyy-MM-dd}.log");
+
+                // 準備要寫入的物件
+                var slots = new List<object>();
+                var slotArray = _slotServices.SlotInfo;
+                int slotCount = slotArray?.Length ?? 0;
+                int chargerCount = _hardwareManager.Charger?.Length ?? 0;
+
+                for (int i = 0; i < slotCount; i++)
+                {
+                    var s = slotArray[i];
+                    // slot number 以 1 起算
+                    int slotNo = i + 1;
+
+                    double? voltage = null;
+                    double? current = null;
+
+                    if (i >= 0 && i < chargerCount && _hardwareManager.Charger[i] != null)
+                    {
+                        try
+                        {
+                            voltage = _hardwareManager.Charger[i].GetCachedVoltage();
+                            current = _hardwareManager.Charger[i].GetCachedCurrent();
+                        }
+                        catch
+                        {
+                            // 若讀取失敗則保留 null
+                        }
+                    }
+
+                    slots.Add(new
+                    {
+                        slotNo,
+                        id = s?.Id ?? 0,
+                        name = s?.Name,
+                        label = s?.Label,
+                        chargeState = s?.ChargeState.ToString(),
+                        chargingProcessValue = s?.ChargingProcessValue,
+                        batteryMemory = s?.BatteryMemory,
+                        stateError = s?.StateError,
+                        isEnabled = s?.IsEnabled,
+                        voltage,
+                        current
+                    });
+                }
+
+                var entry = new
+                {
+                    timestamp = DateTime.Now.ToString("o"),
+                    swapIn,
+                    swapOut,
+                    isAnySlotInError = _slotServices.IsAnySlotInErrorState,
+                    slots
+                };
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = false
+                };
+
+                string json = JsonSerializer.Serialize(entry, options);
+
+                // 以 append 方式每筆一行 json
+                System.IO.File.AppendAllText(filePath, json + Environment.NewLine);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"SaveSlotInfoBeforeSwap failed for swapIn={swapIn}, swapOut={swapOut}");
+            }
         }
 
         #endregion

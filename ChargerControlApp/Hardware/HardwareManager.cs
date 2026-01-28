@@ -161,6 +161,12 @@ namespace ChargerControlApp.Hardware
                     break;
                 }
 
+                if (Charger[index].FullChargeRetryFlag)
+                {
+                    result = swap;
+                    break;
+                }
+
                 if (Charger[index].GetCachedVoltage() > voltage_temp)
                 {
                     voltage_temp = Charger[index].GetCachedVoltage();

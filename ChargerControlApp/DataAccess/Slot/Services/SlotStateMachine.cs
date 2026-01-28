@@ -160,6 +160,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
                 _slotServices.SetBatteryMemory(_index, false);
             }
             _hardwareManager.Charger[_index].RecalculateFullChargedStatus(); // 重新計算是否充滿電
+            _hardwareManager.Charger[_index].FullChargeRetryFlag = false; // 清除滿充重試旗標
             Console.WriteLine($"Slot[{_index}]進入空狀態");
         }
         public override bool HandleTransition(SlotState nextState)
@@ -221,6 +222,7 @@ namespace ChargerControlApp.DataAccess.Slot.Services
             _hardwareManager.Charger[_index].RecalculateFullChargedStatus(); // 重新計算是否充滿電
             _hardwareManager.Charger[_index].StopCharging(); // 確保充電器停止充電
             _hardwareManager.Charger[_index].RecalculateFullChargedStatus(); // 重新計算是否充滿電
+
         }
         public override bool HandleTransition(SlotState nextState)
         {

@@ -55,6 +55,8 @@ namespace ChargerControlApp.Hardware
         public bool FinalStartChargingTrigger { get; internal set; } = false;
         public bool FinalStopChargingTrigger { get; internal set; } = false;
 
+        public bool FullChargeRetryFlag { get; set; } = false; // 滿充重試旗標
+
         // timeout
         private bool isReadError = false;
         private long timeoutMilliseconds = 1000;
@@ -166,9 +168,14 @@ namespace ChargerControlApp.Hardware
                                 {
                                     RecalculateFullChargedStatus();
                                 }
+
+                                if (FullChargeRetryFlag) FullChargeRetryFlag = false; // 重試旗標歸零
                             }
                             else if (fullchargeCheckDelay.ElapsedMilliseconds > _appSettings.FullChargeCheckDelay_Seconds * 1000)
+                            {
                                 result = true;
+                                if (FullChargeRetryFlag) FullChargeRetryFlag = false; // 重試旗標歸零
+                            }
                             if (flag)
                             {
                                 if (!fullchargeCheckDelay.IsRunning) { fullchargeCheckDelay.Start(); }
@@ -180,6 +187,8 @@ namespace ChargerControlApp.Hardware
                             {
                                 RecalculateFullChargedStatus();
                             }
+
+                            if (FullChargeRetryFlag) FullChargeRetryFlag = false; // 重試旗標歸零
                         }
                     }
                 }

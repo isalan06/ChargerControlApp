@@ -1,4 +1,5 @@
 ﻿using ChargerControlApp.Hardware;
+using ChargerControlApp.DataAccess.Robot.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
 using System.IO;
@@ -161,13 +162,6 @@ namespace ChargerControlApp.Controllers
             }
         }
 
-        // System action DTO
-        public class SystemActionRequest
-        {
-            public string Action { get; set; } = ""; // "restart-service" | "reboot" | "shutdown"
-            public string ServiceName { get; set; } = "chargercontrolapp.service"; // optional
-        }
-
         // POST /System/SystemAction
         [HttpPost]
         public IActionResult SystemAction([FromBody] SystemActionRequest req)
@@ -236,6 +230,138 @@ namespace ChargerControlApp.Controllers
             {
                 return StatusCode(500, new { message = "Failed to execute", detail = ex.Message });
             }
+        }
+
+        // --- 新增：保存 SwapLog 呼叫 RobotService.SaveSlotInfoBeforeSwap ---
+        public class SaveSwapRequest
+        {
+            public int SwapIn { get; set; }
+            public int SwapOut { get; set; }
+        }
+
+        [HttpPost]
+        public IActionResult SaveSwapLog([FromBody] SaveSwapRequest req)
+        {
+            if (req == null) return BadRequest(new { message = "Missing body" });
+
+            var robot = HttpContext.RequestServices.GetService<RobotService>();
+            if (robot == null) return StatusCode(500, new { message = "RobotService not available" });
+
+            try
+            {
+                robot.SaveSlotInfoBeforeSwap(req.SwapIn, req.SwapOut);
+                return Ok(new { message = "Saved" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Save failed", detail = ex.Message });
+            }
+        }
+
+        // 列出 SwapLog 資料夾下檔案，支援 fromDate, toDate, keyword 過濾
+        [HttpGet]
+        public IActionResult ListSwapLogs(string fromDate = null, string toDate = null, string keyword = null)
+        {
+            try
+            {
+                string logDir = Path.Combine(AppContext.BaseDirectory, "SwapLog");
+                if (!Directory.Exists(logDir))
+                    return Json(new object[0]);
+
+                DateTime? from = null, to = null;
+                if (!string.IsNullOrEmpty(fromDate) && DateTime.TryParse(fromDate, out var f)) from = f.Date;
+                if (!string.IsNullOrEmpty(toDate) && DateTime.TryParse(toDate, out var t)) to = t.Date.AddDays(1).AddTicks(-1);
+
+                var files = Directory.GetFiles(logDir, "*.log")
+                                     .Select(f => new FileInfo(f))
+                                     .Where(fi =>
+                                     {
+                                         if (from.HasValue && fi.LastWriteTime < from.Value) return false;
+                                         if (to.HasValue && fi.LastWriteTime > to.Value) return false;
+                                         if (!string.IsNullOrEmpty(keyword) && !fi.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) && !fi.FullName.Contains(keyword, StringComparison.OrdinalIgnoreCase)) return false;
+                                         return true;
+                                     })
+                                     .Select(fi => new {
+                                         name = fi.Name,
+                                         length = fi.Length,
+                                         lastWrite = fi.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")
+                                     })
+                                     .OrderByDescending(f => f.lastWrite)
+                                     .ToArray();
+                return Json(files);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "List failed", detail = ex.Message });
+            }
+        }
+
+        // 讀取指定檔案內容（從 SwapLog 資料夾），避免路徑穿越
+        [HttpGet]
+        public IActionResult ReadSwapLog(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                return BadRequest(new { message = "Missing fileName" });
+
+            // 檢查是否包含路徑分隔符，避免路徑穿越
+            if (fileName.IndexOfAny(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }) >= 0)
+                return BadRequest(new { message = "Invalid fileName" });
+
+            try
+            {
+                string logDir = Path.Combine(AppContext.BaseDirectory, "SwapLog");
+                string fullPath = Path.Combine(logDir, fileName);
+
+                if (!System.IO.File.Exists(fullPath))
+                    return NotFound(new { message = "File not found" });
+
+                var content = System.IO.File.ReadAllText(fullPath);
+                return Content(content, "text/plain");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Read failed", detail = ex.Message });
+            }
+        }
+
+        // 下載指定 SwapLog（attachment），避免路徑穿越
+        [HttpGet]
+        public IActionResult DownloadSwapLog(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                return BadRequest(new { message = "Missing fileName" });
+
+            if (fileName.IndexOfAny(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }) >= 0)
+                return BadRequest(new { message = "Invalid fileName" });
+
+            try
+            {
+                string logDir = Path.Combine(AppContext.BaseDirectory, "SwapLog");
+                string fullPath = Path.Combine(logDir, fileName);
+
+                // 安全檢查：確保 fullPath 在 logDir 中
+                var fullPathResolved = Path.GetFullPath(fullPath);
+                var logDirResolved = Path.GetFullPath(logDir);
+                if (!fullPathResolved.StartsWith(logDirResolved, StringComparison.OrdinalIgnoreCase))
+                    return BadRequest(new { message = "Invalid file path" });
+
+                if (!System.IO.File.Exists(fullPathResolved))
+                    return NotFound(new { message = "File not found" });
+
+                var bytes = System.IO.File.ReadAllBytes(fullPathResolved);
+                return File(bytes, "application/octet-stream", fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Download failed", detail = ex.Message });
+            }
+        }
+
+        // System action DTO
+        public class SystemActionRequest
+        {
+            public string Action { get; set; } = ""; // "restart-service" | "reboot" | "shutdown"
+            public string ServiceName { get; set; } = "chargercontrolapp.service"; // optional
         }
 
         private static string RunProcessAndCapture(string fileName, string arguments)

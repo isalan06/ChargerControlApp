@@ -18,6 +18,10 @@
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="parameter-tab" data-bs-toggle="tab" data-bs-target="#parameter" type="button" role="tab">Parameter</button>
     </li>
+
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="swaplog-tab" data-bs-toggle="tab" data-bs-target="#swaplog" type="button" role="tab">Swap Log</button>
+    </li>
 </ul>
 
 <div class="tab-content mt-3" id="systemTabContent">
@@ -299,6 +303,77 @@
         </div>
 
     </div>
+
+    <div class="tab-pane fade" id="swaplog" role="tabpanel">
+        <h4>Swap Slot Log</h4>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-2 align-items-end">
+                    <div class="col-auto">
+                        <label class="form-label">Swap In</label>
+                        <select id="swap-in-select" class="form-select form-select-sm">
+                            @for (int i = 1; i <= 8; i++)
+                            {
+                                <option value="@i">@i</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label">Swap Out</label>
+                        <select id="swap-out-select" class="form-select form-select-sm">
+                            @for (int i = 1; i <= 8; i++)
+                            {
+                                <option value="@i">@i</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button id="btn-save-swapped" class="btn btn-sm btn-primary">Save</button>
+                    </div>
+
+                    <div class="col-auto ms-4">
+                        <label class="form-label">From</label>
+                        <input id="filter-from" type="date" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label">To</label>
+                        <input id="filter-to" type="date" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label">Keyword</label>
+                        <input id="filter-keyword" type="text" class="form-control form-control-sm" placeholder="檔名或內容關鍵字" />
+                    </div>
+
+                    <div class="col-auto ms-2">
+                        <label class="form-label">Log File</label>
+                        <select id="swaplog-file-select" class="form-select form-select-sm" style="min-width:300px;">
+                            <option value="">-- 請選擇檔案 --</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button id="btn-refresh-loglist" class="btn btn-sm btn-outline-secondary">Refresh</button>
+                    </div>
+                    <div class="col-auto">
+                        <button id="btn-open-log" class="btn btn-sm btn-outline-primary">Open</button>
+                    </div>
+                    <div class="col-auto">
+                        <button id="btn-download-log" class="btn btn-sm btn-outline-success">Download</button>
+                    </div>
+
+                </div>
+                <div id="swaplog-feedback" class="mt-2 text-muted small"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <label class="form-label">Log Content</label>
+                <textarea id="swaplog-content" class="form-control" rows="12" spellcheck="false" style="font-family: monospace; white-space: pre; overflow-wrap: normal;"></textarea>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 
@@ -707,6 +782,135 @@
 
             if (btnLoad) btnLoad.addEventListener('click', handleLoad);
             if (btnSave) btnSave.addEventListener('click', handleSave);
+        })();
+
+        // --- 新增 Swap Log 前端行為（含過濾與下載） ---
+        (function () {
+            const saveBtn = document.getElementById('btn-save-swapped');
+            const openBtn = document.getElementById('btn-open-log');
+            const refreshBtn = document.getElementById('btn-refresh-loglist');
+            const downloadBtn = document.getElementById('btn-download-log');
+            const feedbackEl = document.getElementById('swaplog-feedback');
+            const fileSelect = document.getElementById('swaplog-file-select');
+            const contentEl = document.getElementById('swaplog-content');
+            const swapInSel = document.getElementById('swap-in-select');
+            const swapOutSel = document.getElementById('swap-out-select');
+            const fromInput = document.getElementById('filter-from');
+            const toInput = document.getElementById('filter-to');
+            const keywordInput = document.getElementById('filter-keyword');
+
+            function buildQuery() {
+                const params = new URLSearchParams();
+                if (fromInput.value) params.append('fromDate', fromInput.value);
+                if (toInput.value) params.append('toDate', toInput.value);
+                if (keywordInput.value) params.append('keyword', keywordInput.value);
+                return params.toString();
+            }
+
+            async function refreshList() {
+                feedbackEl.textContent = '載入檔案列表…';
+                try {
+                    const q = buildQuery();
+                    const url = '/System/ListSwapLogs' + (q ? ('?' + q) : '');
+                    const res = await fetch(url, { cache: 'no-store' });
+                    if (!res.ok) {
+                        feedbackEl.textContent = '載入失敗: ' + res.statusText;
+                        return;
+                    }
+                    const arr = await res.json();
+                    fileSelect.innerHTML = '<option value="">-- 請選擇檔案 --</option>';
+                    arr.forEach(f => {
+                        const opt = document.createElement('option');
+                        opt.value = f.name;
+                        opt.textContent = `${f.name} (${f.lastWrite})`;
+                        opt.dataset.length = f.length;
+                        fileSelect.appendChild(opt);
+                    });
+                    feedbackEl.textContent = '已更新檔案列表';
+                } catch (ex) {
+                    feedbackEl.textContent = '載入列表例外: ' + ex.message;
+                }
+            }
+
+            async function saveSwap() {
+                const swapIn = Number(swapInSel.value) || 0;
+                const swapOut = Number(swapOutSel.value) || 0;
+                feedbackEl.textContent = '儲存中…';
+                try {
+                    const res = await fetch('/System/SaveSwapLog', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ swapIn, swapOut })
+                    });
+                    if (!res.ok) {
+                        const err = await res.json().catch(()=>null);
+                        feedbackEl.textContent = '儲存失敗: ' + (err?.message ?? res.statusText);
+                        return;
+                    }
+                    feedbackEl.textContent = '儲存完成';
+                    // 更新檔案列表
+                    await refreshList();
+                } catch (ex) {
+                    feedbackEl.textContent = '儲存例外: ' + ex.message;
+                }
+            }
+
+            async function openLog() {
+                const fileName = fileSelect.value;
+                if (!fileName) {
+                    feedbackEl.textContent = '請先選擇一個檔案';
+                    return;
+                }
+                feedbackEl.textContent = '讀取檔案…';
+                try {
+                    const res = await fetch('/System/ReadSwapLog?fileName=' + encodeURIComponent(fileName), { cache: 'no-store' });
+                    if (!res.ok) {
+                        const err = await res.json().catch(()=>null);
+                        feedbackEl.textContent = '讀取失敗: ' + (err?.message ?? res.statusText);
+                        contentEl.value = '';
+                        return;
+                    }
+                    const text = await res.text();
+                    contentEl.value = text;
+                    feedbackEl.textContent = '已載入檔案內容';
+                } catch (ex) {
+                    feedbackEl.textContent = '讀取例外: ' + ex.message;
+                }
+            }
+
+            async function downloadLog() {
+                const fileName = fileSelect.value;
+                if (!fileName) {
+                    feedbackEl.textContent = '請先選擇一個檔案';
+                    return;
+                }
+                feedbackEl.textContent = '準備下載…';
+                try {
+                    // 直接導向下載 endpoint（會回傳 Content-Disposition attachment）
+                    const url = '/System/DownloadSwapLog?fileName=' + encodeURIComponent(fileName);
+                    // create invisible anchor to download
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    feedbackEl.textContent = '已開始下載';
+                } catch (ex) {
+                    feedbackEl.textContent = '下載例外: ' + ex.message;
+                }
+            }
+
+            if (saveBtn) saveBtn.addEventListener('click', () => {
+                if (!confirm('確定要儲存當前 slot 狀態至 SwapLog？')) return;
+                saveSwap();
+            });
+            if (openBtn) openBtn.addEventListener('click', openLog);
+            if (refreshBtn) refreshBtn.addEventListener('click', refreshList);
+            if (downloadBtn) downloadBtn.addEventListener('click', downloadLog);
+
+            // 初次載入檔案列表
+            refreshList();
         })();
 
         // --- 新增：前端呼叫 SystemAction (restart service / reboot / shutdown) ---
