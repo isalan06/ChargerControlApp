@@ -167,6 +167,12 @@ namespace ChargerControlApp.Hardware
                     break;
                 }
 
+                if (Charger[index].GetCachedCurrent() < 0.1) // 電流小於0.1A視為充電完成
+                {
+                    result = swap;
+                    break;
+                }
+
                 if (Charger[index].GetCachedVoltage() > voltage_temp)
                 {
                     voltage_temp = Charger[index].GetCachedVoltage();
