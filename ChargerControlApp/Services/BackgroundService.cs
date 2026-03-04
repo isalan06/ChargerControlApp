@@ -36,6 +36,12 @@ namespace ChargerControlApp.Services
         private readonly SlotServices _slotServices;
         private readonly AppSettings _settings;
 
+        // BTNC handling
+        private readonly DateTime?[] _btncDetectedSince;
+        private readonly bool[] _btncRetryInProgress;
+        private static readonly TimeSpan BtncDetectThreshold = TimeSpan.FromSeconds(20);
+        private static readonly TimeSpan BtncStopDuration = TimeSpan.FromSeconds(20);
+
         //public CanBusPollingService(NPB1700Controller npbController, ILogger<CanBusPollingService> logger)
         //{
         //    _npbController = npbController;
@@ -52,6 +58,11 @@ namespace ChargerControlApp.Services
             _chargersController = serviceProvider.GetService<ChargersReader>();
             _slotServices = serviceProvider.GetService<SlotServices>();
             _settings = serviceProvider.GetRequiredService<AppSettings>();
+
+            // initialize BTNC tracking arrays using max possible charger count
+            int maxCount = NPB450Controller.NPB450ControllerInstnaceMaxNumber;
+            _btncDetectedSince = new DateTime?[maxCount];
+            _btncRetryInProgress = new bool[maxCount];
         }
         //public CanBusPollingService(HardwareManager hardwareManager, ILogger<CanBusPollingService> logger)
         //{
@@ -112,7 +123,7 @@ namespace ChargerControlApp.Services
                     // Read GPIO Inputs
                     GPIOService.ReadInputsFromHardware();
 
-                    //_hardwareManager.Charger.PollingOnce();
+                    //_hardware_manager.Charger.PollingOnce();
                     //_logger.LogDebug("輪詢成功，電壓: {Voltage}", _hardwareManager.Charger.GetCachedVoltage());
 
                     if (!recheckAllSlotStatus)
@@ -228,6 +239,66 @@ namespace ChargerControlApp.Services
                         slotService.TransitionTo(index, SlotState.FullCharge);
                     //if (!charger.IsBatteryExist && !_robotService.IsMainProcedureRunning)
                     //    slotService.TransitionTo(index, SlotState.Empty);
+                    // 充電中，檢查是否檢測到BTNC狀態約20秒，若有則嘗試停止充電20秒後再重新充電一次，以解決部分電池在充電過程中會出現BTNC狀態的問題
+                    if (charger.CHG_STATUS.Bits.BTNC)
+                    {
+                        // 記錄第一次偵測到 BTNC 的時間
+                        if (!_btncDetectedSince[index].HasValue)
+                        {
+                            _btncDetectedSince[index] = DateTime.UtcNow;
+                        }
+                        else if (!_btncRetryInProgress[index] && (DateTime.UtcNow - _btncDetectedSince[index].Value) >= BtncDetectThreshold)
+                        {
+                            //觸發一次性的停止充電再重試流程
+                            try
+                            {
+                                _logger.LogInformation($"Charger[{index}] BTNC detected for >= {BtncDetectThreshold.TotalSeconds} seconds. Stopping charging to retry...");
+                                charger.StopCharging();
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, $"Charger[{index}] StopCharging failed during BTNC handling");
+                            }
+
+                            _btncRetryInProgress[index] = true;
+
+                            // 非同步等待一定時間後再嘗試重新啟動充電
+                            var _idx = index;
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    await Task.Delay(BtncStopDuration);
+
+                                    try
+                                    {
+                                        _logger.LogInformation($"Charger[{_idx}] retrying StartCharging after BTNC stop period...");
+                                        if (slotState.State.CurrentState.CurrentState != SlotState.FullCharge)
+                                            charger.StartCharging();
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _logger.LogError(ex, $"Charger[{_idx}] StartCharging failed during BTNC retry");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogError(ex, $"Charger[{_idx}] BTNC retry task failed");
+                                }
+                                finally
+                                {
+                                    // reset tracking state regardless of success
+                                    _btncDetectedSince[_idx] = null;
+                                    _btncRetryInProgress[_idx] = false;
+                                }
+                            });
+                        }
+                    }
+                    else
+                    {
+                        // BTNC 清除，重置計時
+                        _btncDetectedSince[index] = null;
+                    }
                 }
                 else if (slotState.State.CurrentState.CurrentState == SlotState.Floating)
                 {
