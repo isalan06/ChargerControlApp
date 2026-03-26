@@ -456,22 +456,21 @@ namespace ChargerControlApp.Hardware
         }
 
         /// <summary>
-        /// 主要的輪詢迴圈，會持續呼叫 PollingOnce 方法來取得充電器的狀態。
+        /// 主要的輪詢一次作業（原 PollingOnce），改為回傳 Task，並接受 CancellationToken
         /// </summary>
-        public async void PollingOnce()
+        public async Task PollingOnceAsync(CancellationToken ct = default)
         {
+            if (ct.IsCancellationRequested) return;
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-Start");
                 _canBusService.ClearCANBuffer();
-                // 這裡是實際和硬體通訊的地方
                 var commandFrame = new CanRouteCommandFrame();
                 var isFinal = false;
                 bool routeResult = RoutueCommandFrames.Next(out commandFrame, out isFinal);
-                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-Next Result: {routeResult}, IsFinal: {isFinal}");
                 if (routeResult)
                 {
+                    // 傳送請求（僅送出），GetStatusFromDevice_OnlySend 本身是 async Task
                     await GetStatusFromDevice_OnlySend(commandFrame.Command);
                 }
 
@@ -480,7 +479,6 @@ namespace ChargerControlApp.Hardware
                 {
                     if (this.startChargingTrigger)
                     {
-                        _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StartCharging()");
                         this.startChargingTrigger = false;
                         int numberOfDataBytes = 1;
                         byte[] send = new byte[2 + numberOfDataBytes];
@@ -492,7 +490,6 @@ namespace ChargerControlApp.Hardware
                     }
                     if (this.stopChargingTrigger)
                     {
-                        _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StopCharging()");
                         this.stopChargingTrigger = false;
                         int numberOfDataBytes = 1;
                         byte[] send = new byte[2 + numberOfDataBytes];
@@ -503,23 +500,25 @@ namespace ChargerControlApp.Hardware
                         IsTriggerStartCharging = false;
                     }
                 }
-                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-End");
             }
             else
             {
                 // Windows 模擬資料
                 _Windows_PollingOnce();
             }
+            await Task.CompletedTask;
         }
 
-
-        public async void PollingOnceSync()
+        /// <summary>
+        /// 舊 PollingOnceSync 改為 PollingOnceSyncAsync 回傳 Task
+        /// </summary>
+        public async Task PollingOnceSyncAsync(CancellationToken ct = default)
         {
+            if (ct.IsCancellationRequested) return;
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-Start");
                 _canBusService.ClearCANBuffer();
-                // 這裡是實際和硬體通訊的地方
 
                 // Voltage
                 double voltageValue = await GetVoltage_Sync();
@@ -527,7 +526,7 @@ namespace ChargerControlApp.Hardware
                 if (voltageValue != -1)
                     this.Voltage = voltageValue;
 
-                Task.Delay(100).Wait(); // 讀取間隔
+                await Task.Delay(100, ct); // 讀取間隔
 
                 // Current
                 double currentValue = await GetCurrent_Sync();
@@ -535,25 +534,25 @@ namespace ChargerControlApp.Hardware
                 if (currentValue != -1)
                     this.Current = currentValue;
 
-                Task.Delay(100).Wait(); // 讀取間隔
+                await Task.Delay(100, ct); // 讀取間隔
 
                 // CHG_STATUS
                 NPB450Controller.CHG_STATUS_Union cHG_STATUS_Union = await GetCHG_STATUS_Sync();
                 if (isReadError) return;
                 this.CHG_STATUS = cHG_STATUS_Union;
 
-                Task.Delay(100).Wait(); // 讀取間隔
+                await Task.Delay(100, ct); // 讀取間隔
 
 
                 NPB450Controller.FAULT_STATUS_Union fAULT_STATUS_Union = await GetFAULT_STATUS_Sync();
                 if (isReadError) return;
                 this.FAULT_STATUS = fAULT_STATUS_Union;
 
-                Task.Delay(100).Wait(); // 讀取間隔
+                await Task.Delay(100, ct); // 讀取間隔
+
 
                 if (this.startChargingTrigger)
                 {
-                    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StartCharging()");
                     this.startChargingTrigger = false;
                     int numberOfDataBytes = 1;
                     byte[] send = new byte[2 + numberOfDataBytes];
@@ -562,11 +561,10 @@ namespace ChargerControlApp.Hardware
                     send[2] = (byte)0x01;
                     _canBusService.SendCommand(send, deviceCanID);
 
-                    Task.Delay(100).Wait(); // 讀取間隔
+                    await Task.Delay(100, ct); // 讀取間隔
                 }
                 if (this.stopChargingTrigger)
                 {
-                    _logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-StopCharging()");
                     this.stopChargingTrigger = false;
                     int numberOfDataBytes = 1;
                     byte[] send = new byte[2 + numberOfDataBytes];
@@ -575,15 +573,15 @@ namespace ChargerControlApp.Hardware
                     send[2] = (byte)0x00;
                     _canBusService.SendCommand(send, deviceCanID);
 
-                    Task.Delay(100).Wait(); // 讀取間隔
+                    await Task.Delay(100, ct); // 讀取間隔
                 }
-                //_logger.LogInformation($"NPB450Controller{this.deviceID}-[Linux]-PollingOnce()-End");
             }
             else
             {
                 // Windows 模擬資料
                 _Windows_PollingOnce();
             }
+            await Task.CompletedTask;
         }
 
         private void _Windows_PollingOnce()

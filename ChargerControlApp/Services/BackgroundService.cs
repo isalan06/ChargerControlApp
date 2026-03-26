@@ -109,22 +109,26 @@ namespace ChargerControlApp.Services
                     {
                         SlotStateCheck(i);
                         
+                        // 使用 Task 版本並傳入 stoppingToken，避免 fire-and-forget
                         try
                         {
-                            await Task.Run(() => _hardwareManager.Charger[i].PollingOnce()); // 使用同步版本
+                            // await 充電器的非同步輪詢方法（已改為 Task 回傳）
+                            await _hardwareManager.Charger[i].PollingOnceAsync(stoppingToken);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // 取消時靜默跳過
                         }
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, $"Charger[{i}] PollingOnce 發生例外");
                         }
-                        await Task.Delay(200);
+
+                        await Task.Delay(200, stoppingToken);
                     }
 
                     // Read GPIO Inputs
                     GPIOService.ReadInputsFromHardware();
-
-                    //_hardware_manager.Charger.PollingOnce();
-                    //_logger.LogDebug("輪詢成功，電壓: {Voltage}", _hardwareManager.Charger.GetCachedVoltage());
 
                     if (!recheckAllSlotStatus)
                     {

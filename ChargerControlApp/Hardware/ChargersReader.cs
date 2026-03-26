@@ -21,6 +21,9 @@ namespace ChargerControlApp.Hardware
         public static int ChargerResponseIndex { get; internal set; } = -1;
         public static int ChargerResponseData { get; internal set; } = -1;
 
+        // 新增：儲存背景工作 Task，方便關閉時等待
+        private Task? _backgroundTask;
+
         #region costructor
 
         private ChargersReader()
@@ -29,9 +32,7 @@ namespace ChargerControlApp.Hardware
         public ChargersReader(ICANBusService canBusService, HardwareManager hardwareManager) : this()
         {
             _canBusService = canBusService;
-            
             _hardwareManager = hardwareManager;
-
             Open();
         }
 
@@ -47,27 +48,32 @@ namespace ChargerControlApp.Hardware
             {
                 if (disposing)
                 {
-                    // TODO: 處置受控狀態 (受控物件)
-                    source.Cancel();
-                    IsRunning = false;
+                    // 取消背景工作並嘗試等待（短暫）
+                    try
+                    {
+                        source.Cancel();
+                        IsRunning = false;
+                        if (_backgroundTask != null)
+                        {
+                            // 同步等待最多 1 秒，避免長時間 block
+                            _backgroundTask.Wait(1000);
+                        }
+                    }
+                    catch (AggregateException) { }
+                    catch (Exception) { }
                 }
 
-                // TODO: 釋出非受控資源 (非受控物件) 並覆寫完成項
-                // TODO: 將大型欄位設為 Null
                 disposedValue = true;
             }
         }
 
-        // // TODO: 僅有當 'Dispose(bool disposing)' 具有會釋出非受控資源的程式碼時，才覆寫完成項
         ~ChargersReader()
         {
-            // 請勿變更此程式碼。請將清除程式碼放入 'Dispose(bool disposing)' 方法
             Dispose(disposing: false);
         }
 
         void IDisposable.Dispose()
         {
-            // 請勿變更此程式碼。請將清除程式碼放入 'Dispose(bool disposing)' 方法
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
@@ -82,6 +88,7 @@ namespace ChargerControlApp.Hardware
         {
             CancellationToken ct = source.Token;
 
+            // 回傳 Task.Run 的 Task 物件給呼叫者以便等待
             return Task.Run(async () =>
             {
                 while (!ct.IsCancellationRequested && IsRunning)
@@ -90,19 +97,19 @@ namespace ChargerControlApp.Hardware
                     {
                         try
                         {
-                            uint canid = 0x123; // Example CAN ID
-                            ushort commandCode = 0x0; // Example command code
+                            uint canid = 0x123;
+                            ushort commandCode = 0x0;
+                            // 這裡仍呼叫同步介面 (ReceiveMessageWithID)，保留既有邏輯
                             ReceivedCANBusMessage = _canBusService.ReceiveMessageWithID(ref canid, ref commandCode);
-                           
+
                             if (ReceivedCANBusMessage != null)
                             {
-                                int chargerIndex = (int)(canid& 0xFF); // Assuming charger index is in the lower byte of CAN ID
+                                int chargerIndex = (int)(canid & 0xFF);
                                 var cmd = (NPB450Controller.CanbusReadCommand)commandCode;
                                 switch (cmd)
                                 {
                                     case NPB450Controller.CanbusReadCommand.READ_VOUT:
-                                        // 處理 READ_VOUT
-                                        byte[]? VoltageBytes = ReceivedCANBusMessage; // 取得收到的資料
+                                        byte[]? VoltageBytes = ReceivedCANBusMessage;
                                         if (VoltageBytes == null)
                                         {
                                             Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetVoltage_Sync()-ReceivedCANBusMessage is null");
@@ -112,13 +119,11 @@ namespace ChargerControlApp.Hardware
                                             ushort Voltage = BitConverter.ToUInt16(new byte[] { VoltageBytes[2], VoltageBytes[3] }.ToArray(), 0);
                                             _hardwareManager.Charger[chargerIndex].Voltage = (double)Voltage / 100;
                                             _hardwareManager.Charger[chargerIndex].RoutueCommandFrames.CaptureResponse(cmd);
-                                            //Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetVoltage_Sync()-Voltage: {_hardwareManager.Charger[chargerIndex].Voltage} V");
                                         }
                                         break;
 
                                     case NPB450Controller.CanbusReadCommand.READ_IOUT:
-                                        // 處理 READ_IOUT
-                                        byte[]? CurrentBytes = ReceivedCANBusMessage; // 取得收到的資料
+                                        byte[]? CurrentBytes = ReceivedCANBusMessage;
                                         if (CurrentBytes == null)
                                         {
                                             Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetCurrent_Sync()-ReceivedCANBusMessage is null");
@@ -128,14 +133,11 @@ namespace ChargerControlApp.Hardware
                                             ushort Current = BitConverter.ToUInt16(new byte[] { CurrentBytes[2], CurrentBytes[3] }.ToArray(), 0);
                                             _hardwareManager.Charger[chargerIndex].Current = (double)Current / 100;
                                             _hardwareManager.Charger[chargerIndex].RoutueCommandFrames.CaptureResponse(cmd);
-                                            //Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetCurrent_Sync()-Current: {_hardwareManager.Charger[chargerIndex].Current} A");
                                         }
                                         break;
-                                        
 
                                     case NPB450Controller.CanbusReadCommand.CHG_STATUS:
-                                        // 處理 CHG_STATUS
-                                        byte[]? CHG_STATUS_BYTES = ReceivedCANBusMessage; // 取得收到的資料
+                                        byte[]? CHG_STATUS_BYTES = ReceivedCANBusMessage;
                                         if (CHG_STATUS_BYTES == null)
                                         {
                                             Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetCHG_STATUS_Sync()-ReceivedCANBusMessage is null");
@@ -146,29 +148,28 @@ namespace ChargerControlApp.Hardware
                                             CHG_STATUS.Data = BitConverter.ToUInt16(new byte[] { CHG_STATUS_BYTES[2], CHG_STATUS_BYTES[3] }.ToArray(), 0);
                                             _hardwareManager.Charger[chargerIndex].CHG_STATUS = CHG_STATUS;
                                             _hardwareManager.Charger[chargerIndex].RoutueCommandFrames.CaptureResponse(cmd);
-                                            //Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetCHG_STATUS_Sync()-CHG_STATUS: 0x{_hardwareManager.Charger[chargerIndex].CHG_STATUS.Data:X}");
                                         }
                                         break;
 
                                     case NPB450Controller.CanbusReadCommand.FAULT_STATUS:
-                                        // 處理 FAULT_STATUS
-                                        byte[]? FAULT_STATUS_BYTES = ChargersReader.ReceivedCANBusMessage; // 取得收到的資料
+                                        byte[]? FAULT_STATUS_BYTES = ReceivedCANBusMessage;
                                         if (FAULT_STATUS_BYTES == null)
                                         {
                                             Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetFAULT_STATUS_Sync()-ReceivedCANBusMessage is null");
                                         }
-                                        FAULT_STATUS_Union FAULT_STATUS = new FAULT_STATUS_Union();
-                                        FAULT_STATUS.Data = BitConverter.ToUInt16(new byte[] { FAULT_STATUS_BYTES[2], FAULT_STATUS_BYTES[3] }.ToArray(), 0);
-                                        _hardwareManager.Charger[chargerIndex].FAULT_STATUS = FAULT_STATUS;
-                                        _hardwareManager.Charger[chargerIndex].RoutueCommandFrames.CaptureResponse(cmd);
-                                        //Console.WriteLine($"NPB450Controller{chargerIndex}-[Linux]-GetFAULT_STATUS_Sync()-FAULT_STATUS: 0x{_hardwareManager.Charger[chargerIndex].FAULT_STATUS.Data:X}");
+                                        else
+                                        {
+                                            FAULT_STATUS_Union FAULT_STATUS = new FAULT_STATUS_Union();
+                                            FAULT_STATUS.Data = BitConverter.ToUInt16(new byte[] { FAULT_STATUS_BYTES[2], FAULT_STATUS_BYTES[3] }.ToArray(), 0);
+                                            _hardwareManager.Charger[chargerIndex].FAULT_STATUS = FAULT_STATUS;
+                                            _hardwareManager.Charger[chargerIndex].RoutueCommandFrames.CaptureResponse(cmd);
+                                        }
                                         break;
 
                                     default:
                                         Console.WriteLine($"No Canbus Route Command = 0x{commandCode:X}");
                                         break;
                                 }
-
                             }
                         }
                         catch (Exception ex)
@@ -176,6 +177,9 @@ namespace ChargerControlApp.Hardware
                             Console.WriteLine($"Error receiving CAN bus message: {ex.Message}");
                         }
                     }
+
+                    // 每輪小延遲，讓取消更敏感
+                    try { await Task.Delay(5, ct); } catch (TaskCanceledException) { break; }
                 }
             }, ct);
         }
@@ -187,12 +191,15 @@ namespace ChargerControlApp.Hardware
         public void Open()
         {
             IsRunning = true;
-            DoWork();
+            // 儲存背景 Task 供關閉時等待
+            _backgroundTask = DoWork();
         }
 
         public void Close()
         {
             IsRunning = false;
+            source.Cancel();
+            // 不做長時間 blocking，Dispose 會嘗試等待短暫時間
         }
 
         #endregion
