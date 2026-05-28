@@ -6,6 +6,7 @@ Battery Swapping Station ASP.Net 8.0 MVC架構
 
 - [Hardware Description](#hardware-description)
   - [MOXA IPC](#moxa-ipc) 
+  - [東方馬達驅動器更新](#東方馬達驅動器設定)
 - [軟體環境](#軟體環境)
   - [檔案內容說明](#檔案內容說明)
   - [套件](#套件)
@@ -60,7 +61,7 @@ Battery Swapping Station ASP.Net 8.0 MVC架構
 # 設定 UART Serial Port 與 CANBus 參數
 
 # UART Port
-UART_PORT="/dev/ttyS1"
+UART_PORT="/dev/ttyM0"
 
 # CAN Port
 CAN_PORT="can0"
@@ -148,7 +149,25 @@ fi
   sudo systemctl status chargercontrolapp.service
   ```
 
+##  東方馬達驅動器設定
+- 資料
+  - 檔案存放在 OrientalMotorDriver 資料夾中
+  - Axis_0_parameter_20251203.mxex: 旋轉軸參數檔
+  - Axis_1_parameter_20251203.mxex: Y軸參數檔
+  - Axis_2_parameter_20251203.mxex: Z軸參數檔
+- 更新東方馬達驅動器(每一軸都要更新參數檔)
+  - 安裝 MEXE02 Ver. 4 軟體
+  - 使用 USB連接線(USB A to mini USB) 連接電腦與驅動器
+  - 開啟 MEXE02 Ver. 4 軟體
+  - 開啟參數檔 (選擇檔案)
+  - 選擇 連接口(若沒有需確認是否有連接到驅動器或有無安裝驅動程式)
+  - 資料寫入
+
+
 ---
+
+
+
 # 軟體環境
 
 ## 檔案內容說明
