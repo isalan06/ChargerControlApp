@@ -38,10 +38,10 @@ namespace ChargerControlApp.DataAccess.Modbus.Models
             this.Clone(frame);
         }
 
-        public byte[] CreateCommand()
+        public byte[]? CreateCommand()
         {
             var modbusHandler = Smart.Modbus.ModbusFactory.Create(ModbusProtocol.ModbusRTU, SlaveAddress);
-            byte[] result = null;
+            byte[]? result = null;
 
             if (Data == null)
             {
@@ -166,7 +166,7 @@ namespace ChargerControlApp.DataAccess.Modbus.Models
                 Array.Copy(data, Data, data.Length);
             }
             else
-                Data = null;
+                Data = new ushort[0];
         }
 
         public void Clone(ModbusRTUFrame frame)
